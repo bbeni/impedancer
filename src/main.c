@@ -1,10 +1,15 @@
+#include "s2p.h"
+
 #include "stdio.h"
 #include "math.h"
-#include "raylib.h"
 
-#include "s2p.h"
+#define MUI_IMPLEMENTATION
+#include "mui.h"
+
+#include "raylib.h"
+#include "rlgl.h"
+
 #define NOB_IMPLEMENTATION
-#define NOB_STRIP_PREFIX
 #include "nob.h"
 
 
@@ -13,28 +18,34 @@ char* next(int* count, char*** argv) {
     return *((*argv)++);
 }
 
-void draw_graph(S2P_Info info, int width, int height) {
+Complex_Array sel_s11(S2P_Info* info) {return info->s11;}
+Complex_Array sel_s21(S2P_Info* info) {return info->s21;}
+Complex_Array sel_s12(S2P_Info* info) {return info->s12;}
+Complex_Array sel_s22(S2P_Info* info) {return info->s22;}
+
+void draw_graph(S2P_Info info, int posx, int posy, int width, int height, Complex_Array (* selector)(S2P_Info* info), Color color) {
     double max_f = info.freq.items[info.freq.count-1];
     double min_f = info.freq.items[0];
 
     double mag_min = INFINITY;
     double mag_max = -INFINITY;
 
-    for (int i=0; i < info.freq.count; i++) {
-        Complex s21 = info.s21.items[i];
-        double mag_s21 = s21.r*s21.r + s21.i * s21.i;
-        if (mag_s21 < mag_min) mag_min = mag_s21;
-        if (mag_s21 > mag_max) mag_max = mag_s21;
+    Complex_Array arr = selector(&info);
+
+    for (size_t i=0; i < info.freq.count; i++) {
+        Complex s = arr.items[i];
+        double mag_s = s.r*s.r + s.i * s.i;
+        if (mag_s < mag_min) mag_min = mag_s;
+        if (mag_s > mag_max) mag_max = mag_s;
     }
 
-
-    for (int i=0; i < info.freq.count; i++) {
-        Complex s21 = info.s21.items[i];
-        double mag_s21 = s21.r*s21.r + s21.i * s21.i;
+    for (size_t i=0; i < info.freq.count; i++) {
+        Complex s = arr.items[i];
+        double mag_s = s.r*s.r + s.i * s.i;
         double f = info.freq.items[i];
-        int x = (f-min_f)/(max_f - min_f) * width;
-        int y = height - (mag_s21-mag_min)/(mag_max - mag_min)*height;
-        DrawCircle(x, y, 1, GREEN);
+        int x = (f-min_f)/(max_f - min_f) * width + posx;
+        int y = height - (mag_s-mag_min)/(mag_max - mag_min)*height + posy;
+        DrawCircle(x, y, 2, color);
     }
 
 }
@@ -56,14 +67,27 @@ int main(int argc, char** argv) {
 
 
     int w, h;
-    w = 1400;
-    h = 900;
-    InitWindow(1400, 900, "Impedancer (s2p stats for impedance matching) - by bbeni");
+    w = 1600;
+    h = 1100;
+
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    InitWindow(w, h, "Impedancer (s2p stats for impedance matching) - by bbeni");
 
     size_t selected = 0;
+    Mui_Checkbox_State show_s11_checkbox_state = {0};
+    Mui_Checkbox_State show_s21_checkbox_state = {0};
+    Mui_Checkbox_State show_s12_checkbox_state = {0};
+    Mui_Checkbox_State show_s22_checkbox_state = {0};
+
+    mui_load_ttf_font("resources/font/NimbusSans-Regular.ttf");
 
     while (!WindowShouldClose())
     {
+        w = GetScreenWidth();
+        h = GetScreenHeight();
+        mui_time_now = GetTime();
+        mui_mouse_pos = GetMousePosition();
+
         if (IsKeyPressed(KEY_DOWN) || IsKeyPressedRepeat(KEY_DOWN)) {
             selected = (selected + 1) % infos.count;
         }
@@ -72,9 +96,53 @@ int main(int argc, char** argv) {
         }
 
         BeginDrawing();
-            ClearBackground(BLACK);
-            draw_graph(infos.items[selected], w, h);
-            DrawText(nob_temp_sprintf("%d: %s", selected, infos.items[selected].file_name), 200, 0, 32, RED); 
+            ClearBackground(mui_protos_theme.global_background_color);
+
+            Rectangle screen = {0, 0, w, h};
+            Rectangle t_r = {0};
+            Rectangle rest = mui_cut_top(screen, 100, &t_r);
+            
+            float padding = 5;
+
+            t_r = mui_shrink(t_r, padding);
+            mui_label(&mui_protos_theme, nob_temp_sprintf("%lld: %s", selected, infos.items[selected].file_name), t_r);
+
+            Rectangle left;
+            Rectangle right = mui_cut_left(rest, 450, &left);
+
+            Rectangle sg_r;
+            left = mui_cut_top(left, 50, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&show_s11_checkbox_state, "Show S11", sg_r);
+            left = mui_cut_top(left, 50, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&show_s21_checkbox_state, "Show S21", sg_r);
+            left = mui_cut_top(left, 50, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&show_s12_checkbox_state, "Show S12", sg_r);
+            left = mui_cut_top(left, 50, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&show_s22_checkbox_state, "Show S22", sg_r);
+
+            right = mui_shrink(right, padding);
+
+            if (show_s11_checkbox_state.checked) {
+                draw_graph(infos.items[selected], right.x, right.y, right.width, right.height, sel_s11, RED);
+            }
+
+            if (show_s21_checkbox_state.checked) {
+                draw_graph(infos.items[selected], right.x, right.y, right.width, right.height, sel_s21, GREEN);
+            }
+
+            if (show_s12_checkbox_state.checked) {
+                draw_graph(infos.items[selected], right.x, right.y, right.width, right.height, sel_s12, YELLOW);
+            }
+
+            if (show_s22_checkbox_state.checked) {
+                draw_graph(infos.items[selected], right.x, right.y, right.width, right.height, sel_s22, BROWN);
+            }
+
+
         EndDrawing();
     }
 

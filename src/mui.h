@@ -68,6 +68,12 @@ typedef struct {
     Mui_Color textinput_hint_text_color;
     float textinput_text_size;
 
+    float slider_thickness;
+    float slider_wagon_width;
+    float slider_wagon_height;
+    float slider_wagon_corner_radius;
+    float slider_wagon_border_thickness;
+
     struct Mui_Font *font;
     struct Mui_Font *label_font;
     struct Mui_Font *textinput_font;
@@ -96,6 +102,18 @@ typedef struct {
     Mui_Theme *theme; // can be NULL
 } Mui_Checkbox_State;
 
+
+typedef struct {
+    float hover_t; // from 0 to 1 representing the hover state (animation)
+    float last_time;
+    float value; // from 0 to 1 (left to right)
+
+    bool grabbed;
+
+    Mui_Theme *theme; // can be NULL
+} Mui_Slider_State;
+
+
 #ifndef MUI_TEXTINPUT_CAP
 #define MUI_TEXTINPUT_CAP 35
 #endif
@@ -118,18 +136,19 @@ Mui_Rectangle mui_shrink(Mui_Rectangle r, float amount);
 Mui_Rectangle mui_cut_left(Mui_Rectangle r, float amount, Mui_Rectangle *out_left);
 Mui_Rectangle mui_cut_right(Mui_Rectangle r, float amount, Mui_Rectangle *out_right);
 Mui_Rectangle mui_cut_top(Mui_Rectangle r, float amount, Mui_Rectangle *out_top);
+Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot);
 
 bool mui_is_inside_rectangle(Mui_Vector2, Mui_Rectangle);
 
 //
-// mui API
+// mui elements API
 //
 
 bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme);
 bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place);
 void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place);
 void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place);
-void mui_load();
+float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle place);
 
 //
 // window API platform
@@ -346,8 +365,9 @@ bool mui_is_key_pressed(Mui_Keyboard_Key key);
 bool mui_is_key_pressed_repeat(Mui_Keyboard_Key key);
 int mui_get_char_pressed();
 bool mui_is_mouse_button_pressed(int button);
-
-
+bool mui_is_mouse_button_down(int button);
+bool mui_is_mouse_button_up(int button);
+bool mui_is_mouse_button_released(int button);
 
 //
 // Some easing functions from easings.net

@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
     Mui_Checkbox_State show_s21_checkbox_state = {0};
     Mui_Checkbox_State show_s12_checkbox_state = {0};
     Mui_Checkbox_State show_s22_checkbox_state = {0};
+    Mui_Slider_State slider_state = {0};
 
     mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme);
 
@@ -105,6 +106,9 @@ int main(int argc, char** argv) {
             Mui_Rectangle right = mui_cut_left(rest, 450, &left);
 
             Mui_Rectangle sg_r;
+            left = mui_cut_top(left, 50, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_simple_slider(&slider_state, false, sg_r);
             left = mui_cut_top(left, 50, &sg_r);
             sg_r = mui_shrink(sg_r, padding);
             mui_checkbox(&show_s11_checkbox_state, "Show S11", sg_r);

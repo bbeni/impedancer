@@ -62,6 +62,12 @@ Mui_Theme mui_protos_theme = {
     .label_text_size = 28.0f,
     .textinput_text_size = 28.0f,
 
+    .slider_thickness = 10.0f,
+    .slider_wagon_width = 14.0f,
+    .slider_wagon_height = 40.0f,
+    .slider_wagon_corner_radius = 4.0f,
+    .slider_wagon_border_thickness = 2.0f,
+
     .animation_speed_to_hover = 18.0f,
     .animation_speed_to_normal = 11.0f,
     .corner_radius = 10.0f,
@@ -145,7 +151,7 @@ Mui_Rectangle mui_cut_top(Mui_Rectangle r, float amount, Mui_Rectangle *out_top)
 }
 
 // Cut Rectangle from the bot by amount - out_bot can be NULL.
-Mui_Rectangle cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot) {
+Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot) {
     if (out_bot != NULL) {
         out_bot->x = r.x;
         out_bot->y = r.y + r.height - amount;
@@ -179,6 +185,8 @@ void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {
     mui_draw_text_line(theme->label_font, position, 0.1, theme->label_text_size, text, theme->label_text_color, l);
 }
 
+
+
 void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place) {
 
     Mui_Theme *theme = state->theme;
@@ -202,9 +210,10 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
     place = mui_cut_left(place, place.height, &area); // place of text
 
     Mui_Color bg = mui_interpolate_color(theme->background_color, theme->background_hover_color, state->hover_t);
-    mui_draw_rectangle_rounded(area, theme->corner_radius, bg);
-
     Mui_Color border_color = mui_interpolate_color(theme->border_color, theme->border_hover_color, state->hover_t);
+    Mui_Color text_color = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
+
+    mui_draw_rectangle_rounded(area, theme->corner_radius, bg);
     mui_draw_rectangle_rounded_lines(area, theme->corner_radius, border_color, theme->border_thickness);
 
     if (state->checked) {
@@ -212,12 +221,66 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
         mui_draw_rectangle_rounded(area, theme->corner_radius, border_color);
     }
 
-    Mui_Color text_color = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
     Mui_Vector2 position = {place.x+20, place.y + place.height/2 - theme->text_size/2};
     size_t l = mui_text_len(text, strlen(text));
-
     mui_draw_text_line(theme->font, position, 0, theme->text_size, text, text_color, l);
 }
+
+float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle place) {
+
+    Mui_Theme *theme = state->theme;
+    if (theme == NULL) theme = &mui_protos_theme;
+
+    // Update the time
+    float dt = mui_get_time() - state->last_time;
+    state->last_time = mui_get_time();
+
+    Mui_Vector2 mpos = mui_get_mouse_position();
+    if (mui_is_inside_rectangle(mpos, place)) {
+        mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
+        if (mui_is_mouse_button_pressed(0)) {
+            state->grabbed = true;
+        }
+    } else {
+        mui_move_towards(&(state->hover_t), 0, theme->animation_speed_to_normal, dt);
+    }
+
+    if (mui_is_mouse_button_up(0)) {state->grabbed = false;}
+
+    if (state->grabbed) {
+        float s = min(max(0.0f, (mpos.x - place.x) / place.width), 1.0f);
+        state->value = s;
+        mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
+    }
+
+    Mui_Color bg = mui_interpolate_color(theme->background_color, theme->background_hover_color, state->hover_t);
+    Mui_Color border_color = mui_interpolate_color(theme->border_color, theme->border_hover_color, state->hover_t);
+    Mui_Color text_color = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
+
+    // [..]...........
+    // ...........[..]
+    // 0           -> place at 0
+    // palce.width -> place at place.width - theme.slider
+    float w = place.width - theme->slider_wagon_width;
+
+    //rail
+    Mui_Rectangle rail = mui_cut_top(place, place.height*0.5f - 0.5f*theme->slider_thickness, NULL);
+    rail = mui_cut_bot(rail, place.height*0.5f - 0.5f*theme->slider_thickness, NULL);
+    rail = mui_cut_left(rail, theme->slider_wagon_width*0.5f, NULL); 
+    rail = mui_cut_right(rail, theme->slider_wagon_width*0.5f, NULL);
+    mui_draw_rectangle_rounded(rail, theme->slider_thickness*0.5f, text_color);
+
+    Mui_Rectangle wagon = {
+        .x = state->value * w + place.x,
+        .y = place.y,
+        .width = theme->slider_wagon_width,
+        .height = theme->slider_wagon_height,
+    };
+
+    mui_draw_rectangle_rounded(wagon, theme->slider_wagon_corner_radius, bg);
+    mui_draw_rectangle_rounded_lines(wagon, theme->slider_wagon_corner_radius, border_color, theme->slider_wagon_border_thickness);
+}
+
 
 bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place) {
 

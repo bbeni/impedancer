@@ -60,7 +60,10 @@ Mui_Vector2 mui_get_mouse_position_now() {
 bool mui_is_key_pressed(Mui_Keyboard_Key key)        {return IsKeyPressed(key);}
 bool mui_is_key_pressed_repeat(Mui_Keyboard_Key key) {return IsKeyPressedRepeat(key);}
 int mui_get_char_pressed()                           {return GetCharPressed();}
-bool mui_is_mouse_button_pressed(int button)             {return IsMouseButtonPressed(button);}
+bool mui_is_mouse_button_pressed(int button)         {return IsMouseButtonPressed(button);}
+bool mui_is_mouse_button_released(int button)        {return IsMouseButtonReleased(button);}
+bool mui_is_mouse_button_down(int button)            {return IsMouseButtonDown(button);}
+bool mui_is_mouse_button_up(int button)              {return IsMouseButtonUp(button);}
 
 
 //

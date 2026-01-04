@@ -1,0 +1,143 @@
+#include "mui.h"
+#include "raylib.h"
+#include "rlgl.h"
+
+
+bool is_border_less = false;
+
+uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float opacity, MUI_WINDOW_FLAGS flags, Mui_Image* icon) {
+
+    // TODO: implement icon
+    if (icon != NULL) {
+        assert(false && "not implemented icon in mui_open_window()");
+    }
+
+    ConfigFlags raylib_flags = FLAG_VSYNC_HINT & FLAG_WINDOW_UNDECORATED;
+
+    if (opacity < 1.0f) raylib_flags &= FLAG_WINDOW_TRANSPARENT;
+    if (0 > (flags & MUI_WINDOW_FULLSCREEN)) raylib_flags &= FLAG_FULLSCREEN_MODE;
+    if (0 > (flags & MUI_WINDOW_BORDERLESS)) raylib_flags &= FLAG_BORDERLESS_WINDOWED_MODE;
+    if (0 > (flags & MUI_WINDOW_RESIZEABLE)) raylib_flags &= FLAG_WINDOW_RESIZABLE;
+    if (0 > (flags & MUI_WINDOW_HIDDEN)) raylib_flags &= FLAG_WINDOW_HIDDEN;
+    if (0 > (flags & MUI_WINDOW_MINIMIZED)) raylib_flags &= FLAG_WINDOW_MINIMIZED;
+    if (0 > (flags & MUI_WINDOW_MAXIMIZED)) raylib_flags &= FLAG_WINDOW_MAXIMIZED;
+    if (0 == (flags & MUI_WINDOW_FOCUSED)) raylib_flags &= FLAG_WINDOW_UNFOCUSED;
+
+    SetConfigFlags(raylib_flags);
+    InitWindow(w, h, title);
+    SetWindowPosition(pos_x, pos_y);
+    SetWindowOpacity(opacity);
+
+    return 0;
+}
+
+uint8_t mui_get_active_window_id() {
+    return 0;
+}
+
+int mui_screen_width()                  {return GetScreenWidth();}
+int mui_screen_height()                 {return GetScreenHeight();}
+bool mui_window_should_close()          {return WindowShouldClose();}
+void mui_set_clipboard_text(char* text) {SetClipboardText(text);}
+char* mui_clipboatd_text()              {return GetClipboardText();}
+
+void mui_clear_background(Mui_Color color, Mui_Image* image) {
+    ClearBackground((Color){.a=color.a, .r=color.r, .g=color.g, .b=color.b});
+    assert(image == NULL && "TODO: implement image for background clearing");
+}
+void mui_begin_drawing()                {BeginDrawing();}
+void mui_end_drawing()                  {EndDrawing();}
+void mui_close_window()                 {CloseWindow();}
+
+double mui_get_time_now()                   {return GetTime();}
+float mui_get_frame_time_now()              {return GetFrameTime();}
+Mui_Vector2 mui_get_mouse_position_now() {
+    Vector2 p = GetMousePosition();
+    return (Mui_Vector2) {.x=p.x, .y=p.y};
+}
+
+
+bool mui_is_key_pressed(Mui_Keyboard_Key key)        {return IsKeyPressed(key);}
+bool mui_is_key_pressed_repeat(Mui_Keyboard_Key key) {return IsKeyPressedRepeat(key);}
+int mui_get_char_pressed()                           {return GetCharPressed();}
+bool mui_is_mouse_button_pressed(int button)             {return IsMouseButtonPressed(button);}
+
+
+//
+// primitive drawing platform
+//
+
+#define RCOLOR(color) (Color){.r=(color).r, .g=(color).g, .b=(color).b, .a=(color).a}
+#define RV2(vector) (Vector2){.x=(vector).x, .y=(vector).y}
+
+void mui_draw_pixel(Mui_Vector2 pos, Mui_Color color) {
+    DrawPixel(pos.x, pos.y, RCOLOR(color));
+}
+
+void mui_draw_circle(Mui_Vector2 pos, float radius, Mui_Color color) {
+    DrawCircle(pos.x, pos.y, radius, RCOLOR(color));
+}
+
+void mui_draw_line(Mui_Vector2 start, Mui_Vector2 end, float thickness, Mui_Color color) {
+    DrawLineEx(RV2(start), RV2(end), thickness, RCOLOR(color));
+}
+
+void mui_draw_rectangle(Mui_Rectangle rect, Mui_Color color) {
+    DrawRectangle(rect.x, rect.y, rect.width, rect.height, RCOLOR(color));
+}
+
+float _raylib_roundedness(Mui_Rectangle rect, float radius) {
+    float m = min(rect.width, rect.height);
+    return radius * 2 / m;
+}
+
+void mui_draw_rectangle_rounded(Mui_Rectangle rect, float corner_radius, Mui_Color color) {
+    float roundedness = _raylib_roundedness(rect, corner_radius);
+    const int segments = 16;
+    DrawRectangleRounded((Rectangle) {.x=rect.x, .y=rect.y, .width=rect.width, .height=rect.height}, roundedness, segments, RCOLOR(color));
+}
+
+void mui_draw_rectangle_lines(Mui_Rectangle rect, Mui_Color color, float thickness) {
+    DrawRectangleLinesEx((Rectangle) {.x=rect.x, .y=rect.y, .width=rect.width, .height=rect.height}, thickness, RCOLOR(color));
+}
+
+void mui_draw_rectangle_rounded_lines(Mui_Rectangle rect, float corner_radius, Mui_Color color, float thickness) {
+    float roundedness = _raylib_roundedness(rect, corner_radius);
+    const int segments = 16;
+    DrawRectangleRoundedLinesEx((Rectangle) {.x=rect.x, .y=rect.y, .width=rect.width, .height=rect.height}, roundedness, segments, thickness, RCOLOR(color));
+}
+
+struct Mui_Font {
+    Font raylib_font;
+};
+
+Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing) {
+    Vector2 v= MeasureTextEx(font->raylib_font, text, font_size, spacing);
+    return (Mui_Vector2) {
+        .x = v.x,
+        .y = v.y,
+    };
+}
+
+// TODO: malloc leaks
+struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float text_size) {
+    struct Mui_Font* font = malloc(sizeof(struct Mui_Font));
+    memset(font, 0xCD, sizeof(struct Mui_Font));
+    Font f = LoadFontFromMemory(".ttf", ttf_data, ttf_data_size, text_size, 0, 250);
+    memcpy(font, &f, sizeof(*font));
+    return font;
+}
+
+Mui_Vector2 mui_measure_text_line(struct Mui_Font* font, const char* text, float letter_space, float letter_size, unsigned int length) {
+    Vector2 size = MeasureTextEx(font->raylib_font, text, letter_size, letter_space);
+    return (Mui_Vector2) {
+        .x = size.x,
+        .y = size.y,
+    };
+}
+
+void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, unsigned int length) {
+    DrawTextEx(font->raylib_font, text, RV2(pos), letter_size, letter_space, RCOLOR(color));
+}
+
+

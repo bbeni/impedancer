@@ -4,7 +4,7 @@ THIRDPARTY_PATH := src/thirdparty
 # Compiler and linker
 CC := gcc
 LD := gcc  # Use gcc to link (easier on Windows)
-CFLAGS := -Wall -Wextra -O2 -Iinclude -I$(RAYLIB_PATH)/include -I$(THIRDPARTY_PATH)
+CFLAGS := -Wall -Wextra -O2 -Iinclude -I$(RAYLIB_PATH)/include -I$(THIRDPARTY_PATH) -ggdb
 LDFLAGS := -L$(RAYLIB_PATH)/lib -lraylib -lopengl32 -lgdi32 -lwinmm -Wl,-subsystem,console
 
 
@@ -14,8 +14,8 @@ BUILD_DIR := build
 
 # Files
 TARGET := $(BUILD_DIR)/impedancer
-SRCS := $(SRC_DIR)/main.c $(SRC_DIR)/s2p.c
-OBJS := $(BUILD_DIR)/main.o $(BUILD_DIR)/s2p.o
+SRCS := $(SRC_DIR)/main.c $(SRC_DIR)/s2p.c $(SRC_DIR)/mui.c $(SRC_DIR)/mui_platform_raylib.c
+OBJS := $(BUILD_DIR)/main.o $(BUILD_DIR)/s2p.o $(BUILD_DIR)/mui.o $(BUILD_DIR)/mui_platform_raylib.o
 HEADER_DEPS := $(SRC_DIR)/mui.h
 
 all: $(TARGET)

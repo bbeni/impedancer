@@ -30,6 +30,7 @@ int read_s2p_files(const char* dir, S2P_Infos *infos) {
         nob_da_append(infos, info);
         
         nob_temp_reset();
+        break;
     }
 
     if (infos->count == 0) {

@@ -234,8 +234,8 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
     // Update the time
     float dt = mui_get_time() - state->last_time;
     state->last_time = mui_get_time();
-
     Mui_Vector2 mpos = mui_get_mouse_position();
+
     if (mui_is_inside_rectangle(mpos, place)) {
         mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
         if (mui_is_mouse_button_pressed(0)) {
@@ -248,7 +248,10 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
     if (mui_is_mouse_button_up(0)) {state->grabbed = false;}
 
     if (state->grabbed) {
-        float s = min(max(0.0f, (mpos.x - place.x) / place.width), 1.0f);
+        
+        float s;
+        if (vertical) s = min(max(0.0f, (mpos.y - place.y) / place.height), 1.0f);
+        else          s = min(max(0.0f, (mpos.x - place.x) / place.width), 1.0f);
         state->value = s;
         mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
     }
@@ -257,28 +260,49 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
     Mui_Color border_color = mui_interpolate_color(theme->border_color, theme->border_hover_color, state->hover_t);
     Mui_Color text_color = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
 
-    // [..]...........
-    // ...........[..]
-    // 0           -> place at 0
-    // palce.width -> place at place.width - theme.slider
-    float w = place.width - theme->slider_wagon_width;
+    if (!vertical) { // horizontal
+        // [..]...........
+        // ...........[..]
+        // 0           -> place at 0
+        // palce.width -> place at place.width - theme.slider
+        float w = place.width - theme->slider_wagon_width;
 
-    //rail
-    Mui_Rectangle rail = mui_cut_top(place, place.height*0.5f - 0.5f*theme->slider_thickness, NULL);
-    rail = mui_cut_bot(rail, place.height*0.5f - 0.5f*theme->slider_thickness, NULL);
-    rail = mui_cut_left(rail, theme->slider_wagon_width*0.5f, NULL); 
-    rail = mui_cut_right(rail, theme->slider_wagon_width*0.5f, NULL);
-    mui_draw_rectangle_rounded(rail, theme->slider_thickness*0.5f, text_color);
+        //rail
+        Mui_Rectangle rail = mui_cut_top(place, place.height*0.5f - 0.5f*theme->slider_thickness, NULL);
+        rail = mui_cut_bot(rail, place.height*0.5f - 0.5f*theme->slider_thickness, NULL);
+        rail = mui_cut_left(rail, theme->slider_wagon_width*0.5f, NULL); 
+        rail = mui_cut_right(rail, theme->slider_wagon_width*0.5f, NULL);
+        mui_draw_rectangle_rounded(rail, theme->slider_thickness*0.5f, text_color);
 
-    Mui_Rectangle wagon = {
-        .x = state->value * w + place.x,
-        .y = place.y,
-        .width = theme->slider_wagon_width,
-        .height = theme->slider_wagon_height,
-    };
+        Mui_Rectangle wagon = {
+            .x = state->value * w + place.x,
+            .y = place.y + 0.5f*place.height - 0.5f*theme->slider_wagon_height,
+            .width = theme->slider_wagon_width,
+            .height = theme->slider_wagon_height,
+        };
 
-    mui_draw_rectangle_rounded(wagon, theme->slider_wagon_corner_radius, bg);
-    mui_draw_rectangle_rounded_lines(wagon, theme->slider_wagon_corner_radius, border_color, theme->slider_wagon_border_thickness);
+        mui_draw_rectangle_rounded(wagon, theme->slider_wagon_corner_radius, bg);
+        mui_draw_rectangle_rounded_lines(wagon, theme->slider_wagon_corner_radius, border_color, theme->slider_wagon_border_thickness);
+    } else { // verical
+        float w = place.height - theme->slider_wagon_width;
+
+        //rail
+        Mui_Rectangle rail = mui_cut_left(place, place.width*0.5f - 0.5f*theme->slider_thickness, NULL);
+        rail = mui_cut_right(rail, place.width*0.5f - 0.5f*theme->slider_thickness, NULL);
+        rail = mui_cut_top(rail, theme->slider_wagon_width*0.5f, NULL); 
+        rail = mui_cut_bot(rail, theme->slider_wagon_width*0.5f, NULL);
+        mui_draw_rectangle_rounded(rail, theme->slider_thickness*0.5f, text_color);
+
+        Mui_Rectangle wagon = {
+            .x = place.x + 0.5f*place.width - 0.5f*theme->slider_wagon_height,
+            .y = state->value * w + place.y,
+            .width = theme->slider_wagon_height,
+            .height = theme->slider_wagon_width,
+        };
+
+        mui_draw_rectangle_rounded(wagon, theme->slider_wagon_corner_radius, bg);
+        mui_draw_rectangle_rounded_lines(wagon, theme->slider_wagon_corner_radius, border_color, theme->slider_wagon_border_thickness);
+    }
 }
 
 
@@ -323,6 +347,119 @@ bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place) 
     mui_draw_text_line(theme->label_font, position, 0, theme->text_size, text, text_color, l);
     return returnstate;
 }
+
+void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *hint, Mui_Rectangle place) {
+
+
+    Mui_Theme *theme = state->theme;
+    if (theme == NULL) {
+        theme = &mui_protos_theme;
+    }
+
+    if (mui_is_mouse_button_pressed(0)) {
+        if (mui_is_inside_rectangle(mui_get_mouse_position(), place)) {
+            state->active = true;
+        } else {
+            state->active = false;
+        }
+    }
+
+    if (state->buffer.count < 1) {
+        nob_da_append(&(state->buffer), '\0');
+    }
+
+    if (state->active) {
+        int unicode_char = mui_get_char_pressed();
+        if (unicode_char != 0) {
+            unsigned char c = unicode_char & 0xff; // TODO make it better 
+        
+            // add at the end and then swap
+            nob_da_append(&(state->buffer), '\0');
+            assert(state->cursor < state->buffer.count-1);
+
+            for( int i = state->buffer.count-2; i > state->cursor; i--) {
+                state->buffer.items[i] = state->buffer.items[i-1];
+            }
+
+            printf("Input %c\n", unicode_char & 0xff);
+            state->buffer.items[state->cursor] = c;
+            state->cursor++;
+        }
+        
+    }
+
+
+    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->border_color);
+    place = mui_shrink(place, theme->border_thickness);
+    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->textinput_background_color);
+
+    float text_offset_left = theme->textinput_text_size*0.1f;
+    float text_offset_top = theme->textinput_text_size*0.1f;
+
+    // cursor
+    Mui_Rectangle rect_cursor = {
+        .x=place.x + text_offset_left, 
+        .y=place.y + text_offset_top,
+        .width=3,
+        .height=theme->textinput_text_size
+    };
+
+    if (state->buffer.count > 1 || state->active) {
+        const float line_spacing = 1.1f;
+
+        int line_nr = 0;
+        char* line_start = state->buffer.items;
+
+        Mui_Vector2 line_size = {0};
+
+        for (int i=0; i < state->buffer.count; i++) {
+            char* buf = &state->buffer.items[i];
+            line_size = mui_measure_text(theme->textinput_font, line_start, theme->textinput_text_size, 0.1f, buf-line_start);
+
+            // draw it
+            if (line_size.x >= place.width - text_offset_left || *buf == '\n' || i==state->buffer.count-1) {
+                char* orig = buf;
+                if(i!=state->buffer.count-1) {
+                    buf--; // we overshot, so we do backtracking
+                }
+                    
+                Mui_Vector2 position = {place.x + text_offset_left, place.y + text_offset_top + line_nr*theme->textinput_text_size*line_spacing};
+                size_t l = buf-line_start;
+                mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, line_start, theme->textinput_text_color, l);
+
+                if (*orig == "\n") buf += 2; // skip new line and backtracking
+                line_start = buf;
+                line_nr++;
+            }
+
+            // check for cursor
+            if (i == state->cursor) {
+                rect_cursor.x += line_size.x;
+                rect_cursor.y += (line_nr-1)*theme->textinput_text_size*line_spacing;
+            }
+
+            nob_temp_reset();
+        }
+
+        // cursor edge case at the end of buffer
+        if (state->cursor == state->buffer.count) {
+            rect_cursor.x += line_size.x;
+            rect_cursor.y += line_nr*theme->textinput_text_size*line_spacing;
+        }
+
+    } else {
+        //hint text
+        size_t l = mui_text_len(hint, strlen(hint));
+        Mui_Vector2 position = {place.x+ text_offset_left, place.y + text_offset_top};
+        mui_draw_text_line(theme->textinput_font, position, 0.1f, theme->textinput_text_size, hint, theme->textinput_text_color, l);
+    }
+
+    // draw cursor
+    if (state->active) {
+        mui_draw_rectangle(rect_cursor, theme->textinput_text_color);
+    }
+}
+
 
 void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle place) {
 
@@ -369,7 +506,7 @@ void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle p
 
     if (state->active) {
         // cursor
-        Mui_Vector2 offset = mui_measure_text(theme->textinput_font, state->buf, theme->textinput_text_size, 0);
+        Mui_Vector2 offset = mui_measure_text(theme->textinput_font, state->buf, theme->textinput_text_size, 0, state->count-1);
         int pos = place.x + text_offset_left + offset.x;
         Mui_Rectangle rc = {
             .x=pos, 

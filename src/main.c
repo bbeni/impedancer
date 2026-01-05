@@ -73,8 +73,11 @@ int main(int argc, char** argv) {
     Mui_Checkbox_State show_s12_checkbox_state = {0};
     Mui_Checkbox_State show_s22_checkbox_state = {0};
     Mui_Slider_State slider_state = {0};
+    Mui_Slider_State slider_state_2 = {0};
+    Mui_Textinput_Multiline_State textinput_ml_state = {0};
 
     mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme);
+
 
     while (!mui_window_should_close())
     {
@@ -83,6 +86,7 @@ int main(int argc, char** argv) {
         w = mui_screen_width();
         h = mui_screen_height();
 
+        int selected_before = selected;
         if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_UP)) {
             selected = (selected + 1) % infos.count;
         }
@@ -96,6 +100,7 @@ int main(int argc, char** argv) {
             Mui_Rectangle screen = {0, 0, w, h};
             Mui_Rectangle t_r = {0};
             Mui_Rectangle rest = mui_cut_top(screen, 100, &t_r);
+
             
             float padding = 5;
 
@@ -122,6 +127,23 @@ int main(int argc, char** argv) {
             sg_r = mui_shrink(sg_r, padding);
             mui_checkbox(&show_s22_checkbox_state, "Show S22", sg_r);
 
+            Mui_Rectangle slider_rect;
+            left = mui_cut_right(left, 50, &slider_rect);
+            slider_rect = mui_shrink(slider_rect, padding);
+            mui_simple_slider(&slider_state_2, true, slider_rect);
+
+            left = mui_shrink(left, padding);
+            
+            if (selected_before != selected){
+                char* text = nob_temp_sprintf("%s\n===========================\n%.*s\n",infos.items[selected].file_name, infos.items[selected].file_content.count, infos.items[selected].file_content.items);
+                size_t size = strlen(text)+1;
+                nob_da_resize(&textinput_ml_state.buffer, size);
+                memcpy(textinput_ml_state.buffer.items, text, size);
+            }
+
+            mui_textinput_multiline(&textinput_ml_state, "Hint...", left);
+
+            // plot view
             right = mui_shrink(right, padding);
 
             if (show_s11_checkbox_state.checked) {
@@ -139,9 +161,9 @@ int main(int argc, char** argv) {
             if (show_s22_checkbox_state.checked) {
                 draw_graph(infos.items[selected], right.x, right.y, right.width, right.height, sel_s22, MUI_BROWN);
             }
-
-
         mui_end_drawing();
+
+        nob_temp_reset();
     }
 
     mui_close_window();

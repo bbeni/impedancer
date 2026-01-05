@@ -126,6 +126,22 @@ typedef struct {
     Mui_Theme *theme;
 } Mui_Textinput_State;
 
+
+struct Text_Buffer {
+    char* items;
+    size_t capacity;
+    size_t count;
+};
+
+typedef struct Mui_Textinput_Multiline_State {
+    struct Text_Buffer buffer;
+    size_t cursor;
+    bool active; // wheter it was clicked and it is writable
+
+    Mui_Theme *theme;
+} Mui_Textinput_Multiline_State;
+
+
 //
 // mui.h utility API
 //
@@ -149,6 +165,8 @@ bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place);
 void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place);
 void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place);
 float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle place);
+void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle place);
+void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *hint, Mui_Rectangle place);
 
 //
 // window API platform
@@ -201,7 +219,7 @@ void mui_draw_rectangle_rounded(Mui_Rectangle rect, float corner_radius, Mui_Col
 void mui_draw_rectangle_lines(Mui_Rectangle rect, Mui_Color color, float thickness);
 void mui_draw_rectangle_rounded_lines(Mui_Rectangle rect, float corner_radius, Mui_Color color, float thickness);
 
-Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing);
+Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t length);
 struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float text_size);
 void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, unsigned int length);
 

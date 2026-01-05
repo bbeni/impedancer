@@ -114,8 +114,9 @@ struct Mui_Font {
     Font raylib_font;
 };
 
-Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing) {
-    Vector2 v= MeasureTextEx(font->raylib_font, text, font_size, spacing);
+Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t length) {
+    char* t_cstr = nob_temp_strndup(text, length);
+    Vector2 v= MeasureTextEx(font->raylib_font, t_cstr, font_size, spacing);
     return (Mui_Vector2) {
         .x = v.x,
         .y = v.y,
@@ -140,7 +141,8 @@ Mui_Vector2 mui_measure_text_line(struct Mui_Font* font, const char* text, float
 }
 
 void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, unsigned int length) {
-    DrawTextEx(font->raylib_font, text, RV2(pos), letter_size, letter_space, RCOLOR(color));
+    char* t_cstr = nob_temp_strndup(text, length);
+    DrawTextEx(font->raylib_font, t_cstr, RV2(pos), letter_size, letter_space, RCOLOR(color));
 }
 
 

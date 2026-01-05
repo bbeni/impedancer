@@ -90,7 +90,7 @@ void mui_draw_rectangle(Mui_Rectangle rect, Mui_Color color) {
 }
 
 float _raylib_roundedness(Mui_Rectangle rect, float radius) {
-    float m = min(rect.width, rect.height);
+    float m = fmin(rect.width, rect.height);
     return radius * 2 / m;
 }
 

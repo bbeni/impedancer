@@ -53,7 +53,7 @@ Mui_Theme mui_protos_theme = {
     .label_background_color = {40, 47, 50, 255},
     .label_text_color = {230, 240, 225, 255},
 
-    .textinput_background_color = {120, 205, 160, 255},
+    .textinput_background_color = {100, 75, 105, 255},
     .textinput_text_color = {224, 224, 224, 255},
     .textinput_hint_text_color = {224, 124, 224, 255},
 
@@ -250,8 +250,8 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
     if (state->grabbed) {
         
         float s;
-        if (vertical) s = min(max(0.0f, (mpos.y - place.y) / place.height), 1.0f);
-        else          s = min(max(0.0f, (mpos.x - place.x) / place.width), 1.0f);
+        if (vertical) s = fmin(fmax(0.0f, (mpos.y - place.y) / place.height), 1.0f);
+        else          s = fmin(fmax(0.0f, (mpos.x - place.x) / place.width), 1.0f);
         state->value = s;
         mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
     }
@@ -370,6 +370,7 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
 
     if (state->active) {
         int unicode_char = mui_get_char_pressed();
+        if (mui_is_key_pressed(MUI_KEY_ENTER) || mui_is_key_pressed_repeat(MUI_KEY_ENTER)) {unicode_char = '\n';}
         if (unicode_char != 0) {
             unsigned char c = unicode_char & 0xff; // TODO make it better 
         
@@ -385,7 +386,26 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
             state->buffer.items[state->cursor] = c;
             state->cursor++;
         }
-        
+
+        if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
+            if (state->cursor != 0) state->cursor--;
+            printf("cursor %d\n", state->cursor);
+        }
+
+        if (mui_is_key_pressed(MUI_KEY_RIGHT) || mui_is_key_pressed_repeat(MUI_KEY_RIGHT)) {
+            if (state->cursor < state->buffer.count-1) state->cursor++;
+            printf("cursor %d\n", state->cursor);
+        }
+
+        if (mui_is_key_pressed(MUI_KEY_BACKSPACE) || mui_is_key_pressed_repeat(MUI_KEY_BACKSPACE)) {
+            if (state->buffer.count > 1 && state->cursor > 0) {
+                for (int i = state->cursor; i < state->buffer.count-1; i++) {
+                    state->buffer.items[i-1] = state->buffer.items[i]; 
+                }
+                state->cursor--;
+                state->buffer.count--;
+            }
+        }
     }
 
 
@@ -398,7 +418,7 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
 
     // cursor
     Mui_Rectangle rect_cursor = {
-        .x=place.x + text_offset_left, 
+        .x=place.x + text_offset_left,
         .y=place.y + text_offset_top,
         .width=3,
         .height=theme->textinput_text_size
@@ -419,12 +439,13 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
             // draw it
             if (line_size.x >= place.width - text_offset_left || *buf == '\n' || i==state->buffer.count-1) {
                 char* orig = buf;
-                if(i!=state->buffer.count-1) {
+                if(i!=state->buffer.count-1 || *buf == '\n') {
                     buf--; // we overshot, so we do backtracking
                 }
                     
                 Mui_Vector2 position = {place.x + text_offset_left, place.y + text_offset_top + line_nr*theme->textinput_text_size*line_spacing};
                 size_t l = buf-line_start;
+                printf("%.*s\n==\n", l, line_start);
                 mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, line_start, theme->textinput_text_color, l);
 
                 if (*orig == "\n") buf += 2; // skip new line and backtracking
@@ -434,17 +455,12 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
 
             // check for cursor
             if (i == state->cursor) {
+                if (state->cursor == state->buffer.count-1) line_nr--;
                 rect_cursor.x += line_size.x;
-                rect_cursor.y += (line_nr-1)*theme->textinput_text_size*line_spacing;
+                rect_cursor.y += line_nr*theme->textinput_text_size*line_spacing;
             }
 
             nob_temp_reset();
-        }
-
-        // cursor edge case at the end of buffer
-        if (state->cursor == state->buffer.count) {
-            rect_cursor.x += line_size.x;
-            rect_cursor.y += line_nr*theme->textinput_text_size*line_spacing;
         }
 
     } else {
@@ -530,7 +546,6 @@ void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle p
         mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, hint, theme->textinput_text_color, l);
     }
 }
-
 
 
 //

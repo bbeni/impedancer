@@ -14,13 +14,13 @@ build/impedancer path_to_dir_with_s2p_files
 ## Linux quick start
 ```console
 wget https://github.com/raysan5/raylib/releases/download/5.5/raylib-5.5_linux_amd64.tar.gz
-mkdir -p src/thirdparty/raylib-5.5
-tar -xf raylib-5.5_linux_amd64.tar.gz -C src/thirdparty/raylib-5.5 --strip-components=1
+mkdir -p src/thirdparty/raylib-5.5-linux
+tar -xf raylib-5.5_linux_amd64.tar.gz -C src/thirdparty/raylib-5.5-linux --strip-components=1
 ```
 
-To build and run the program (not tested):
+To build and run the program:
 
 ```console
-mingw32-make.exe
-build/impedancer path_to_dir_with_s2p_files
+make
+LD_LIBRARY_PATH=./src/thirdparty/raylib-5.5-linux/lib/ ./build/impedancer path_to_dir_with_s2p_files
 ```

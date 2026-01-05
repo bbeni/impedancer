@@ -15,11 +15,11 @@ int read_s2p_files(const char* dir, S2P_Infos *infos) {
         if (strncmp(files.items[i] + strlen(files.items[i]) - strlen(suffix), suffix, strlen(suffix)) != 0)
             continue;
 
-        S2P_Info info = {0}; 
+        S2P_Info info = {0};
         
         char* full_path = nob_temp_sprintf("%s/%s", dir, files.items[i]);
         
-        strncpy(info.file_name, files.items[i], sizeof(info.file_name)-1);
+        strncpy(info.file_name, files.items[i], strlen(files.items[i]));
 
         if (!nob_read_entire_file(full_path, &info.file_content)) {
             printf("ERROR: Could not read file %s\n", full_path);

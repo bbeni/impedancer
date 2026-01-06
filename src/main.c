@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
 
     int w, h;
     w = 1600;
-    h = 1100;
+    h = 1000;
 
     mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE & MUI_WINDOW_RESIZEABLE, NULL);
 
@@ -140,6 +140,7 @@ int main(int argc, char** argv) {
             left = mui_shrink(left, padding);
             
             
+            /*
             if (selected_before != selected){
                 char* text = nob_temp_sprintf("%s\n===========================\n%.*s\n",infos.items[selected].file_name, infos.items[selected].file_content.count, infos.items[selected].file_content.items);
                 size_t size = strlen(text)+1;
@@ -147,7 +148,7 @@ int main(int argc, char** argv) {
                 memcpy(textinput_ml_state.buffer.items, text, size);
             }
 
-            mui_textinput_multiline(&textinput_ml_state, "Hint...", left);
+            mui_textinput_multiline(&textinput_ml_state, "Hint...", left); */
 
             // plot view
 
@@ -167,8 +168,6 @@ int main(int argc, char** argv) {
             Complex *s22 = infos.items[selected].s22.items;
             double max_y = slider_state_2.value * 100; 
             double max_f = slider_state.value * 2e11;
-
-
             
             if (show_s11_checkbox_state.checked) {
                 gra_xy_plot(fs, s11, mag, length, "frequency [Hz]", "mag(S11)", 0, max_f, 0, max_y, 2e9, 1, MUI_RED, right);
@@ -185,8 +184,6 @@ int main(int argc, char** argv) {
             if (show_s22_checkbox_state.checked) {
                 gra_xy_plot(fs, s22, mag, length, "frequency [Hz]", "mag(S22)", 0, max_f, 0, max_y, 2e9, 1, MUI_BLUE, right);
             }
-
-
 
         mui_end_drawing();
         nob_temp_reset();

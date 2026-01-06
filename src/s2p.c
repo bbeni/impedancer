@@ -8,6 +8,9 @@ int read_s2p_files(const char* dir, S2P_Infos *infos) {
     if (!nob_read_entire_dir(dir, &files)) return 1;
 
     for (size_t i = 0; i < files.count; i++) {
+        if (i < 10) continue;
+        if (i > 20) break;
+        
         if (strlen(files.items[i]) < 4 || strcmp(files.items[i], ".") == 0 || strcmp(files.items[i], "..") == 0)
             continue;
 

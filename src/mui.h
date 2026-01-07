@@ -15,7 +15,10 @@ for exmample program, see end of this header file.
 #define MUI_H_
 
 #include "math.h"
-#include "nob.h"
+#include "stddef.h"
+#include "stdbool.h"
+#include "stdint.h"
+
 
 // primitives
 typedef struct Mui_Color {
@@ -153,6 +156,7 @@ Mui_Rectangle mui_cut_left(Mui_Rectangle r, float amount, Mui_Rectangle *out_lef
 Mui_Rectangle mui_cut_right(Mui_Rectangle r, float amount, Mui_Rectangle *out_right);
 Mui_Rectangle mui_cut_top(Mui_Rectangle r, float amount, Mui_Rectangle *out_top);
 Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot);
+void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle *out_11, Mui_Rectangle *out_12, Mui_Rectangle *out_21, Mui_Rectangle *out_22);
 
 bool mui_is_inside_rectangle(Mui_Vector2, Mui_Rectangle);
 
@@ -255,7 +259,7 @@ void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_spa
 //
 
 void mui_set_clipboard_text(char* text);
-char* mui_clipboatd_text();
+const char* mui_clipboatd_text();
 Mui_Vector2 mui_get_mouse_position();
 
 // FROM RAYLIB.
@@ -405,12 +409,10 @@ float mui_ease_in_out_sin(float t);
 #endif // MUI_H_
 
 
-/* Usage example: mui_showcase.c:
+/* Usage example: mui_showcase.c: (outdated)
 
 #define MUI_IMPLEMENTATION
 #include "mui.h"
-#define NOB_IMPLEMENTATION
-#include "nob.h"
 #include "raylib.h"
 #include "rlgl.h"
 

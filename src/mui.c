@@ -1,5 +1,13 @@
 #include "mui.h"
 #include "math.h"
+#include "stdbool.h"
+#include "string.h"
+#include "stdio.h"
+#include "assert.h"
+
+#define NOB_NO_MINIRENT
+#define NOB_IMPLEMENTATION
+#include "nob.h"
 
 // globals need to be updated by calling mui_update_input()
 float mui_global_time = 0.0f;
@@ -161,6 +169,34 @@ Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot)
     r.height -= amount;
     return r;
 }
+
+void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle *out_11, Mui_Rectangle *out_12, Mui_Rectangle *out_21, Mui_Rectangle *out_22) {
+    if (out_11) {
+        out_11->x = r.x;
+        out_11->y = r.y;
+        out_11->width = r.width * factor_x;
+        out_11->height = r.height * factor_y;
+    }
+    if (out_12) {
+        out_12->x = r.x;
+        out_12->y = r.y + r.height * factor_y;
+        out_12->width = r.width * factor_x;
+        out_12->height = r.height * (1-factor_y);
+    }
+    if (out_21) {
+        out_21->x = r.x + r.width * factor_x;
+        out_21->y = r.y;
+        out_21->width = r.width * (1-factor_x);
+        out_21->height = r.height * factor_y;
+    }
+    if (out_22) {
+        out_22->x = r.x + r.width * factor_x;
+        out_22->y = r.y + r.height * factor_y;
+        out_22->width = r.width * (1-factor_x);
+        out_22->height = r.height * (1-factor_y);
+    }
+}
+
 
 bool mui_is_inside_rectangle(Mui_Vector2 pos, Mui_Rectangle rect) {
     return pos.x >= rect.x &&
@@ -460,7 +496,6 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
                 rect_cursor.y += line_nr*theme->textinput_text_size*line_spacing;
             }
 
-            nob_temp_reset();
         }
 
     } else {

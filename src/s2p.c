@@ -1,38 +1,50 @@
 #include "s2p.h"
+#include "uti.h"
+
 #include "math.h"
+#include "stdbool.h"
+#include "stdio.h"
+#include "stddef.h"
+#include "string.h"
+#include "stdlib.h"
+
+#define NOB_NO_MINIRENT
+#include "nob.h"
 
 typedef enum { FMT_RI, FMT_MA, FMT_DB } S_Format;
 
-int read_s2p_files(const char* dir, S2P_Infos *infos) {
-    Nob_File_Paths files = {0};
-    if (!nob_read_entire_dir(dir, &files)) return 1;
 
-    for (size_t i = 0; i < files.count; i++) {
-        if (i < 10) continue;
-        if (i > 20) break;
-        
-        if (strlen(files.items[i]) < 4 || strcmp(files.items[i], ".") == 0 || strcmp(files.items[i], "..") == 0)
+int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
+
+    const char* suffix = ".s2p";
+
+    char** file_names;
+    size_t file_names_count;
+    if (!read_entire_dir(dir, &file_names, &file_names_count)) return 1;
+
+    // naively allocate enough space
+    infos->capacity = file_names_count;
+    infos->count = 0;
+    infos->items = malloc(sizeof(infos->items[0])*infos->capacity);
+    memset(infos->items, 0xCD, sizeof(infos->items[0])*infos->capacity);
+
+    for (size_t i = 0; i < file_names_count; i++) {       
+        if (strlen(file_names[i]) < 4 || strcmp(file_names[i], ".") == 0 || strcmp(file_names[i], "..") == 0)
+            continue;
+        if (strncmp(file_names[i] + strlen(file_names[i]) - strlen(suffix), suffix, strlen(suffix)) != 0)
             continue;
 
-        const char* suffix = ".s2p";
-        if (strncmp(files.items[i] + strlen(files.items[i]) - strlen(suffix), suffix, strlen(suffix)) != 0)
-            continue;
-
-        S2P_Info info = {0};
+        struct S2P_Info * info = &infos->items[infos->count++];
         
-        char* full_path = nob_temp_sprintf("%s/%s", dir, files.items[i]);
-        
-        strncpy(info.file_name, files.items[i], strlen(files.items[i]));
+        sprintf(info->full_path, "%s%s", dir, file_names[i]);
+        sprintf(info->file_name, "%s", file_names[i]);
 
-        if (!nob_read_entire_file(full_path, &info.file_content)) {
-            printf("ERROR: Could not read file %s\n", full_path);
+        if (!read_entire_file(info->full_path, &info->file__content, &info->file__content_size)) {
+            infos->count--;
+            exit(3);
             continue;
         }
-
-        printf("INFO: read file %s\n", full_path);
-        nob_da_append(infos, info);
-        
-        nob_temp_reset();
+        printf("INFO: read file %s\n", info->full_path);
     }
 
     if (infos->count == 0) {
@@ -43,8 +55,8 @@ int read_s2p_files(const char* dir, S2P_Infos *infos) {
     return 0;
 }
 
-Complex parse_complex(double v1, double v2, S_Format fmt) {
-    Complex c;
+struct Complex parse_complex(double v1, double v2, S_Format fmt) {
+    struct Complex c;
     switch (fmt) {
         case FMT_MA: // Magnitude / Angle (degrees)
             c.r = v1 * cos(v2 * M_PI / 180.0);
@@ -64,10 +76,33 @@ Complex parse_complex(double v1, double v2, S_Format fmt) {
     return c;
 }
 
-int parse_s2p_files(S2P_Infos *infos) {
+int parse_s2p_files(struct S2P_Info_Array *infos) {
+
     for (size_t i = 0; i < infos->count; ++i) {
-        S2P_Info *info = &infos->items[i];
-        Nob_String_View content = { .data = info->file_content.items, .count = info->file_content.count };
+        struct S2P_Info *info = &infos->items[i];
+        info->s11.count = 0;
+        info->s12.count = 0;
+        info->s21.count = 0;
+        info->s22.count = 0;
+        info->noise.count = 0;
+        info->freq.count = 0;
+
+        #define INITIAL_CAP 512
+        info->s11.items = malloc(sizeof(*info->s11.items)*INITIAL_CAP);
+        info->s11.capacity = INITIAL_CAP;
+        info->s21.items = malloc(sizeof(*info->s21.items)*INITIAL_CAP);
+        info->s21.capacity = INITIAL_CAP;
+        info->s12.items = malloc(sizeof(*info->s12.items)*INITIAL_CAP);
+        info->s12.capacity = INITIAL_CAP;
+        info->s22.items = malloc(sizeof(*info->s22.items)*INITIAL_CAP);
+        info->s22.capacity = INITIAL_CAP;
+        info->noise.items = malloc(sizeof(*info->noise.items)*INITIAL_CAP);
+        info->noise.capacity = INITIAL_CAP;
+        info->freq.items = malloc(sizeof(*info->freq.items)*INITIAL_CAP);
+        info->freq.capacity = INITIAL_CAP;
+
+
+        Nob_String_View content = { .data = info->file__content, .count = info->file__content_size};
 
         double freq_multiplier = 1.0;
         S_Format format = FMT_RI;
@@ -105,7 +140,7 @@ int parse_s2p_files(S2P_Infos *infos) {
             else if (scanned == 5) {
                 // Noise Data Line: Freq Fmin Gamma_Mag Gamma_Ang Rn
                 // Freq       Fmin(dB)  Mag(Gopt) Ang(Gopt) Rn/50
-                Noise_Data nd = {
+                struct Noise_Data nd = {
                     .Fmin = val[1],
                     .GammaOptdB = val[2], // Usually stored as Mag/Ang, can be converted if needed
                     .GammaOptAngle = val[3],
@@ -115,8 +150,7 @@ int parse_s2p_files(S2P_Infos *infos) {
             }
         }
 
-
-
+        uti_temp_reset();
         nob_temp_reset();
         printf("INFO: Parsed %zu frequency points from %s\n", info->freq.count, info->file_name);
     }

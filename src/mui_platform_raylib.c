@@ -1,9 +1,14 @@
 #include "mui.h"
+#include "uti.h"
+
 #include "raylib.h"
 #include "rlgl.h"
+#include "assert.h"
+#include "string.h"
+#include "stdlib.h"
 
 
-bool is_border_less = false;
+
 
 uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float opacity, MUI_WINDOW_FLAGS flags, Mui_Image* icon) {
 
@@ -15,12 +20,12 @@ uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float o
     ConfigFlags raylib_flags = FLAG_VSYNC_HINT & FLAG_WINDOW_UNDECORATED;
 
     if (opacity < 1.0f) raylib_flags &= FLAG_WINDOW_TRANSPARENT;
-    if (0 > (flags & MUI_WINDOW_FULLSCREEN)) raylib_flags &= FLAG_FULLSCREEN_MODE;
-    if (0 > (flags & MUI_WINDOW_BORDERLESS)) raylib_flags &= FLAG_BORDERLESS_WINDOWED_MODE;
-    if (0 > (flags & MUI_WINDOW_RESIZEABLE)) raylib_flags &= FLAG_WINDOW_RESIZABLE;
-    if (0 > (flags & MUI_WINDOW_HIDDEN)) raylib_flags &= FLAG_WINDOW_HIDDEN;
-    if (0 > (flags & MUI_WINDOW_MINIMIZED)) raylib_flags &= FLAG_WINDOW_MINIMIZED;
-    if (0 > (flags & MUI_WINDOW_MAXIMIZED)) raylib_flags &= FLAG_WINDOW_MAXIMIZED;
+    if (0 < (flags & MUI_WINDOW_FULLSCREEN)) raylib_flags &= FLAG_FULLSCREEN_MODE;
+    if (0 < (flags & MUI_WINDOW_BORDERLESS)) raylib_flags &= FLAG_BORDERLESS_WINDOWED_MODE;
+    if (0 < (flags & MUI_WINDOW_RESIZEABLE)) raylib_flags &= FLAG_WINDOW_RESIZABLE;
+    if (0 < (flags & MUI_WINDOW_HIDDEN)) raylib_flags &= FLAG_WINDOW_HIDDEN;
+    if (0 < (flags & MUI_WINDOW_MINIMIZED)) raylib_flags &= FLAG_WINDOW_MINIMIZED;
+    if (0 < (flags & MUI_WINDOW_MAXIMIZED)) raylib_flags &= FLAG_WINDOW_MAXIMIZED;
     if (0 == (flags & MUI_WINDOW_FOCUSED)) raylib_flags &= FLAG_WINDOW_UNFOCUSED;
 
     SetConfigFlags(raylib_flags);
@@ -39,7 +44,7 @@ int mui_screen_width()                  {return GetScreenWidth();}
 int mui_screen_height()                 {return GetScreenHeight();}
 bool mui_window_should_close()          {return WindowShouldClose();}
 void mui_set_clipboard_text(char* text) {SetClipboardText(text);}
-char* mui_clipboatd_text()              {return GetClipboardText();}
+const char* mui_clipboatd_text()        {return GetClipboardText();}
 
 void mui_clear_background(Mui_Color color, Mui_Image* image) {
     ClearBackground((Color){.a=color.a, .r=color.r, .g=color.g, .b=color.b});
@@ -115,7 +120,7 @@ struct Mui_Font {
 };
 
 Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t length) {
-    char* t_cstr = nob_temp_strndup(text, length);
+    char* t_cstr = uti_temp_strndup(text, length);
     Vector2 v= MeasureTextEx(font->raylib_font, t_cstr, font_size, spacing);
     return (Mui_Vector2) {
         .x = v.x,
@@ -133,15 +138,17 @@ struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float text
 }
 
 Mui_Vector2 mui_measure_text_line(struct Mui_Font* font, const char* text, float letter_space, float letter_size, unsigned int length) {
-    Vector2 size = MeasureTextEx(font->raylib_font, text, letter_size, letter_space);
+    char* t_cstr = uti_temp_strndup(text, length);
+    Vector2 size = MeasureTextEx(font->raylib_font, t_cstr, letter_size, letter_space);
     return (Mui_Vector2) {
         .x = size.x,
         .y = size.y,
     };
 }
 
+
 void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, unsigned int length) {
-    char* t_cstr = nob_temp_strndup(text, length);
+    char* t_cstr = uti_temp_strndup(text, length);
     DrawTextEx(font->raylib_font, t_cstr, RV2(pos), letter_size, letter_space, RCOLOR(color));
 }
 

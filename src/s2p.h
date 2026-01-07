@@ -44,6 +44,12 @@ struct S2P_Info {
     char full_path[512];
     char* file__content;
     size_t file__content_size;
+
+    // derived / calculated data
+    struct Complex_Array z11;
+    struct Complex_Array z12;
+    struct Complex_Array z21;
+    struct Complex_Array z22;
 };
 
 struct S2P_Info_Array {
@@ -54,6 +60,6 @@ struct S2P_Info_Array {
 
 
 int read_s2p_files(const char* dir, struct S2P_Info_Array *infos);
-int parse_s2p_files(struct S2P_Info_Array *infos);
+int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z);
 
 #endif // S2P_H_

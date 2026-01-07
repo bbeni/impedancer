@@ -57,68 +57,12 @@ void draw_smith_grid(Mui_Rectangle plot_area, bool plot_reactance_circles, bool 
         Mui_Vector2 c1_plot = {center.x + r_outer, center.y + r1 * r_outer};
         // r 0 -> inf, angle 0 -> 180
         float angle = 180 - atan(1/r1) * 2 * 180 / M_PI;
-        mui_draw_arc_lines(c1_plot, r1*r_outer, 90+angle, 270,  MUI_RED, 1.0f);
+        mui_draw_arc_lines(c1_plot, r1*r_outer, 90+angle, 270,  _color_bg_smith(), 1.0f);
         c1_plot.y = center.y - r1 * r_outer;
-        mui_draw_arc_lines(c1_plot, r1*r_outer, 90, 270-angle,  MUI_ORANGE, 1.0f);
+        mui_draw_arc_lines(c1_plot, r1*r_outer, 90, 270-angle,  _color_bg_smith(), 1.0f);
     }
 
 }
-
-
-/*
-// draw the grid and labels. Returns plot_area rectangle.
-Mui_Rectangle gra_smith_plot_labels_and_grid(char* x_label, char* y_label, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step, Mui_Rectangle place) {
-    
-    (void) y_label;
-
-    float label_text_size = mui_protos_theme.label_text_size;
-
-    // make space for label
-    Mui_Rectangle x_label_place;
-    Mui_Rectangle rest = mui_cut_bot(place, label_text_size, &x_label_place);
-    Mui_Rectangle y_label_place;
-    rest = mui_cut_left(rest, label_text_size, &y_label_place);
-
-    size_t l = strlen(x_label);
-    Mui_Vector2 m = mui_measure_text(mui_protos_theme.label_font, x_label, label_text_size, 0.1f, l);
-    Mui_Vector2 x_label_pos = {x_label_place.x + x_label_place.width/2 - m.x/2, x_label_place.y};
-    mui_draw_text_line(mui_protos_theme.label_font, x_label_pos, 0.1f, label_text_size, x_label, _color_text(), l);
-
-    Mui_Rectangle plot_area = rest;
-    mui_draw_rectangle(plot_area, _color_bg());
-    _draw_grid(plot_area, x_min, x_max, y_min, y_max, x_step, y_step);
-
-    return plot_area;
-} */
-
-/*
-void gra_smith_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels_, Mui_Rectangle plot_area) {
-    size_t n_labels = 0;
-    for (size_t n = 0; n < n_labels_; n++) {
-        if (mask[n]) n_labels++;
-    }
-    if (n_labels == 0) return;
-    float legends_v_spacing = 0.1f;
-    float legends_size = mui_protos_theme.label_text_size;
-    float legends_padding = 10.0f;
-    float legend_spacing = 10.0f;
-    Mui_Rectangle  legends_rect;
-    mui_cut_top(plot_area, n_labels * legends_size + (n_labels-1)*legends_v_spacing + 2*legends_padding + 2*legend_spacing, &legends_rect);
-    legends_rect = mui_cut_left(legends_rect, legends_rect.width - 200, NULL);
-    legends_rect = mui_shrink(legends_rect, legend_spacing);
-    mui_draw_rectangle_rounded(legends_rect, 10.0f, _color_bg());
-    mui_draw_rectangle_rounded_lines(legends_rect, 10.0f, _color_border(), 1.0f);
-    legends_rect = mui_shrink(legends_rect, legends_padding);
-
-    size_t index = 0;
-    for (size_t i = 0; i < n_labels_; i++) {
-        if (!mask[i]) continue;
-        Mui_Vector2 pos = {legends_rect.x, legends_rect.y + index * legends_size + index * legends_v_spacing };
-        mui_draw_text_line(mui_protos_theme.label_font, pos, 0.1f, legends_size, labels[i], colors[i], strlen(labels[i]));
-        index++;
-    }
-}
-*/
 
 
 void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_length,
@@ -133,7 +77,7 @@ void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_len
         if (f >= f_min && f <= f_max){
             Mui_Vector2 screen_coords = {
                 smith_center.x + x * smith_radius,
-                smith_center.y + y * smith_radius
+                smith_center.y - y * smith_radius
             };
             mui_draw_circle(screen_coords, 3.0f, color);
         }

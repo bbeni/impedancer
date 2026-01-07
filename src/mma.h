@@ -33,8 +33,17 @@ struct Mat4f {
 	float u14, u24, u34, u44;
 };
 
+struct Complex {
+    double r;
+    double i;
+};
+
 extern const struct Mat4f mat4f_unit;
 
+struct Complex mma_complex_mult(struct Complex a, struct Complex b);
+struct Complex mma_complex_divide_or_zero(struct Complex a, struct Complex b);
+struct Complex mma_complex_add(struct Complex a, struct Complex b);
+struct Complex mma_complex_subtract(struct Complex a, struct Complex b);
 void mma_clampf(float* v, float lower, float upper);
 void mma_clampi(int* v, int lower, int upper);
 float mma_lerpf(float lower, float upper, float t);

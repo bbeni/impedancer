@@ -6,6 +6,42 @@
 #include "math.h"
 #include "assert.h"
 
+
+struct Complex mma_complex_add(struct Complex a, struct Complex b) {
+	return (struct Complex) {
+		.r = a.r + b.r,
+		.i = a.i + b.i	
+	};
+}
+
+struct Complex mma_complex_subtract(struct Complex a, struct Complex b) {
+	return (struct Complex) {
+		.r = a.r - b.r,
+		.i = a.i - b.i	
+	};
+}
+
+struct Complex mma_complex_mult(struct Complex a, struct Complex b) {
+	return (struct Complex) {
+		.r = a.r*b.r - a.i*b.i,
+		.i = a.r*b.i + b.r*a.i	
+	};
+}
+
+
+struct Complex mma_complex_divide_or_zero(struct Complex a, struct Complex b) {
+	if (b.i == 0.0 && b.r == 0.0) {
+		return (struct Complex) {0.0, 0.0};
+	}
+
+	double denom = b.r*b.r + b.i*b.i;
+
+	return (struct Complex) {
+		.r = (a.r*b.r + a.i*b.i) / denom,
+		.i = (a.i*b.r - a.r*b.i) / denom	
+	};
+}
+
 void mma_clampf(float* v, float lower, float upper) {
 	if (*v < lower) {
 		*v = lower;

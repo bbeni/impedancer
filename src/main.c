@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
     char* directory = next(&argc, &argv);
     struct S2P_Info_Array infos = {0};
     if(read_s2p_files(directory, &infos) != 0) return 1;
-    if(parse_s2p_files(&infos) != 0) return 1;
+    if(parse_s2p_files(&infos, true) != 0) return 1;
 
     int w, h;
     w = 1700;
@@ -192,6 +192,7 @@ int main(int argc, char** argv) {
             size_t length = infos.items[selected].freq.count;
             double *fs = infos.items[selected].freq.items;
             struct Complex *s_params[4] = {infos.items[selected].s11.items, infos.items[selected].s21.items, infos.items[selected].s12.items, infos.items[selected].s22.items};
+            struct Complex *z_params[4] = {infos.items[selected].z11.items, infos.items[selected].z21.items, infos.items[selected].z12.items, infos.items[selected].z22.items};
             Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
             char* labels[4] = {"dB(S11)", "dB(S21)", "dB(S12)", "dB(S22)"};
             bool mask[4] = {show_s11_checkbox_state.checked, show_s21_checkbox_state.checked, show_s12_checkbox_state.checked, show_s22_checkbox_state.checked};
@@ -211,18 +212,13 @@ int main(int argc, char** argv) {
             // smith chart
             //
 
-            struct Complex z[6] = {
-                {1, 0},
-                {2, 0},
-                {2, 2},
-                {2, 3},
-                {2, 4},
-                {2, 5},
-            };
-
             draw_smith_grid(r21, true, true, NULL, 0);
             Mui_Vector2 r21c = mui_center_of_rectangle(r21);
-            gra_smith_plot_data(fs, z, 5, 0, 1e11, MUI_GREEN, r21c, r21.height*0.49f);
+            for (int i = 0; i < 4; i++) {
+                if (mask[i]) {
+                    gra_smith_plot_data(fs, z_params[i], length, min_f, max_f, colors[i], r21c, r21.height*0.49f);
+                }
+            }
 
 
         mui_end_drawing();

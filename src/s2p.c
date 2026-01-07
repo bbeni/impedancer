@@ -7,6 +7,7 @@
 #include "stddef.h"
 #include "string.h"
 #include "stdlib.h"
+#include "mma.h"
 
 #define NOB_NO_MINIRENT
 #include "nob.h"
@@ -76,7 +77,7 @@ struct Complex parse_complex(double v1, double v2, S_Format fmt) {
     return c;
 }
 
-int parse_s2p_files(struct S2P_Info_Array *infos) {
+int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
 
     for (size_t i = 0; i < infos->count; ++i) {
         struct S2P_Info *info = &infos->items[i];
@@ -150,10 +151,51 @@ int parse_s2p_files(struct S2P_Info_Array *infos) {
             }
         }
 
+        assert(info->s11.count == info->s12.count);
+        assert(info->s11.count == info->s21.count);
+        assert(info->s11.count == info->s22.count);
+
         uti_temp_reset();
         nob_temp_reset();
         printf("INFO: Parsed %zu frequency points from %s\n", info->freq.count, info->file_name);
     }
+
+
+    if (calc_z) {
+        for (size_t i = 0; i < infos->count; ++i) {
+            struct S2P_Info *info = &infos->items[i];
+            info->z11.count = 0;
+            info->z12.count = 0;
+            info->z21.count = 0;
+            info->z22.count = 0;
+            size_t n = info->s11.count;
+            info->z11.items = malloc(sizeof(*info->z11.items)*n);
+            info->z11.capacity = n;
+            info->z21.items = malloc(sizeof(*info->z21.items)*n);
+            info->z21.capacity = n;
+            info->z12.items = malloc(sizeof(*info->z12.items)*n);
+            info->z12.capacity = n;
+            info->z22.items = malloc(sizeof(*info->z22.items)*n);
+            info->z22.capacity = n;
+
+            for (size_t j = 0; j < n; j++) {
+                // no z0 calculated
+                struct Complex one_m_s11 = {1 - info->s11.items[j].r, -info->s11.items[j].i};
+                struct Complex one_m_s22 = {1 - info->s22.items[j].r, -info->s22.items[j].i};
+                struct Complex one_p_s11 = {1 + info->s11.items[j].r,  info->s11.items[j].i};
+                struct Complex one_p_s22 = {1 + info->s22.items[j].r,  info->s22.items[j].i};
+                struct Complex s12s21 = mma_complex_mult(info->s12.items[j], info->s21.items[j]);
+                struct Complex delta_s = mma_complex_subtract(mma_complex_mult(one_m_s11, one_m_s22), s12s21);
+                info->z11.items[j] = mma_complex_divide_or_zero(mma_complex_add(mma_complex_mult(one_p_s11, one_m_s22), s12s21), delta_s);
+                info->z22.items[j] = mma_complex_divide_or_zero(mma_complex_add(mma_complex_mult(one_m_s11, one_p_s22), s12s21), delta_s);
+                info->z12.items[j] = mma_complex_divide_or_zero(info->s12.items[j], delta_s);
+                info->z12.items[j].r *= 2; info->z12.items[j].i *= 2;
+                info->z21.items[j] = mma_complex_divide_or_zero(info->s21.items[j], delta_s);
+                info->z21.items[j].r *= 2; info->z21.items[j].i *= 2;
+            }
+        }
+    }
+
     return 0;
 }
 

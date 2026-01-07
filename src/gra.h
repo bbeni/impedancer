@@ -20,4 +20,14 @@ void gra_xy_plot_data(double *x_data, void *y_data, double (* y_map)(size_t i, v
 void gra_xy_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels_, Mui_Rectangle plot_area);
 
 
+struct Complex {
+    double r;
+    double i;
+};
+
+
+void draw_smith_grid(Mui_Rectangle plot_area, bool plot_reactance_circles, bool plot_admittance_circles, double *custom_cicles, size_t n_custom_circles);
+void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_length,
+                 double f_min, double f_max, Mui_Color color, Mui_Vector2 smith_center, float smith_radius);
+
 #endif //GRA_H_

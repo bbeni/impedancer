@@ -21,8 +21,7 @@ uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float o
         FLAG_VSYNC_HINT |
         //FLAG_WINDOW_HIGHDPI |
         FLAG_MSAA_4X_HINT |
-        FLAG_WINDOW_UNDECORATED | 
-        FLAG_INTERLACED_HINT |
+        //FLAG_INTERLACED_HINT |
         0;
 
     if (opacity < 1.0f) raylib_flags &= FLAG_WINDOW_TRANSPARENT;
@@ -31,13 +30,19 @@ uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float o
     if (0 < (flags & MUI_WINDOW_RESIZEABLE)) raylib_flags |= FLAG_WINDOW_RESIZABLE;
     if (0 < (flags & MUI_WINDOW_HIDDEN)) raylib_flags |= FLAG_WINDOW_HIDDEN;
     if (0 < (flags & MUI_WINDOW_MINIMIZED)) raylib_flags |= FLAG_WINDOW_MINIMIZED;
-    if (0 < (flags & MUI_WINDOW_MAXIMIZED)) raylib_flags |= FLAG_WINDOW_MAXIMIZED;
+    if (0 < (flags & MUI_WINDOW_MAXIMIZED)) {
+        raylib_flags |= FLAG_WINDOW_MAXIMIZED;
+    }
+    if (0 < (flags & MUI_WINDOW_UNDECORATED)) raylib_flags |= FLAG_WINDOW_UNDECORATED;
     if (0 == (flags & MUI_WINDOW_FOCUSED)) raylib_flags |= FLAG_WINDOW_UNFOCUSED;
 
     SetConfigFlags(raylib_flags);
     InitWindow(w, h, title);
     SetWindowPosition(pos_x, pos_y);
     SetWindowOpacity(opacity);
+    if (0 < (flags & MUI_WINDOW_MAXIMIZED)) {
+        mui_window_maximize();
+    }
 
     return 0;
 }
@@ -49,8 +54,15 @@ uint8_t mui_get_active_window_id() {
 int mui_screen_width()                  {return GetScreenWidth();}
 int mui_screen_height()                 {return GetScreenHeight();}
 bool mui_window_should_close()          {return WindowShouldClose();}
+void mui_window_restore()               {RestoreWindow();}
+void mui_window_maximize()              {MaximizeWindow();}
+void mui_window_minimize()              {MinimizeWindow();}
+bool mui_is_window_maximized()          {return IsWindowMaximized();}
+Mui_Vector2 mui_window_get_position()   {Vector2 p = GetWindowPosition(); return (Mui_Vector2) {.x=p.x, .y=p.y };}
+void mui_window_set_position(int x, int y)          {SetWindowPosition(x, y);}
+void mui_window_set_size(int width, int height)     {SetWindowSize(width, height);}
 void mui_set_clipboard_text(char* text) {SetClipboardText(text);}
-const char* mui_clipboatd_text()        {return GetClipboardText();}
+const char* mui_clipboard_text()        {return GetClipboardText();}
 
 void mui_clear_background(Mui_Color color, Mui_Image* image) {
     ClearBackground((Color){.a=color.a, .r=color.r, .g=color.g, .b=color.b});
@@ -92,8 +104,19 @@ void mui_draw_circle(Mui_Vector2 pos, float radius, Mui_Color color) {
     DrawCircle(pos.x, pos.y, radius, RCOLOR(color));
 }
 
-void mui_draw_line(Mui_Vector2 start, Mui_Vector2 end, float thickness, Mui_Color color) {
-    DrawLineEx(RV2(start), RV2(end), thickness, RCOLOR(color));
+void mui_draw_circle_lines(Mui_Vector2 center, float radius, Mui_Color color, float thickness) {
+    //RLAPI void DrawCircleLines(int centerX, int centerY, float radius, Color color); // no thickness parameter.
+    DrawRing((Vector2){center.x, center.y}, radius-thickness*0.5f, radius+thickness*0.5f, 0, 360, radius, RCOLOR(color));
+}
+
+// start and end in degrees
+void mui_draw_arc_lines(Mui_Vector2 center, float radius, float start_angle, float end_angle, Mui_Color color, float thickness) {
+    //RLAPI void DrawCircleLines(int centerX, int centerY, float radius, Color color); // no thickness parameter.
+    DrawRing((Vector2){center.x, center.y}, radius-thickness*0.5f, radius+thickness*0.5f, start_angle, end_angle, 100, RCOLOR(color));
+}
+
+void mui_draw_line(float start_x, float start_y, float end_x, float end_y, float thickness, Mui_Color color) {
+    DrawLineEx((Vector2){start_x, start_y}, (Vector2){end_x, end_y}, thickness, RCOLOR(color));
 }
 
 void mui_draw_rectangle(Mui_Rectangle rect, Mui_Color color) {

@@ -85,7 +85,15 @@ void mma_move_towards_on_circlef(float* angle, float target,  float speed, float
 	else {
 		mma_move_towardsf(angle, target, speed, dt);
 	}
-} 
+}
+
+float mma_next_multiple_of(float start, float step) {
+    float x = ceilf(start / step) * step;
+    if (x == start) {
+        x += step;
+    }
+    return x;
+}
 
 
 float mma_angle_betweenv2f(struct Vec2f a, struct Vec2f b) {

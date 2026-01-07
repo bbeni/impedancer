@@ -156,6 +156,7 @@ Mui_Rectangle mui_cut_left(Mui_Rectangle r, float amount, Mui_Rectangle *out_lef
 Mui_Rectangle mui_cut_right(Mui_Rectangle r, float amount, Mui_Rectangle *out_right);
 Mui_Rectangle mui_cut_top(Mui_Rectangle r, float amount, Mui_Rectangle *out_top);
 Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot);
+Mui_Vector2 mui_center_of_rectangle(Mui_Rectangle rectangle);
 void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle *out_11, Mui_Rectangle *out_12, Mui_Rectangle *out_21, Mui_Rectangle *out_22);
 
 bool mui_is_inside_rectangle(Mui_Vector2, Mui_Rectangle);
@@ -165,6 +166,8 @@ bool mui_is_inside_rectangle(Mui_Vector2, Mui_Rectangle);
 //
 
 bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme);
+// returns the rest of the space left ( to the left or right ) as a rectangle
+Mui_Rectangle mui_window_decoration(float height, bool window_movable, bool closeable, bool minimizable, bool maximizable, bool to_the_right, Mui_Rectangle window_rect);
 bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place);
 void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place);
 void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place);
@@ -184,6 +187,7 @@ typedef enum {
     MUI_WINDOW_MINIMIZED = 0x10,
     MUI_WINDOW_MAXIMIZED = 0x20,
     MUI_WINDOW_FOCUSED = 0x40,
+    MUI_WINDOW_UNDECORATED = 0x80,
 } MUI_WINDOW_FLAGS;
 
 uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float opacity, MUI_WINDOW_FLAGS flags, Mui_Image* icon);
@@ -191,6 +195,15 @@ uint8_t mui_get_active_window_id();
 int mui_screen_width();
 int mui_screen_height();
 bool mui_window_should_close();
+void mui_window_restore();
+void mui_window_maximize();
+void mui_window_minimize();
+bool mui_is_window_maximized();
+Mui_Vector2 mui_window_get_position();
+void mui_window_set_position(int x, int y);
+void mui_window_set_size(int width, int height);
+
+
 
 void mui_clear_background(Mui_Color color, Mui_Image* image);
 void mui_begin_drawing();
@@ -200,7 +213,6 @@ void mui_close_window();
 size_t mui_text_len(const char* text, size_t size);
 
 double mui_get_time();
-Mui_Vector2 mui_get_mouse_pos();
 void mui_update_core();
 
 //
@@ -217,7 +229,10 @@ Mui_Vector2 mui_get_mouse_position_now();
 
 void mui_draw_pixel(Mui_Vector2 pos, Mui_Color color);
 void mui_draw_circle(Mui_Vector2 pos, float radius, Mui_Color color);
-void mui_draw_line(Mui_Vector2 start, Mui_Vector2 end, float thickness, Mui_Color color);
+void mui_draw_circle_lines(Mui_Vector2 center, float radius, Mui_Color color, float thickness);
+// start and end in degrees
+void mui_draw_arc_lines(Mui_Vector2 center, float radius, float start_angle, float end_angle, Mui_Color color, float thickness);
+void mui_draw_line(float start_x, float start_y, float end_x, float end_y, float thickness, Mui_Color color);
 void mui_draw_rectangle(Mui_Rectangle rect, Mui_Color color);
 void mui_draw_rectangle_rounded(Mui_Rectangle rect, float corner_radius, Mui_Color color);
 void mui_draw_rectangle_lines(Mui_Rectangle rect, Mui_Color color, float thickness);
@@ -254,13 +269,7 @@ void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_spa
 #define MUI_MAGENTA    (Mui_Color){ 255, 0, 255, 255 }     // Magenta
 #define MUI_RAYWHITE   (Mui_Color){ 245, 245, 245, 255 }   // My own White (raylib logo)
 
-//
-// input/output/controller API platform
-//
 
-void mui_set_clipboard_text(char* text);
-const char* mui_clipboatd_text();
-Mui_Vector2 mui_get_mouse_position();
 
 // FROM RAYLIB.
 // Keyboard keys (US keyboard layout)
@@ -383,6 +392,11 @@ typedef enum {
     MUI_ANDDROID_KEY_VOLUME_DOWN     = 25        // Key: Android volume down button
 } Mui_Keyboard_Key;
 
+
+//
+// input/output/controller API platform
+//
+
 bool mui_is_key_pressed(Mui_Keyboard_Key key);
 bool mui_is_key_pressed_repeat(Mui_Keyboard_Key key);
 int mui_get_char_pressed();
@@ -390,6 +404,10 @@ bool mui_is_mouse_button_pressed(int button);
 bool mui_is_mouse_button_down(int button);
 bool mui_is_mouse_button_up(int button);
 bool mui_is_mouse_button_released(int button);
+
+void mui_set_clipboard_text(char* text);
+const char* mui_clipboard_text();
+Mui_Vector2 mui_get_mouse_position();
 
 //
 // Some easing functions from easings.net

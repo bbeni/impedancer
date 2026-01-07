@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
     w = 1700;
     h = 1100;
 
-    mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_MAXIMIZED, NULL);
+    mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED | MUI_WINDOW_MAXIMIZED, NULL);
 
     size_t selected = 0;
     Mui_Checkbox_State show_s11_checkbox_state = {0};
@@ -118,10 +118,9 @@ int main(int argc, char** argv) {
             mui_clear_background(mui_protos_theme.global_background_color, NULL);
 
             Mui_Rectangle screen = {0, 0, w, h};
-            Mui_Rectangle t_r = {0};
-            Mui_Rectangle rest = mui_cut_top(screen, 100, &t_r);
+            Mui_Rectangle t_r = mui_window_decoration(50.0f, true, true, true, true, true, screen);
+            Mui_Rectangle rest = mui_cut_top(screen, 50, NULL);
 
-            
             float padding = 5;
 
             t_r = mui_shrink(t_r, padding);
@@ -205,7 +204,26 @@ int main(int argc, char** argv) {
                     gra_xy_plot_data(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, colors[i], plot_area);
                 }
             }
+
             gra_xy_legend(labels, colors, mask, 4, plot_area);
+
+            //
+            // smith chart
+            //
+
+            struct Complex z[6] = {
+                {1, 0},
+                {2, 0},
+                {2, 2},
+                {2, 3},
+                {2, 4},
+                {2, 5},
+            };
+
+            draw_smith_grid(r21, true, true, NULL, 0);
+            Mui_Vector2 r21c = mui_center_of_rectangle(r21);
+            gra_smith_plot_data(fs, z, 5, 0, 1e11, MUI_GREEN, r21c, r21.height*0.49f);
+
 
         mui_end_drawing();
         uti_temp_reset();

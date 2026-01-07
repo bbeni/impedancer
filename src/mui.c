@@ -170,6 +170,10 @@ Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot)
     return r;
 }
 
+Mui_Vector2 mui_center_of_rectangle(Mui_Rectangle rectangle) {
+    return (Mui_Vector2) {.x = rectangle.x + 0.5f * rectangle.width, .y = rectangle.y + 0.5f * rectangle.height};
+}
+
 void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle *out_11, Mui_Rectangle *out_12, Mui_Rectangle *out_21, Mui_Rectangle *out_22) {
     if (out_11) {
         out_11->x = r.x;
@@ -209,6 +213,145 @@ size_t mui_text_len(const char* text, size_t size) {
     // TODO: implement unicode, for now only ascii
     (void)text;
     return size;
+}
+
+static bool window_grabbed = false;
+static Mui_Vector2 window_grabbed_pos;
+static Mui_Vector2 window_initial_os_position;
+static Mui_Rectangle previous_window_rect;
+static float window_x_hover_t = 0;
+static float window_maximizer_hover_t = 0;
+static float window_minimizer_hover_t = 0;
+static float last_time = 0;
+Mui_Rectangle mui_window_decoration(float height, bool window_movable, bool closeable, bool minimizable, bool maximizable, bool to_the_right, Mui_Rectangle window_rect) {
+
+    float w_to_h_ratio = 4.71f;
+    float w_component = w_to_h_ratio * height / 3;
+
+    Mui_Color color = mui_protos_theme.text_color;
+    Mui_Color bg = mui_protos_theme.background_color;
+    Mui_Color color_hover = mui_protos_theme.text_hover_color;
+    Mui_Color bg_hover = mui_protos_theme.background_hover_color;
+    float to_hover_speed = mui_protos_theme.animation_speed_to_hover;
+    float to_normal_speed = mui_protos_theme.animation_speed_to_normal;
+
+    // Update the time
+    float dt = mui_get_time() - last_time;
+    last_time = mui_get_time();
+
+
+    Mui_Rectangle comp_rect = {
+        .x = window_rect.x + window_rect.width - w_component,
+        .y = window_rect.y,
+        .width = w_component,
+        .height = height,
+    };
+    
+    //
+    // draw x
+    //
+    if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
+        if (mui_is_mouse_button_pressed(0)) {
+            // TODO: kill app gracefully
+            exit(0);
+        }
+        mui_move_towards(&(window_x_hover_t), 1, to_hover_speed, dt);
+    } else {
+        mui_move_towards(&(window_x_hover_t), 0, to_normal_speed, dt);
+    }
+
+    Mui_Color b = mui_interpolate_color(bg, bg_hover, window_x_hover_t);
+    Mui_Color f = mui_interpolate_color(color, color_hover, window_x_hover_t);
+    
+    mui_draw_rectangle(comp_rect, b);
+    float x_s = height / 4;
+    Mui_Vector2 center = mui_center_of_rectangle(comp_rect);
+    mui_draw_line(center.x + x_s, center.y + x_s, center.x - x_s, center.y - x_s, 2.0f, f);
+    mui_draw_line(center.x + x_s, center.y - x_s, center.x - x_s, center.y + x_s, 2.0f, f);
+
+    //
+    // draw maximizer
+    //
+    comp_rect.x -= w_component;
+    comp_rect.x = ceilf(comp_rect.x);
+    if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
+        if (mui_is_mouse_button_pressed(0)) {
+            if (mui_is_window_maximized()){
+                mui_window_restore();
+            } else {
+                mui_window_maximize();
+                previous_window_rect = window_rect;
+            }
+        }
+        mui_move_towards(&(window_maximizer_hover_t), 1, to_hover_speed, dt);
+    } else {
+        mui_move_towards(&(window_maximizer_hover_t), 0, to_normal_speed, dt);
+    }
+
+    b = mui_interpolate_color(bg, bg_hover, window_maximizer_hover_t);
+    f = mui_interpolate_color(color, color_hover, window_maximizer_hover_t);
+    
+    mui_draw_rectangle(comp_rect, b);
+    Mui_Rectangle m_rect = mui_shrink(comp_rect, height/4);
+    mui_draw_rectangle_rounded_lines(m_rect, 5.0f, f, 2.0f);
+
+    //
+    // draw minimizer
+    //
+    comp_rect.x -= w_component;
+    comp_rect.x = ceilf(comp_rect.x);
+    if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
+        if (mui_is_mouse_button_pressed(0)) { mui_window_minimize(); }
+        mui_move_towards(&(window_minimizer_hover_t), 1, to_hover_speed, dt);
+    } else {
+        mui_move_towards(&(window_minimizer_hover_t), 0, to_normal_speed, dt);
+    }
+
+    b = mui_interpolate_color(bg, bg_hover, window_minimizer_hover_t);
+    f = mui_interpolate_color(color, color_hover, window_minimizer_hover_t);
+    
+    mui_draw_rectangle(comp_rect, b);
+    x_s = height / 4;
+    center = mui_center_of_rectangle(comp_rect);
+    mui_draw_line(center.x - x_s, center.y, center.x + x_s, center.y, 4.0f, f);
+
+    //
+    // draw dragging area
+    //
+    comp_rect.x -= w_component*3;
+    comp_rect.width = w_component*3;
+    comp_rect.x = ceilf(comp_rect.x);
+    if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
+        if (mui_is_mouse_button_pressed(0)) {
+            window_grabbed = true;
+            window_grabbed_pos = mui_get_mouse_position();
+            window_initial_os_position = mui_window_get_position();
+        }
+    }
+
+    if (mui_is_mouse_button_up(0)) {
+        window_grabbed = false;
+    } else {
+        if (window_grabbed) {
+            Mui_Vector2 delta = mui_get_mouse_position();
+            delta.x -= window_grabbed_pos.x;
+            delta.y -= window_grabbed_pos.y;
+            mui_window_set_position(window_initial_os_position.x + delta.x, window_initial_os_position.y + delta.y);
+        }
+    }
+    
+    
+    mui_draw_rectangle(comp_rect, bg);
+    //.x_s = height / 4;
+    //center = mui_center_of_rectangle(comp_rect);
+    // TODO draw arrows or hand maybe
+    //mui_draw_line((Mui_Vector2){.x = center.x + x_s, .y=center.y}, (Mui_Vector2){.x = center.x - x_s, .y=center.y}, 2.0f, color);
+    //mui_draw_line((Mui_Vector2){.x = center.x, .y=center.y - x_s}, (Mui_Vector2){.x = center.x, .y=center.y + x_s}, 2.0f, color);
+
+
+
+
+    return (Mui_Rectangle) {.x = window_rect.x, .y = window_rect.y, .height = height, .width = comp_rect.x - window_rect.x};
 }
 
 void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {

@@ -3,15 +3,8 @@
 //
 
 #include "gra.h"
+#include "mma.h"
 #include "string.h"
-
-float _next_multiple_of(float start, float step) {
-    float x = ceilf(start / step) * step;
-    if (x == start) {
-        x += step;
-    }
-    return x;
-}
 
 Mui_Color _color_bg() {return mui_protos_theme.background_color;}
 Mui_Color _color_border() {return mui_protos_theme.border_color;}
@@ -22,31 +15,32 @@ void _draw_grid(Mui_Rectangle plot_area, double x_min, double x_max, double y_mi
     mui_draw_rectangle_lines(plot_area, _color_border(), 2.0f);
 
     // draw grid
-    float grid_x = _next_multiple_of(x_min, x_step);
+    float grid_x = mma_next_multiple_of(x_min, x_step);
     float grid_norm_x = (grid_x - x_min)/ (x_max - x_min);
-    Mui_Vector2 upper = {plot_area.x + grid_norm_x * plot_area.width, plot_area.y};
-    Mui_Vector2 lower = {plot_area.x + grid_norm_x * plot_area.width, plot_area.y + plot_area.height};
+    float x = plot_area.x + grid_norm_x * plot_area.width;
+    float y1 = plot_area.y;
+    float y2 = plot_area.y + plot_area.height;
     int iter = 0;
 #define MAX_LINES 1000
     while (grid_x < x_max && iter < MAX_LINES) {
-        mui_draw_line(upper, lower, 1.0f, _color_text());
-        grid_x = _next_multiple_of(grid_x, x_step);
+        mui_draw_line(x, y1, x, y2, 1.0f, _color_text());
+        grid_x = mma_next_multiple_of(grid_x, x_step);
         grid_norm_x = (grid_x - x_min) / (x_max - x_min);
-        upper.x = plot_area.x + grid_norm_x * plot_area.width;
-        lower.x = plot_area.x + grid_norm_x * plot_area.width;
+        x = plot_area.x + grid_norm_x * plot_area.width;
         iter++;
     }
-    float grid_y = _next_multiple_of(y_min, y_step);
+
+    float grid_y = mma_next_multiple_of(y_min, y_step);
     float grid_norm_y = 1 - (grid_y - y_min)/ (y_max - y_min);
-    Mui_Vector2 left = {plot_area.x , plot_area.y + grid_norm_y * plot_area.height};
-    Mui_Vector2 right = {plot_area.x + plot_area.width, plot_area.y + grid_norm_y * plot_area.height};
+    float y = plot_area.y + grid_norm_y * plot_area.height;
+    float x1 = plot_area.x;
+    float x2 = plot_area.x + plot_area.width;
     iter = 0;
     while (grid_y < y_max && iter < MAX_LINES) {
-        mui_draw_line(left, right, 1.0f, _color_text());
-        grid_y = _next_multiple_of(grid_y, y_step);
+        mui_draw_line(x1, y, x2, y, 1.0f, _color_text());
+        grid_y = mma_next_multiple_of(grid_y, y_step);
         grid_norm_y = 1 - (grid_y - y_min) / (y_max - y_min);
-        left.y = plot_area.y + grid_norm_y * plot_area.height;
-        right.y = plot_area.y + grid_norm_y * plot_area.height;
+        y = plot_area.y + grid_norm_y * plot_area.height;
         iter++;
     }
 }

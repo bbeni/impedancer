@@ -40,6 +40,7 @@ void mma_clampi(int* v, int lower, int upper);
 float mma_lerpf(float lower, float upper, float t);
 void mma_move_towardsf(float* x, float target, float speed, float dt);
 void mma_move_towardsv3f(struct Vec3f* vec, struct Vec3f target, float speed, float dt);
+float mma_next_multiple_of(float start, float step);
 // move an angle to a range [-pi, pi) closer to the mapped target angle the shorter way around the circle
 // @Bug somehow there is and edge case where the target is PI and we go to -PI and never set to PI but it should flip it here
 // for now just assume the user of this function is not dependent on the wrap around behaviour

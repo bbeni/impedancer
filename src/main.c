@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
     w = 1700;
     h = 1100;
 
-    mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE & MUI_WINDOW_RESIZEABLE, NULL);
+    mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_MAXIMIZED, NULL);
 
     size_t selected = 0;
     Mui_Checkbox_State show_s11_checkbox_state = {0};

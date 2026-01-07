@@ -19,19 +19,20 @@ uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float o
 
     ConfigFlags raylib_flags = 
         FLAG_VSYNC_HINT |
-        FLAG_WINDOW_HIGHDPI |
+        //FLAG_WINDOW_HIGHDPI |
         FLAG_MSAA_4X_HINT |
         FLAG_WINDOW_UNDECORATED | 
-        FLAG_INTERLACED_HINT;
+        FLAG_INTERLACED_HINT |
+        0;
 
     if (opacity < 1.0f) raylib_flags &= FLAG_WINDOW_TRANSPARENT;
-    if (0 < (flags & MUI_WINDOW_FULLSCREEN)) raylib_flags &= FLAG_FULLSCREEN_MODE;
-    if (0 < (flags & MUI_WINDOW_BORDERLESS)) raylib_flags &= FLAG_BORDERLESS_WINDOWED_MODE;
-    if (0 < (flags & MUI_WINDOW_RESIZEABLE)) raylib_flags &= FLAG_WINDOW_RESIZABLE;
-    if (0 < (flags & MUI_WINDOW_HIDDEN)) raylib_flags &= FLAG_WINDOW_HIDDEN;
-    if (0 < (flags & MUI_WINDOW_MINIMIZED)) raylib_flags &= FLAG_WINDOW_MINIMIZED;
-    if (0 < (flags & MUI_WINDOW_MAXIMIZED)) raylib_flags &= FLAG_WINDOW_MAXIMIZED;
-    if (0 == (flags & MUI_WINDOW_FOCUSED)) raylib_flags &= FLAG_WINDOW_UNFOCUSED;
+    if (0 < (flags & MUI_WINDOW_FULLSCREEN)) raylib_flags |= FLAG_FULLSCREEN_MODE;
+    if (0 < (flags & MUI_WINDOW_BORDERLESS)) raylib_flags |= FLAG_BORDERLESS_WINDOWED_MODE;
+    if (0 < (flags & MUI_WINDOW_RESIZEABLE)) raylib_flags |= FLAG_WINDOW_RESIZABLE;
+    if (0 < (flags & MUI_WINDOW_HIDDEN)) raylib_flags |= FLAG_WINDOW_HIDDEN;
+    if (0 < (flags & MUI_WINDOW_MINIMIZED)) raylib_flags |= FLAG_WINDOW_MINIMIZED;
+    if (0 < (flags & MUI_WINDOW_MAXIMIZED)) raylib_flags |= FLAG_WINDOW_MAXIMIZED;
+    if (0 == (flags & MUI_WINDOW_FOCUSED)) raylib_flags |= FLAG_WINDOW_UNFOCUSED;
 
     SetConfigFlags(raylib_flags);
     InitWindow(w, h, title);

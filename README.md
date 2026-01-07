@@ -2,6 +2,8 @@
 
 S2p View and Impedance matching tools
 
+![](documentation/screenshot.png "Preview")
+
 ## Windows quick start
 
 Download https://github.com/raysan5/raylib/releases/download/5.5/raylib-5.5_win64_mingw-w64.zip and place inside src/thirdparty named as raylib-5.5

@@ -70,10 +70,10 @@ Mui_Theme mui_protos_theme = {
     .label_text_size = 28.0f,
     .textinput_text_size = 28.0f,
 
-    .slider_thickness = 10.0f,
-    .slider_wagon_width = 14.0f,
-    .slider_wagon_height = 40.0f,
-    .slider_wagon_corner_radius = 4.0f,
+    .slider_thickness = 8.0f,
+    .slider_wagon_width = 16.0f,
+    .slider_wagon_height = 24.0f,
+    .slider_wagon_corner_radius = 6.0f,
     .slider_wagon_border_thickness = 2.0f,
 
     .animation_speed_to_hover = 18.0f,
@@ -207,6 +207,7 @@ bool mui_is_inside_rectangle(Mui_Vector2 pos, Mui_Rectangle rect) {
 
 size_t mui_text_len(const char* text, size_t size) {
     // TODO: implement unicode, for now only ascii
+    (void)text;
     return size;
 }
 
@@ -249,15 +250,18 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
     Mui_Color border_color = mui_interpolate_color(theme->border_color, theme->border_hover_color, state->hover_t);
     Mui_Color text_color = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
 
+    area = mui_shrink(area, 2.0f);
     mui_draw_rectangle_rounded(area, theme->corner_radius, bg);
     mui_draw_rectangle_rounded_lines(area, theme->corner_radius, border_color, theme->border_thickness);
 
+    float inset = area.height/4;
+
     if (state->checked) {
-        area = mui_shrink(area, area.height/6);
-        mui_draw_rectangle_rounded(area, theme->corner_radius, border_color);
+        area = mui_shrink(area, area.height/4);
+        mui_draw_rectangle_rounded(area, theme->corner_radius - inset/2, border_color);
     }
 
-    Mui_Vector2 position = {place.x+20, place.y + place.height/2 - theme->text_size/2};
+    Mui_Vector2 position = {place.x+inset, place.y + place.height/2 - theme->text_size/2};
     size_t l = mui_text_len(text, strlen(text));
     mui_draw_text_line(theme->font, position, 0, theme->text_size, text, text_color, l);
 }
@@ -339,6 +343,7 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
         mui_draw_rectangle_rounded(wagon, theme->slider_wagon_corner_radius, bg);
         mui_draw_rectangle_rounded_lines(wagon, theme->slider_wagon_corner_radius, border_color, theme->slider_wagon_border_thickness);
     }
+    return state->value;
 }
 
 
@@ -414,7 +419,7 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
             nob_da_append(&(state->buffer), '\0');
             assert(state->cursor < state->buffer.count-1);
 
-            for( int i = state->buffer.count-2; i > state->cursor; i--) {
+            for( size_t i = state->buffer.count-2; i > state->cursor; i--) {
                 state->buffer.items[i] = state->buffer.items[i-1];
             }
 
@@ -425,17 +430,17 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
 
         if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
             if (state->cursor != 0) state->cursor--;
-            printf("cursor %d\n", state->cursor);
+            printf("cursor %lld\n", state->cursor);
         }
 
         if (mui_is_key_pressed(MUI_KEY_RIGHT) || mui_is_key_pressed_repeat(MUI_KEY_RIGHT)) {
             if (state->cursor < state->buffer.count-1) state->cursor++;
-            printf("cursor %d\n", state->cursor);
+            printf("cursor %lld\n", state->cursor);
         }
 
         if (mui_is_key_pressed(MUI_KEY_BACKSPACE) || mui_is_key_pressed_repeat(MUI_KEY_BACKSPACE)) {
             if (state->buffer.count > 1 && state->cursor > 0) {
-                for (int i = state->cursor; i < state->buffer.count-1; i++) {
+                for (size_t i = state->cursor; i < state->buffer.count-1; i++) {
                     state->buffer.items[i-1] = state->buffer.items[i]; 
                 }
                 state->cursor--;
@@ -468,23 +473,23 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
 
         Mui_Vector2 line_size = {0};
 
-        for (int i=0; i < state->buffer.count; i++) {
+        for (size_t i = 0; i < state->buffer.count; i++) {
             char* buf = &state->buffer.items[i];
             line_size = mui_measure_text(theme->textinput_font, line_start, theme->textinput_text_size, 0.1f, buf-line_start);
 
             // draw it
             if (line_size.x >= place.width - text_offset_left || *buf == '\n' || i==state->buffer.count-1) {
                 char* orig = buf;
-                if(i!=state->buffer.count-1 || *buf == '\n') {
+                if(i != state->buffer.count-1 || *buf == '\n') {
                     buf--; // we overshot, so we do backtracking
                 }
                     
                 Mui_Vector2 position = {place.x + text_offset_left, place.y + text_offset_top + line_nr*theme->textinput_text_size*line_spacing};
                 size_t l = buf-line_start;
-                printf("%.*s\n==\n", l, line_start);
+                printf("%.*s\n==\n", (int)l, line_start);
                 mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, line_start, theme->textinput_text_color, l);
 
-                if (*orig == "\n") buf += 2; // skip new line and backtracking
+                if (*orig == '\n') buf += 2; // skip new line and backtracking
                 line_start = buf;
                 line_nr++;
             }

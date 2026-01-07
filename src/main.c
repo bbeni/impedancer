@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
     Mui_Checkbox_State show_s22_checkbox_state = {0};
     Mui_Slider_State slider_state = {0};
     Mui_Slider_State slider_state_2 = {0};
-    Mui_Textinput_Multiline_State textinput_ml_state = {0};
+    //Mui_Textinput_Multiline_State textinput_ml_state = {0};
 
     show_s11_checkbox_state.checked = true;
     show_s21_checkbox_state.checked = true;
@@ -106,7 +106,6 @@ int main(int argc, char** argv) {
         w = mui_screen_width();
         h = mui_screen_height();
 
-        int selected_before = selected;
         if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN)) {
             selected = (selected + 1) % infos.count;
         }

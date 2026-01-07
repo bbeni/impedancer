@@ -17,7 +17,12 @@ uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float o
         assert(false && "not implemented icon in mui_open_window()");
     }
 
-    ConfigFlags raylib_flags = FLAG_VSYNC_HINT & FLAG_WINDOW_UNDECORATED;
+    ConfigFlags raylib_flags = 
+        FLAG_VSYNC_HINT |
+        FLAG_WINDOW_HIGHDPI |
+        FLAG_MSAA_4X_HINT |
+        FLAG_WINDOW_UNDECORATED | 
+        FLAG_INTERLACED_HINT;
 
     if (opacity < 1.0f) raylib_flags &= FLAG_WINDOW_TRANSPARENT;
     if (0 < (flags & MUI_WINDOW_FULLSCREEN)) raylib_flags &= FLAG_FULLSCREEN_MODE;

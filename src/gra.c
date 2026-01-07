@@ -54,6 +54,8 @@ void _draw_grid(Mui_Rectangle plot_area, double x_min, double x_max, double y_mi
 // draw the grid and labels. Returns plot_area rectangle.
 Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step, Mui_Rectangle place) {
     
+    (void) y_label;
+
     float label_text_size = mui_protos_theme.label_text_size;
 
     // make space for label

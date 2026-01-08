@@ -71,7 +71,7 @@ Mui_Theme mui_protos_theme = {
     .textinput_text_size = 28.0f,
 
     .slider_thickness = 8.0f,
-    .slider_wagon_width = 16.0f,
+    .slider_wagon_width = 116.0f,
     .slider_wagon_height = 24.0f,
     .slider_wagon_corner_radius = 6.0f,
     .slider_wagon_border_thickness = 2.0f,

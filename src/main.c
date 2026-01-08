@@ -85,6 +85,7 @@ int main(int argc, char** argv) {
     Mui_Checkbox_State show_s21_checkbox_state = {0};
     Mui_Checkbox_State show_s12_checkbox_state = {0};
     Mui_Checkbox_State show_s22_checkbox_state = {0};
+    Mui_Checkbox_State show_Gopt_checkbox_state = {0};
     Mui_Slider_State slider_state = {0};
     Mui_Slider_State slider_state_2 = {0};
     //Mui_Textinput_Multiline_State textinput_ml_state = {0};
@@ -93,6 +94,7 @@ int main(int argc, char** argv) {
     show_s21_checkbox_state.checked = true;
     show_s12_checkbox_state.checked = true;
     show_s22_checkbox_state.checked = true;
+    show_Gopt_checkbox_state.checked = true;
     slider_state.value = 0.5f;
     slider_state_2.value = 0.5f;
 
@@ -142,7 +144,9 @@ int main(int argc, char** argv) {
             left = mui_cut_top(left, 50, &sg_r);
             sg_r = mui_shrink(sg_r, padding);
             mui_checkbox(&show_s22_checkbox_state, "Show S22", sg_r);
-
+            left = mui_cut_top(left, 50, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&show_Gopt_checkbox_state, "Show Gopt", sg_r);
 
             left = mui_shrink(left, padding);
             
@@ -211,13 +215,18 @@ int main(int argc, char** argv) {
             //
             // smith chart
             //
-
-            draw_smith_grid(r21, true, true, NULL, 0);
+            draw_smith_grid(r21, true, false, NULL, 0);
             Mui_Vector2 r21c = mui_center_of_rectangle(r21);
             for (int i = 0; i < 4; i++) {
                 if (mask[i]) {
                     gra_smith_plot_data(fs, z_params[i], length, min_f, max_f, colors[i], r21c, r21.height*0.49f);
+                    //printf("%s@200GHz = %f + %f * i\n, z = %f + %f * i\n",labels[i], s_params[i][length-1].r, s_params[i][length-1].i, z_params[i][length-1].r, z_params[i][length-1].i);
                 }
+            }
+
+            struct Complex *zGopt = infos.items[selected].zGopt.items;
+            if (show_Gopt_checkbox_state.checked) {
+                gra_smith_plot_data(fs, zGopt, infos.items[selected].zGopt.count, min_f, max_f, MUI_BROWN, r21c, r21.height*0.49f);
             }
 
 

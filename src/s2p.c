@@ -85,7 +85,9 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
         info->s12.count = 0;
         info->s21.count = 0;
         info->s22.count = 0;
-        info->noise.count = 0;
+        info->noise.Fmin.count = 0;
+        info->noise.GammaOpt.count = 0;
+        info->noise.Rn.count = 0;
         info->freq.count = 0;
 
         #define INITIAL_CAP 512
@@ -97,8 +99,14 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
         info->s12.capacity = INITIAL_CAP;
         info->s22.items = malloc(sizeof(*info->s22.items)*INITIAL_CAP);
         info->s22.capacity = INITIAL_CAP;
-        info->noise.items = malloc(sizeof(*info->noise.items)*INITIAL_CAP);
-        info->noise.capacity = INITIAL_CAP;
+
+        info->noise.Fmin.items = malloc(sizeof(*info->noise.Fmin.items)*INITIAL_CAP);
+        info->noise.Fmin.capacity = INITIAL_CAP;
+        info->noise.GammaOpt.items = malloc(sizeof(*info->noise.GammaOpt.items)*INITIAL_CAP);
+        info->noise.GammaOpt.capacity = INITIAL_CAP;
+        info->noise.Rn.items = malloc(sizeof(*info->noise.Rn.items)*INITIAL_CAP);
+        info->noise.Rn.capacity = INITIAL_CAP;
+
         info->freq.items = malloc(sizeof(*info->freq.items)*INITIAL_CAP);
         info->freq.capacity = INITIAL_CAP;
 
@@ -106,6 +114,7 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
         Nob_String_View content = { .data = info->file__content, .count = info->file__content_size};
 
         double freq_multiplier = 1.0;
+        info->R_ref = 50.0;
         S_Format format = FMT_RI;
 
         while (content.count > 0) {
@@ -114,15 +123,34 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
 
             char *line_cstr = nob_temp_sprintf("%.*s", (int)line.count, line.data);
 
-            // 1. Parse Option Line: # <Hz/kHz/MHz/GHz> <S/Y/Z/G/H> <DB/MA/RI> R <val>
+            // Rules for Version 1.0, Version 2.0, and Version 2.1 files:
+            // For 2-port files: # [Hz|kHz|MHz|GHz] [S|Y|Z|G|H] [DB|MA|RI] [R n]
             if (*line.data == '#') {
+
                 if (strstr(line_cstr, "GHz")) freq_multiplier = 1e9;
                 else if (strstr(line_cstr, "MHz")) freq_multiplier = 1e6;
                 else if (strstr(line_cstr, "KHz")) freq_multiplier = 1e3;
 
+                if (strstr(line_cstr, "Y "))       assert(false && "Y-parameters are not implemented in parsing yet.");
+                else if (strstr(line_cstr, "Z "))  assert(false && "Z-parameters are not implemented in parsing yet.");
+                else if (strstr(line_cstr, "G "))  assert(false && "G-parameters are not implemented in parsing yet.");
+                else if (strstr(line_cstr, "H "))  assert(false && "H-parameters are not implemented in parsing yet.");
+                
                 if (strstr(line_cstr, "MA"))      format = FMT_MA;
                 else if (strstr(line_cstr, "DB")) format = FMT_DB;
                 else if (strstr(line_cstr, "RI")) format = FMT_RI;
+
+                if (strstr(line_cstr, "R ")) {
+                    char* start_r = strstr(line_cstr, "R ");
+                    start_r += 2;
+                    int n = sscanf(start_r, "%lf", &info->R_ref);
+                    if (n != 1) {
+                        printf("WARNING: in parsing s2p file: R is not followed by valid value. \n");
+                        printf("    the line:%s\n", line_cstr);
+                        assert(false);
+                    }
+                }
+
                 continue;
             }
 
@@ -141,19 +169,18 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
             else if (scanned == 5) {
                 // Noise Data Line: Freq Fmin Gamma_Mag Gamma_Ang Rn
                 // Freq       Fmin(dB)  Mag(Gopt) Ang(Gopt) Rn/50
-                struct Noise_Data nd = {
-                    .Fmin = val[1],
-                    .GammaOptdB = val[2], // Usually stored as Mag/Ang, can be converted if needed
-                    .GammaOptAngle = val[3],
-                    .Rn = val[4]
-                };
-                nob_da_append(&info->noise, nd);
+                nob_da_append(&info->noise.Fmin, val[1]);
+                nob_da_append(&info->noise.GammaOpt, parse_complex(val[2], val[3], FMT_MA));
+                nob_da_append(&info->noise.Rn, val[4]);
             }
         }
 
         assert(info->s11.count == info->s12.count);
         assert(info->s11.count == info->s21.count);
         assert(info->s11.count == info->s22.count);
+
+        assert(info->noise.Fmin.count == info->noise.GammaOpt.count);
+        assert(info->noise.Fmin.count == info->noise.Rn.count);
 
         uti_temp_reset();
         nob_temp_reset();
@@ -164,11 +191,11 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
     if (calc_z) {
         for (size_t i = 0; i < infos->count; ++i) {
             struct S2P_Info *info = &infos->items[i];
-            info->z11.count = 0;
-            info->z12.count = 0;
-            info->z21.count = 0;
-            info->z22.count = 0;
             size_t n = info->s11.count;
+            info->z11.count = n;
+            info->z12.count = n;
+            info->z21.count = n;
+            info->z22.count = n;
             info->z11.items = malloc(sizeof(*info->z11.items)*n);
             info->z11.capacity = n;
             info->z21.items = malloc(sizeof(*info->z21.items)*n);
@@ -192,6 +219,16 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
                 info->z12.items[j].r *= 2; info->z12.items[j].i *= 2;
                 info->z21.items[j] = mma_complex_divide_or_zero(info->s21.items[j], delta_s);
                 info->z21.items[j].r *= 2; info->z21.items[j].i *= 2;
+
+            }
+
+            info->zGopt.count = info->noise.Fmin.count;
+            info->zGopt.items = malloc(sizeof(*info->zGopt.items)*info->noise.Fmin.count);
+            info->zGopt.capacity = info->noise.Fmin.count;
+            for (size_t j = 0; j < info->noise.Fmin.count; j++) {
+                struct Complex one_m_G = {1 - info->noise.GammaOpt.items[j].r, -info->noise.GammaOpt.items[j].i};
+                struct Complex one_p_G = {1 + info->noise.GammaOpt.items[j].r,  info->noise.GammaOpt.items[j].i};
+                info->zGopt.items[j] = mma_complex_divide_or_zero(one_p_G, one_m_G);
             }
         }
     }

@@ -12,8 +12,8 @@ Mui_Color _color_border_smith() {return mui_protos_theme.border_color;}
 Mui_Color _color_text_smith() {return mui_protos_theme.text_color;}
 
 
-#define N_DEFAULT_REACTANCES 11
-static double const_reactances[N_DEFAULT_REACTANCES] = {0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50};
+#define N_DEFAULT_REACTANCES 6
+static double const_reactances[N_DEFAULT_REACTANCES] = { 0.1, 0.2, 0.5, 1, 2, 5};
 
 void draw_smith_grid(Mui_Rectangle plot_area, bool plot_reactance_circles, bool plot_admittance_circles, double *custom_cicles, size_t n_custom_circles) {
 

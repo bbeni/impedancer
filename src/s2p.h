@@ -3,12 +3,7 @@
 
 #include "stddef.h"
 #include "stdbool.h"
-
-struct Complex {
-    double r;
-    double i;
-};
-
+#include "mma.h"
 
 struct Double_Array {
     double *items;

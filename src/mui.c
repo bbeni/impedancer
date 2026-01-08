@@ -223,7 +223,14 @@ static float window_x_hover_t = 0;
 static float window_maximizer_hover_t = 0;
 static float window_minimizer_hover_t = 0;
 static float last_time = 0;
-Mui_Rectangle mui_window_decoration(float height, bool window_movable, bool closeable, bool minimizable, bool maximizable, bool to_the_right, Mui_Rectangle window_rect) {
+Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, bool minimizable, bool maximizable, bool to_the_right, Mui_Rectangle window_rect) {
+
+    (void) movable;
+    (void) closeable;
+    (void) minimizable;
+    (void) maximizable;
+    (void) to_the_right;    
+    
 
     float w_to_h_ratio = 4.71f;
     float w_component = w_to_h_ratio * height / 3;
@@ -573,12 +580,12 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
 
         if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
             if (state->cursor != 0) state->cursor--;
-            printf("cursor %lld\n", state->cursor);
+            printf("cursor %ld\n", state->cursor);
         }
 
         if (mui_is_key_pressed(MUI_KEY_RIGHT) || mui_is_key_pressed_repeat(MUI_KEY_RIGHT)) {
             if (state->cursor < state->buffer.count-1) state->cursor++;
-            printf("cursor %lld\n", state->cursor);
+            printf("cursor %ld\n", state->cursor);
         }
 
         if (mui_is_key_pressed(MUI_KEY_BACKSPACE) || mui_is_key_pressed_repeat(MUI_KEY_BACKSPACE)) {

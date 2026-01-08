@@ -1,10 +1,11 @@
+#define _GNU_SOURCE
+#include <string.h>
 #include "uti.h"
 #include "stdio.h"
-#include "stdlib.h"
-#include "stdint.h"
-#include "string.h"
-#include "errno.h"
-#include "assert.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <errno.h>
+#include <assert.h>
 
 
 #ifdef _WIN32
@@ -68,29 +69,26 @@ bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_
     char** childs = malloc( sizeof(char *) * CHILDREN_COUNT_INITIAL);
     childs[0] = data;
 
-    size_t data_count = 0;
     size_t data_capacity = CHILDREN_DATA_SIZE_INITIAL;
-
-    size_t childs_count = 0;
     size_t childs_capacity = CHILDREN_COUNT_INITIAL;
+    size_t child_index = 0;
 
-    size_t i = 0;
     struct dirent* entry = NULL;
-	while (entry = readdir(d)) {
+	while ((entry = readdir(d)) != NULL) {
         // check for enough space
         size_t new_length = strlen(entry->d_name);
-        size_t new_size = childs[i] - childs[0] + new_length + 1;
+        size_t new_size = childs[child_index] - childs[0] + new_length + 1;
         if (new_size >= data_capacity) {
-            printf("ERROR: space (%d > %d) exeeded inital capacity of %d Mbytes in %s:%d.\nIncrease CHILDREN_DATA_SIZE_INITIAL and recomplile\n", new_size, data_capacity, CHILDREN_DATA_SIZE_INITIAL / (1024 * 1024), __FILE__, __LINE__);
+            printf("ERROR: space (%ld > %ld) exeeded inital capacity of %d Mbytes in %s:%d.\nIncrease CHILDREN_DATA_SIZE_INITIAL and recomplile\n", new_size, data_capacity, CHILDREN_DATA_SIZE_INITIAL / (1024 * 1024), __FILE__, __LINE__);
             exit(1);
         }
 
-        char* p = mempcpy(childs[i], entry->d_name, new_length);
+        char* p = mempcpy(childs[child_index], entry->d_name, new_length);
         *p = '\0';
-        i++;
+        child_index++;
         
         // check for enough space and double if needed
-        if (i >= childs_capacity) {
+        if (child_index >= childs_capacity) {
             childs_capacity *= 2;
             childs = realloc(childs, sizeof(char *) * childs_capacity);
             if (childs == NULL) {
@@ -99,12 +97,12 @@ bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_
             }
         }
         
-        childs[i] = p + 1;
+        childs[child_index] = p + 1;
     }
     closedir(d);
 
     *children = childs;
-    *children_count = i;
+    *children_count = child_index;
 
     return true;
 

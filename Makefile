@@ -2,11 +2,13 @@
 ifeq ($(OS),Windows_NT)
     PLATFORM := WINDOWS
 	RAYLIB_PATH := src/thirdparty/raylib-5.5
+	STATIC_LIBS :=
 	LDFLAGS_PLATFORM := -lopengl32 -lgdi32 -lwinmm -Wl,-subsystem,console -lShlwapi
 else
     PLATFORM := LINUX
 	RAYLIB_PATH := src/thirdparty/raylib-5.5-linux
-	LDFLAGS_PLATFORM := -lGL -lm -lpthread -ldl -lrt -lX11
+	STATIC_LIBS := $(RAYLIB_PATH)/lib/libraylib.a
+	LDFLAGS_PLATFORM := -lGL -lm -lpthread -ldl -lrt -lX11 
 endif
 
 THIRDPARTY_PATH := src/thirdparty
@@ -15,8 +17,7 @@ THIRDPARTY_PATH := src/thirdparty
 CC := gcc
 LD := gcc
 CFLAGS := -Wall -Wextra -Iinclude -I$(RAYLIB_PATH)/include -I$(THIRDPARTY_PATH) -ggdb
-LDFLAGS := -L$(RAYLIB_PATH)/lib -lraylib $(LDFLAGS_PLATFORM)
-
+LDFLAGS := $(STATIC_LIBS) -L$(RAYLIB_PATH)/lib -lraylib $(LDFLAGS_PLATFORM)
 
 # Directories
 SRC_DIR := src

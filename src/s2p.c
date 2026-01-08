@@ -42,7 +42,7 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
 
         struct S2P_Info * info = &infos->items[infos->count++];
 
-        sprintf(info->full_path, "%s\\%s", dir, file_names[i]);
+        sprintf(info->full_path, "%s/%s", dir, file_names[i]);
         sprintf(info->file_name, "%s", file_names[i]);
 
         if (!read_entire_file(info->full_path, &info->file__content, &info->file__content_size)) {
@@ -57,7 +57,7 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
         return 1;
     }
 
-    printf("INFO: read %d possible s2p files of %d entries in directory %s\n", infos->count, i, dir);
+    printf("INFO: read %ld possible s2p files of %ld entries in directory %s\n", infos->count, i, dir);
     return 0;
 }
 

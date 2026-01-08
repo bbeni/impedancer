@@ -3,7 +3,6 @@
 //
 
 #include "gra.h"
-#include "mma.h"
 #include "string.h"
 
 Mui_Color _color_bg() {return mui_protos_theme.background_color;}

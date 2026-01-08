@@ -29,15 +29,20 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
     infos->items = malloc(sizeof(infos->items[0])*infos->capacity);
     memset(infos->items, 0xCD, sizeof(infos->items[0])*infos->capacity);
 
-    for (size_t i = 0; i < file_names_count; i++) {       
-        if (strlen(file_names[i]) < 4 || strcmp(file_names[i], ".") == 0 || strcmp(file_names[i], "..") == 0)
+    size_t i = 0;
+    for ( ;i < file_names_count; i++) {
+        if (strlen(file_names[i]) < 4 || strcmp(file_names[i], ".") == 0 || strcmp(file_names[i], "..") == 0){
+            printf("x -> %s\n", file_names[i]);
             continue;
-        if (strncmp(file_names[i] + strlen(file_names[i]) - strlen(suffix), suffix, strlen(suffix)) != 0)
+        }
+        if (strncmp(file_names[i] + strlen(file_names[i]) - strlen(suffix), suffix, strlen(suffix)) != 0){
+            printf("x -> %s\n", file_names[i]);
             continue;
+        }
 
         struct S2P_Info * info = &infos->items[infos->count++];
-        
-        sprintf(info->full_path, "%s%s", dir, file_names[i]);
+
+        sprintf(info->full_path, "%s\\%s", dir, file_names[i]);
         sprintf(info->file_name, "%s", file_names[i]);
 
         if (!read_entire_file(info->full_path, &info->file__content, &info->file__content_size)) {
@@ -45,7 +50,6 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
             exit(3);
             continue;
         }
-        printf("INFO: read file %s\n", info->full_path);
     }
 
     if (infos->count == 0) {
@@ -53,6 +57,7 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
         return 1;
     }
 
+    printf("INFO: read %d possible s2p files of %d entries in directory %s\n", infos->count, i, dir);
     return 0;
 }
 

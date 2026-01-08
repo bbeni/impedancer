@@ -1,7 +1,6 @@
 /*
 MIT License
 Copyright (c) 2019 win32ports
-Copyright (c) 2026 bbenif@gmail.com
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -19,22 +18,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#pragma once
+
 #ifndef __DIRENT_H_9DE6B42C_8D0C_4D31_A8EF_8E4C30E6C46A__
 #define __DIRENT_H_9DE6B42C_8D0C_4D31_A8EF_8E4C30E6C46A__
 
-#ifdef _WIN32
+#ifndef _WIN32
 
-#include "sys/types.h"
-#include "stdint.h"
-#include "errno.h"
-#include "stdlib.h"
+#pragma message("this dirent.h implementation is for Windows only!")
 
-#define WIN32_LEAN_AND_MEAN
+#else /* _WIN32 */
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+#include <sys/types.h>
+#include <stdint.h>
+#include <errno.h>
+
 #include <windows.h>
-#include <direct.h>
-#include <shellapi.h>
+
 #include <shlwapi.h>
-#include <winuser.h>
+
+#ifdef _MSC_VER
+#pragma comment(lib, "Shlwapi.lib")
+#endif
 
 #ifndef NAME_MAX
 #define NAME_MAX 260
@@ -208,7 +217,7 @@ static __ino_t __inode(const wchar_t* name)
 	if (!hKernel32)
 		return value;
 
-	pfnGetFileInformationByHandleEx fnGetFileInformationByHandleEx = (pfnGetFileInformationByHandleEx) GetProcAddress((HMODULE)hKernel32, "GetFileInformationByHandleEx");
+	pfnGetFileInformationByHandleEx fnGetFileInformationByHandleEx = (pfnGetFileInformationByHandleEx) GetProcAddress(hKernel32, "GetFileInformationByHandleEx");
 	if (!fnGetFileInformationByHandleEx)
 		return value;
 
@@ -277,7 +286,7 @@ static DIR* __internal_opendir(wchar_t* wname, int size)
 	data->entries = (struct dirent*) malloc(sizeof(struct dirent) * data->count);
 	if (!data->entries)
 		goto out_of_memory;
-	buffer = (char*)malloc(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+	buffer = malloc(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
 	if (!buffer)
 		goto out_of_memory;
 	do
@@ -333,7 +342,7 @@ out_of_memory:
 
 static wchar_t* __get_buffer()
 {
-	wchar_t* name = (wchar_t*)malloc(sizeof(wchar_t) * (NTFS_MAX_PATH + NAME_MAX + 8));
+	wchar_t* name = malloc(sizeof(wchar_t) * (NTFS_MAX_PATH + NAME_MAX + 8));
 	if (name)
 		memcpy(name, L"\\\\?\\", sizeof(wchar_t) * 4);
 	return name;
@@ -396,7 +405,7 @@ static DIR* fdopendir(intptr_t fd)
 		return NULL;
 	}
 
-	pfnGetFinalPathNameByHandleW fnGetFinalPathNameByHandleW = (pfnGetFinalPathNameByHandleW) GetProcAddress((HMODULE)hKernel32, "GetFinalPathNameByHandleW");
+	pfnGetFinalPathNameByHandleW fnGetFinalPathNameByHandleW = (pfnGetFinalPathNameByHandleW) GetProcAddress(hKernel32, "GetFinalPathNameByHandleW");
 	if (!fnGetFinalPathNameByHandleW)
 	{
 		errno = EINVAL;
@@ -485,10 +494,9 @@ static intptr_t dirfd(DIR * dirp)
 	return ((struct __dir*)dirp)->fd;
 }
 
-/* TODO: fix me
 static int scandir(const char* dirp, struct dirent*** namelist,
 	int (*filter)(const struct dirent*),
-	int (*compar)(const struct dirent**, const struct dirent**))
+	int (*compar)(const void*, const void *))
 {
 	struct dirent ** entries = NULL, ** tmp_entries = NULL;
 	long int i = 0, index = 0, count = 16;
@@ -544,7 +552,7 @@ static int scandir(const char* dirp, struct dirent*** namelist,
 		*namelist = entries;
 	closedir(d);
 	return index;
-}*/
+}
 
 static int alphasort(const void* a, const void* b)
 {
@@ -567,6 +575,9 @@ static int versionsort(const void* a, const void* b)
 	return __strverscmp((*dira)->d_name, (*dirb)->d_name);
 }
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* _WIN32 */
 

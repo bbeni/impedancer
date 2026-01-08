@@ -55,95 +55,63 @@ error:
 
 
 bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_count) {
-    DIR *dir = NULL;
-    struct dirent *ent = NULL;
-
-#define _ENTRY_MEMORY_BLOCK_BASE 4092
-#define _ENTRY_COUNT_BASE_MULT 2
-
-    // stores pointers to mem_block string starts
-    char** c_array = NULL;
-    size_t c_size = 0;
-    size_t dir_count = 0;
-
-    // stores literal characters
-    char* mem_block = NULL;
-    size_t size = 0;
-    size_t filled_so_far = 0;
-
-    dir = opendir(parent_dir);
-    if (dir == NULL) {
-        #ifdef _WIN32
-        printf("ERROR: Could not open directory %s: %s\n", parent_dir, "TODO: win error msg"/*nob_win32_error_message(GetLastError())*/);
-        #else
+    DIR* d;
+	d = opendir(parent_dir);
+	if (!d) {
         printf("ERROR: Could not open directory %s: %s\n", parent_dir, strerror(errno));
-        #endif // _WIN32
-        goto error;
+        return false;
     }
+    
+    #define CHILDREN_DATA_SIZE_INITIAL 4096*4096*8
+    #define CHILDREN_COUNT_INITIAL 8
+    char* data = malloc( sizeof(char) * CHILDREN_DATA_SIZE_INITIAL);
+    char** childs = malloc( sizeof(char *) * CHILDREN_COUNT_INITIAL);
+    childs[0] = data;
 
+    size_t data_count = 0;
+    size_t data_capacity = CHILDREN_DATA_SIZE_INITIAL;
 
-    errno = 0;
-    ent = readdir(dir);
+    size_t childs_count = 0;
+    size_t childs_capacity = CHILDREN_COUNT_INITIAL;
 
-    while (ent != NULL) {
-        size_t dir_length = strlen(ent->d_name);
-        if (dir_length == 0) {
-            ent = readdir(dir);
-            continue;
+    size_t i = 0;
+    struct dirent* entry = NULL;
+	while (entry = readdir(d)) {
+        // check for enough space
+        size_t new_length = strlen(entry->d_name);
+        size_t new_size = childs[i] - childs[0] + new_length + 1;
+        if (new_size >= data_capacity) {
+            printf("ERROR: space (%d > %d) exeeded inital capacity of %d Mbytes in %s:%d.\nIncrease CHILDREN_DATA_SIZE_INITIAL and recomplile\n", new_size, data_capacity, CHILDREN_DATA_SIZE_INITIAL / (1024 * 1024), __FILE__, __LINE__);
+            exit(1);
         }
 
-        // realloc madness
-        while (filled_so_far + dir_length + 1 > size) {
-            size = size + _ENTRY_MEMORY_BLOCK_BASE;
-            char* new_mem_block = realloc(mem_block, size);
-            if (new_mem_block == NULL) {
+        char* p = mempcpy(childs[i], entry->d_name, new_length);
+        *p = '\0';
+        i++;
+        
+        // check for enough space and double if needed
+        if (i >= childs_capacity) {
+            childs_capacity *= 2;
+            childs = realloc(childs, sizeof(char *) * childs_capacity);
+            if (childs == NULL) {
                 printf("ERROR: realloc failed in %s:%d\n", __FILE__, __LINE__);
                 goto error;
             }
-            mem_block = new_mem_block;
         }
-        strcpy(&mem_block[filled_so_far], ent->d_name);
-
-        // realloc madness
-        if (dir_count + 1 > c_size) {
-            if (c_size == 0) c_size = _ENTRY_COUNT_BASE_MULT;
-            else c_size *= _ENTRY_COUNT_BASE_MULT;
-            char** new_c_array = realloc(c_array, c_size*sizeof(char*));
-            if (new_c_array == NULL) {
-                printf("ERROR: realloc failed in %s:%d\n", __FILE__, __LINE__);
-                goto error;
-            }
-            c_array = new_c_array;
-        }
-
-        c_array[dir_count] = &mem_block[filled_so_far];
-
-        dir_count++;
-        filled_so_far += dir_length + 1;
-
-        ent = readdir(dir);
+        
+        childs[i] = p + 1;
     }
+    closedir(d);
 
-    if (errno != 0) {
-        #ifdef _WIN32
-        printf("ERROR: Could not read directory %s: %s\n", parent_dir, "TODO: win error msg"/*nob_win32_error_message(GetLastError())*/);
-        #else
-        printf("ERROR: Could not read directory %s: %s\n", parent_dir, strerror(errno));
-        #endif // _WIN32
-        goto error;
-    }
+    *children = childs;
+    *children_count = i;
 
-    // set the output if all is well
-    *children_count = dir_count;
-    *children = c_array;
-
-    closedir(dir);
     return true;
 
 error:
-    if (dir) closedir(dir);
-    if (c_array) free(c_array);
-    if (mem_block) free(mem_block);
+    if (d) closedir(d);
+    if (data) free(data);
+    if (childs) free(childs);
     return false;
 }
 

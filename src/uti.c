@@ -26,7 +26,7 @@ bool read_entire_file(const char *path, char** content, size_t* out_size) {
 #else
     length = _ftelli64(file);
 #endif
-    
+
     if (length < 0) goto error;
     if (fseek(file, 0, SEEK_SET) < 0) goto error;
 
@@ -62,7 +62,7 @@ bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_
         printf("ERROR: Could not open directory %s: %s\n", parent_dir, strerror(errno));
         return false;
     }
-    
+
     #define CHILDREN_DATA_SIZE_INITIAL 4096*4096*8
     #define CHILDREN_COUNT_INITIAL 8
     char* data = malloc( sizeof(char) * CHILDREN_DATA_SIZE_INITIAL);
@@ -86,7 +86,7 @@ bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_
         char* p = mempcpy(childs[child_index], entry->d_name, new_length);
         *p = '\0';
         child_index++;
-        
+
         // check for enough space and double if needed
         if (child_index >= childs_capacity) {
             childs_capacity *= 2;
@@ -96,7 +96,7 @@ bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_
                 goto error;
             }
         }
-        
+
         childs[child_index] = p + 1;
     }
     closedir(d);

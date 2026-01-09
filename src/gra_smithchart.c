@@ -6,7 +6,6 @@
 #include "string.h"
 
 
-
 Mui_Color _color_bg_smith() {return mui_protos_theme.background_color;}
 Mui_Color _color_border_smith() {return mui_protos_theme.border_color;}
 Mui_Color _color_text_smith() {return mui_protos_theme.text_color;}
@@ -15,8 +14,8 @@ Mui_Color _color_text_smith() {return mui_protos_theme.text_color;}
 #define N_DEFAULT_REACTANCES 6
 static double const_reactances[N_DEFAULT_REACTANCES] = { 0.1, 0.2, 0.5, 1, 2, 5};
 
-void draw_smith_grid(Mui_Rectangle plot_area, bool plot_reactance_circles, bool plot_admittance_circles, double *custom_cicles, size_t n_custom_circles) {
-
+void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, double *custom_cicles, size_t n_custom_circles, Mui_Rectangle plot_area)
+{
     Mui_Vector2 center = mui_center_of_rectangle(plot_area);
     float r_outer = fmin(plot_area.height, plot_area.width) * 0.49f;
 
@@ -34,7 +33,7 @@ void draw_smith_grid(Mui_Rectangle plot_area, bool plot_reactance_circles, bool 
             float x = const_reactances[i];
             float left_crossing = (x - 1) / (x + 1);
             float c1_x = (1 - left_crossing) * 0.5f;
-            float r1_plot = (1-c1_x) * r_outer; 
+            float r1_plot = (1-c1_x) * r_outer;
             Mui_Vector2 c1_plot = {center.x + c1_x*r_outer, center.y + 0};
             mui_draw_arc_lines(c1_plot, r1_plot, 0, 360,  _color_bg_smith(), 1.0f);
         }
@@ -45,7 +44,7 @@ void draw_smith_grid(Mui_Rectangle plot_area, bool plot_reactance_circles, bool 
             float x = const_reactances[i];
             float left_crossing = (x - 1) / (x + 1);
             float c1_x = (1 - left_crossing) * 0.5f;
-            float r1_plot = (1-c1_x) * r_outer; 
+            float r1_plot = (1-c1_x) * r_outer;
             Mui_Vector2 c1_plot = {center.x - c1_x*r_outer, center.y + 0};
             mui_draw_arc_lines(c1_plot, r1_plot, 0, 360,  _color_bg_smith(), 1.0f);
         }
@@ -66,18 +65,20 @@ void draw_smith_grid(Mui_Rectangle plot_area, bool plot_reactance_circles, bool 
 
 
 void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_length,
-                 double f_min, double f_max, Mui_Color color, Mui_Vector2 smith_center, float smith_radius)
+                 double f_min, double f_max, Mui_Color color, Mui_Vector2 smith_center, Mui_Rectangle plot_area)
 {
+    float r_outer = fmin(plot_area.height, plot_area.width) * 0.49f;
+
     for (size_t i = 0; i < data_length; i++) {
         double f = f_data[i];
         double q = (z_data[i].r+1)*(z_data[i].r+1) + z_data[i].i*z_data[i].i;
         double x = ((z_data[i].r+1)*(z_data[i].r-1) + z_data[i].i*z_data[i].i) / q;
         double y = 2*z_data[i].i/q;
-         
+
         if (f >= f_min && f <= f_max){
             Mui_Vector2 screen_coords = {
-                smith_center.x + x * smith_radius,
-                smith_center.y - y * smith_radius
+                smith_center.x + x * r_outer,
+                smith_center.y - y * r_outer
             };
             mui_draw_circle(screen_coords, 3.0f, color);
         }

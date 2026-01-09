@@ -4,6 +4,8 @@
 #include "math.h"
 #include "stdbool.h"
 #include "stdlib.h"
+#include "string.h"
+
 
 #include "mui.h"
 #include "gra.h"
@@ -60,7 +62,7 @@ void draw_graph(struct S2P_Info info, int posx, int posy, int width, int height,
 }
 
 int main(int argc, char** argv) {
-    
+
     char* prog_name = next(&argc, &argv);
 
     if (argc == 0) {
@@ -79,6 +81,8 @@ int main(int argc, char** argv) {
     h = 1100;
 
     mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED | MUI_WINDOW_MAXIMIZED, NULL);
+    mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme);
+
 
     size_t selected = 0;
     Mui_Checkbox_State show_s11_checkbox_state = {0};
@@ -88,7 +92,7 @@ int main(int argc, char** argv) {
     Mui_Checkbox_State show_Gopt_checkbox_state = {0};
     Mui_Slider_State slider_state = {0};
     Mui_Slider_State slider_state_2 = {0};
-    //Mui_Textinput_Multiline_State textinput_ml_state = {0};
+    Mui_Textinput_Multiline_State textinput_ml_state = {0};
 
     show_s11_checkbox_state.checked = true;
     show_s21_checkbox_state.checked = true;
@@ -98,9 +102,47 @@ int main(int argc, char** argv) {
     slider_state.value = 0.5f;
     slider_state_2.value = 0.5f;
 
-    mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme);
+    // text selection
+    size_t selector_start = 0;
+    size_t selector_end = 0;
+
+    #define SELECTABLE_TEXT_LENGTH 8*4096
+    char selectable_text[SELECTABLE_TEXT_LENGTH];
+    char* selectable_text_fmt =
+        "impedances z = Z/Z_0 at %f Hz\n"
+        "\n"
+        "z%s      = %.5f + j * %.5f\n"
+        "z%s      = %.5f + j * %.5f\n"
+        "z%s      = %.5f + j * %.5f\n"
+        "z%s      = %.5f + j * %.5f\n"
+        "z%s   = %.5f + j * %.5f\n"
+        "\n"
+        "Z%s      = (%.0f + j * %.0f) Ohm\n"
+        "Z%s      = (%.0f + j * %.0f) Ohm\n"
+        "Z%s      = (%.0f + j * %.0f) Ohm\n"
+        "Z%s      = (%.0f + j * %.0f) Ohm\n"
+        "Z%s   = (%.0f + j * %.0f) Ohm\n";
+
+    // data to load
+    size_t length;
+    double *fs;
+    struct Complex *s_params[4];
+    struct Complex *z_params[4];
+    // static data
+    Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
+    char* labels[4] = {"dB(S11)", "dB(S21)", "dB(S12)", "dB(S22)"};
+    char* labels_index[4] = {"11", "21", "12", "22"};
+    // ui data
+    bool mask[4];
+    double min_y = slider_state_2.value * (-30);
+    double max_y = slider_state_2.value * 60;
+    double step_y = 5;
+    double min_f = 0;
+    double max_f = slider_state.value * 2e11;
+    double step_f = 2e9;
 
 
+    bool first_frame = true;
     while (!mui_window_should_close())
     {
         mui_update_core();
@@ -108,6 +150,10 @@ int main(int argc, char** argv) {
         w = mui_screen_width();
         h = mui_screen_height();
 
+        //
+        // input handling
+        //
+        size_t selected_before = selected;
         if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN)) {
             selected = (selected + 1) % infos.count;
         }
@@ -116,6 +162,37 @@ int main(int argc, char** argv) {
             selected = (selected - 1) % infos.count;
         }
 
+        if (mui_is_key_down(MUI_KEY_LEFT_CONTROL) || mui_is_key_down(MUI_KEY_RIGHT_CONTROL)) {
+            if (mui_is_key_pressed(MUI_KEY_C)) {
+                if (selector_start < selector_end) {
+                    char* temp_str = uti_temp_strndup(&selectable_text[selector_start], selector_end - selector_start);
+                    mui_set_clipboard_text(temp_str);
+                }
+            }
+        }
+
+
+        //
+        // data loading
+        //
+        if (selected != selected_before || first_frame) {
+            length = infos.items[selected].freq.count;
+            fs = infos.items[selected].freq.items;
+            s_params[0] = infos.items[selected].s11.items;
+            s_params[1] = infos.items[selected].s21.items;
+            s_params[2] = infos.items[selected].s12.items;
+            s_params[3] = infos.items[selected].s22.items;
+            z_params[0] = infos.items[selected].z11.items;
+            z_params[1] = infos.items[selected].z21.items;
+            z_params[2] = infos.items[selected].z12.items;
+            z_params[3] = infos.items[selected].z22.items;
+
+        }
+
+
+        //
+        // drawing
+        //
         mui_begin_drawing();
             mui_clear_background(mui_protos_theme.global_background_color, NULL);
 
@@ -149,29 +226,17 @@ int main(int argc, char** argv) {
             mui_checkbox(&show_Gopt_checkbox_state, "Show Gopt", sg_r);
 
             left = mui_shrink(left, padding);
-            
-            
-            /*
-            if (selected_before != selected){
-                char* text = nob_temp_sprintf("%s\n===========================\n%.*s\n",infos.items[selected].file_name, infos.items[selected].file_content.count, infos.items[selected].file_content.items);
-                size_t size = strlen(text)+1;
-                nob_da_resize(&textinput_ml_state.buffer, size);
-                memcpy(textinput_ml_state.buffer.items, text, size);
-            }
-
-            mui_textinput_multiline(&textinput_ml_state, "Hint...", left); */
 
             // plot views
-            //right = mui_shrink(right, padding);
+            right = mui_shrink(right, padding);
 
             // 4 plot windows.
             Mui_Rectangle r11, r12, r21, r22;
-            mui_grid_22(right, 0.5f, 0.5f, &r11, &r12, &r21, &r22);
+            mui_grid_22(right, 0.667f, 0.5f, &r11, &r12, &r21, &r22);
             r11 = mui_shrink(r11, padding);
             r12 = mui_shrink(r12, padding);
             r21 = mui_shrink(r21, padding);
             r22 = mui_shrink(r22, padding);
-
 
             Mui_Rectangle slider_rect;
             r11 = mui_cut_top(r11, 50, &slider_rect);
@@ -186,52 +251,84 @@ int main(int argc, char** argv) {
             slider_rect2 = mui_shrink(slider_rect2, padding);
             mui_simple_slider(&slider_state_2, true, slider_rect2);
 
-            double min_y = slider_state_2.value * (-30);
-            double max_y = slider_state_2.value * 60;
-            double step_y = 5;
-            double min_f = 0;
-            double max_f = slider_state.value * 2e11;
-            double step_f = 2e9;
 
-            size_t length = infos.items[selected].freq.count;
-            double *fs = infos.items[selected].freq.items;
-            struct Complex *s_params[4] = {infos.items[selected].s11.items, infos.items[selected].s21.items, infos.items[selected].s12.items, infos.items[selected].s22.items};
-            struct Complex *z_params[4] = {infos.items[selected].z11.items, infos.items[selected].z21.items, infos.items[selected].z12.items, infos.items[selected].z22.items};
-            Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
-            char* labels[4] = {"dB(S11)", "dB(S21)", "dB(S12)", "dB(S22)"};
-            bool mask[4] = {show_s11_checkbox_state.checked, show_s21_checkbox_state.checked, show_s12_checkbox_state.checked, show_s22_checkbox_state.checked};
+            mask[0] = show_s11_checkbox_state.checked;
+            mask[1] = show_s21_checkbox_state.checked;
+            mask[2] = show_s12_checkbox_state.checked;
+            mask[3] = show_s22_checkbox_state.checked;
+            min_y = slider_state_2.value * (-30);
+            max_y = slider_state_2.value * 60;
+            step_y = 10;
+            min_f = 0;
+            max_f = slider_state.value * 2e11;
+            step_f = 2e9;
 
-            
             Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid("frequency [Hz]", "mag(S11)", min_f, max_f, min_y, max_y, step_f, step_y, r11);
-
             for (int i = 0; i < 4; i++) {
                 if (mask[i]) {
                     gra_xy_plot_data(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, colors[i], plot_area);
                 }
             }
-
             gra_xy_legend(labels, colors, mask, 4, plot_area);
 
             //
             // smith chart
             //
-            draw_smith_grid(r21, true, false, NULL, 0);
+            draw_smith_grid(true, true, NULL, 0, r21);
             Mui_Vector2 r21c = mui_center_of_rectangle(r21);
             for (int i = 0; i < 4; i++) {
                 if (mask[i]) {
-                    gra_smith_plot_data(fs, z_params[i], length, min_f, max_f, colors[i], r21c, r21.height*0.49f);
+                    gra_smith_plot_data(fs, z_params[i], length, min_f, max_f, colors[i], r21c, r21);
                     //printf("%s@200GHz = %f + %f * i\n, z = %f + %f * i\n",labels[i], s_params[i][length-1].r, s_params[i][length-1].i, z_params[i][length-1].r, z_params[i][length-1].i);
                 }
             }
 
             struct Complex *zGopt = infos.items[selected].zGopt.items;
             if (show_Gopt_checkbox_state.checked) {
-                gra_smith_plot_data(fs, zGopt, infos.items[selected].zGopt.count, min_f, max_f, MUI_BROWN, r21c, r21.height*0.49f);
+                gra_smith_plot_data(fs, zGopt, infos.items[selected].zGopt.count, min_f, max_f, MUI_BROWN, r21c, r21);
             }
 
+            //
+            // Text data view
+            //
+            if (selected_before != selected || first_frame) {
+                size_t i = 0;
+                double Z0 = infos.items[selected].R_ref;
+                snprintf(selectable_text, SELECTABLE_TEXT_LENGTH, selectable_text_fmt,
+                    fs[i],
+                    labels_index[0], z_params[0][i].r, z_params[0][i].i,
+                    labels_index[1], z_params[1][i].r, z_params[1][i].i,
+                    labels_index[2], z_params[2][i].r, z_params[2][i].i,
+                    labels_index[3], z_params[3][i].r, z_params[3][i].i,
+                    "Gopt",          zGopt[i].r, zGopt[i].i,
+                    labels_index[0], z_params[0][i].r * Z0, z_params[0][i].i * Z0,
+                    labels_index[1], z_params[1][i].r * Z0, z_params[1][i].i * Z0,
+                    labels_index[2], z_params[2][i].r * Z0, z_params[2][i].i * Z0,
+                    labels_index[3], z_params[3][i].r * Z0, z_params[3][i].i * Z0,
+                    "Gopt",          zGopt[i].r * Z0, zGopt[i].i * Z0
+                );
+            }
+
+            mui_text_selectable(selectable_text, &selector_start, &selector_end, r22);
+
+            /*//
+            // Text data view
+            //
+            if (selected_before != selected) {
+                char* text = infos.items[selected].file__content;
+                size_t size =infos.items[selected].file__content_size;
+                // it is already null terminated
+                textinput_ml_state.buffer.items = realloc(textinput_ml_state.buffer.items, size);
+                textinput_ml_state.buffer.count = size;
+                memcpy(textinput_ml_state.buffer.items, text, size);
+            }
+
+            mui_textinput_multiline(&textinput_ml_state, "Hint...", r22);
+            */
 
         mui_end_drawing();
         uti_temp_reset();
+        first_frame = false;
     }
 
     mui_close_window();

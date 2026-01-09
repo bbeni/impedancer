@@ -17,7 +17,7 @@ uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float o
         assert(false && "not implemented icon in mui_open_window()");
     }
 
-    ConfigFlags raylib_flags = 
+    ConfigFlags raylib_flags =
         FLAG_VSYNC_HINT |
         //FLAG_WINDOW_HIGHDPI |
         FLAG_MSAA_4X_HINT |
@@ -63,6 +63,7 @@ void mui_window_set_position(int x, int y)          {SetWindowPosition(x, y);}
 void mui_window_set_size(int width, int height)     {SetWindowSize(width, height);}
 void mui_set_clipboard_text(char* text) {SetClipboardText(text);}
 const char* mui_clipboard_text()        {return GetClipboardText();}
+void mui_set_mouse_cursor(MUI_MOUSE_CURSOR_TYPES type) { SetMouseCursor(type);};
 
 void mui_clear_background(Mui_Color color, Mui_Image* image) {
     ClearBackground((Color){.a=color.a, .r=color.r, .g=color.g, .b=color.b});
@@ -80,6 +81,8 @@ Mui_Vector2 mui_get_mouse_position_now() {
 }
 
 
+bool mui_is_key_down(Mui_Keyboard_Key key)           {return IsKeyDown(key);}
+bool mui_is_key_up(Mui_Keyboard_Key key)             {return IsKeyUp(key);}
 bool mui_is_key_pressed(Mui_Keyboard_Key key)        {return IsKeyPressed(key);}
 bool mui_is_key_pressed_repeat(Mui_Keyboard_Key key) {return IsKeyPressedRepeat(key);}
 int mui_get_char_pressed()                           {return GetCharPressed();}
@@ -148,9 +151,10 @@ struct Mui_Font {
     Font raylib_font;
 };
 
-Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t length) {
-    char* t_cstr = uti_temp_strndup(text, length);
-    Vector2 v= MeasureTextEx(font->raylib_font, t_cstr, font_size, spacing);
+Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t start, size_t end) {
+    assert(start <= end);
+    char* t_cstr = uti_temp_strndup(&text[start], end - start);
+    Vector2 v = MeasureTextEx(font->raylib_font, t_cstr, font_size, spacing);
     return (Mui_Vector2) {
         .x = v.x,
         .y = v.y,
@@ -166,18 +170,8 @@ struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float text
     return font;
 }
 
-Mui_Vector2 mui_measure_text_line(struct Mui_Font* font, const char* text, float letter_space, float letter_size, unsigned int length) {
-    char* t_cstr = uti_temp_strndup(text, length);
-    Vector2 size = MeasureTextEx(font->raylib_font, t_cstr, letter_size, letter_space);
-    return (Mui_Vector2) {
-        .x = size.x,
-        .y = size.y,
-    };
-}
-
-
-void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, unsigned int length) {
-    char* t_cstr = uti_temp_strndup(text, length);
+void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, size_t start, size_t end) {
+    char* t_cstr = uti_temp_strndup(&text[start], end - start);
     DrawTextEx(font->raylib_font, t_cstr, RV2(pos), letter_size, letter_space, RCOLOR(color));
 }
 

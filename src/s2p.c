@@ -140,7 +140,7 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
                 else if (strstr(line_cstr, "Z "))  assert(false && "Z-parameters are not implemented in parsing yet.");
                 else if (strstr(line_cstr, "G "))  assert(false && "G-parameters are not implemented in parsing yet.");
                 else if (strstr(line_cstr, "H "))  assert(false && "H-parameters are not implemented in parsing yet.");
-                
+
                 if (strstr(line_cstr, "MA"))      format = FMT_MA;
                 else if (strstr(line_cstr, "DB")) format = FMT_DB;
                 else if (strstr(line_cstr, "RI")) format = FMT_RI;
@@ -170,7 +170,7 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
                 nob_da_append(&info->s21, parse_complex(val[3], val[4], format));
                 nob_da_append(&info->s12, parse_complex(val[5], val[6], format));
                 nob_da_append(&info->s22, parse_complex(val[7], val[8], format));
-            } 
+            }
             else if (scanned == 5) {
                 // Noise Data Line: Freq Fmin Gamma_Mag Gamma_Ang Rn
                 // Freq       Fmin(dB)  Mag(Gopt) Ang(Gopt) Rn/50

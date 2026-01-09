@@ -18,7 +18,7 @@ struct Complex_Array {
 };
 
 struct Noise_Data {
-    struct Double_Array Rn;      
+    struct Double_Array Rn;
     struct Double_Array Fmin;
     struct Complex_Array GammaOpt;
 };

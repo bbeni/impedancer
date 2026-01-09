@@ -1,4 +1,4 @@
-# Impdancer 
+# Impdancer
 
 S2p View and Impedance matching tools
 
@@ -26,3 +26,9 @@ To build and run the program:
 make
 LD_LIBRARY_PATH=./src/thirdparty/raylib-5.5-linux/lib/ ./build/impedancer path_to_dir_with_s2p_files
 ```
+
+## Feature goals
+- read out z parameters and make them copy pastable
+- annotate multiple s2p data with meta data
+- sweep meta data parameters and plot it
+-

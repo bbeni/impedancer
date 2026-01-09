@@ -8,7 +8,7 @@ else
     PLATFORM := LINUX
 	RAYLIB_PATH := src/thirdparty/raylib-5.5-linux
 	STATIC_LIBS := $(RAYLIB_PATH)/lib/libraylib.a
-	LDFLAGS_PLATFORM := -lGL -lm -lpthread -ldl -lrt -lX11 
+	LDFLAGS_PLATFORM := -lGL -lm -lpthread -ldl -lrt -lX11
 endif
 
 THIRDPARTY_PATH := src/thirdparty

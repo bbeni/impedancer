@@ -10,21 +10,21 @@
 struct Complex mma_complex_add(struct Complex a, struct Complex b) {
 	return (struct Complex) {
 		.r = a.r + b.r,
-		.i = a.i + b.i	
+		.i = a.i + b.i
 	};
 }
 
 struct Complex mma_complex_subtract(struct Complex a, struct Complex b) {
 	return (struct Complex) {
 		.r = a.r - b.r,
-		.i = a.i - b.i	
+		.i = a.i - b.i
 	};
 }
 
 struct Complex mma_complex_mult(struct Complex a, struct Complex b) {
 	return (struct Complex) {
 		.r = a.r*b.r - a.i*b.i,
-		.i = a.r*b.i + b.r*a.i	
+		.i = a.r*b.i + b.r*a.i
 	};
 }
 
@@ -38,7 +38,7 @@ struct Complex mma_complex_divide_or_zero(struct Complex a, struct Complex b) {
 
 	return (struct Complex) {
 		.r = (a.r*b.r + a.i*b.i) / denom,
-		.i = (a.i*b.r - a.r*b.i) / denom	
+		.i = (a.i*b.r - a.r*b.i) / denom
 	};
 }
 
@@ -105,14 +105,14 @@ void mma_move_towards_on_circlef(float* angle, float target,  float speed, float
 	while (*angle >= M_PI) {
 		*angle -= 2 * M_PI;
 	}
-	
+
 	while (*angle < -M_PI) {
 		*angle += 2 * M_PI;
 	}
 
 	assert(*angle < M_PI);
 	assert(*angle >= -M_PI);
-	
+
 	if (*angle + M_PI < target) {
 		mma_move_towardsf(angle, target - 2*M_PI, speed, dt);
 	} else if (*angle - M_PI > target) {
@@ -356,12 +356,12 @@ Mat4 matrix_transposed(const Mat4& mat) {
 	m.u12 = mat.u21;
 	m.u13 = mat.u31;
 	m.u14 = mat.u41;
-	
+
 	m.u21 = mat.u12;
 	m.u22 = mat.u22;
 	m.u23 = mat.u32;
 	m.u24 = mat.u42;
-	
+
 	m.u31 = mat.u13;
 	m.u32 = mat.u23;
 	m.u33 = mat.u33;
@@ -525,11 +525,11 @@ Mat4 matrix_orthographic_projection(float left, float right, float top, float bo
 	m.u11 = 2.0f / (right - left);
 	m.u22 = 2.0f / (top - bottom);
 	m.u33 = -2.0f / (far - near);
-	
+
 	m.u14 = -(right + left) / (right - left);
 	m.u24 = -(top + bottom) / (top - bottom);
 	m.u34 = -(far + near) / (far - near);
-	
+
 	m.u44 = 1.0f;
 
 	return m;

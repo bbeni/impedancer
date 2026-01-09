@@ -46,7 +46,7 @@ void _draw_grid(Mui_Rectangle plot_area, double x_min, double x_max, double y_mi
 
 // draw the grid and labels. Returns plot_area rectangle.
 Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step, Mui_Rectangle place) {
-    
+
     (void) y_label;
 
     float label_text_size = mui_protos_theme.label_text_size;
@@ -58,9 +58,9 @@ Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x
     rest = mui_cut_left(rest, label_text_size, &y_label_place);
 
     size_t l = strlen(x_label);
-    Mui_Vector2 m = mui_measure_text(mui_protos_theme.label_font, x_label, label_text_size, 0.1f, l);
+    Mui_Vector2 m = mui_measure_text(mui_protos_theme.label_font, x_label, label_text_size, 0.1f, 0, l);
     Mui_Vector2 x_label_pos = {x_label_place.x + x_label_place.width/2 - m.x/2, x_label_place.y};
-    mui_draw_text_line(mui_protos_theme.label_font, x_label_pos, 0.1f, label_text_size, x_label, _color_text(), l);
+    mui_draw_text_line(mui_protos_theme.label_font, x_label_pos, 0.1f, label_text_size, x_label, _color_text(), 0, l);
 
     Mui_Rectangle plot_area = rest;
     mui_draw_rectangle(plot_area, _color_bg());
@@ -121,7 +121,7 @@ void gra_xy_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels
     for (size_t i = 0; i < n_labels_; i++) {
         if (!mask[i]) continue;
         Mui_Vector2 pos = {legends_rect.x, legends_rect.y + index * legends_size + index * legends_v_spacing };
-        mui_draw_text_line(mui_protos_theme.label_font, pos, 0.1f, legends_size, labels[i], colors[i], strlen(labels[i]));
+        mui_draw_text_line(mui_protos_theme.label_font, pos, 0.1f, legends_size, labels[i], colors[i], 0, strlen(labels[i]));
         index++;
     }
 }

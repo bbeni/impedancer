@@ -174,6 +174,7 @@ void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place);
 float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle place);
 void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle place);
 void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *hint, Mui_Rectangle place);
+void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_Rectangle place);
 
 //
 // window API platform
@@ -238,9 +239,9 @@ void mui_draw_rectangle_rounded(Mui_Rectangle rect, float corner_radius, Mui_Col
 void mui_draw_rectangle_lines(Mui_Rectangle rect, Mui_Color color, float thickness);
 void mui_draw_rectangle_rounded_lines(Mui_Rectangle rect, float corner_radius, Mui_Color color, float thickness);
 
-Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t length);
+Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t start, size_t end);
 struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float text_size);
-void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, unsigned int length);
+void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, size_t start, size_t end);
 
 #define MUI_LIGHTGRAY  (Mui_Color){ 200, 200, 200, 255 }   // Light Gray
 #define MUI_GRAY       (Mui_Color){ 130, 130, 130, 255 }   // Gray
@@ -392,11 +393,11 @@ typedef enum {
     MUI_ANDDROID_KEY_VOLUME_DOWN     = 25        // Key: Android volume down button
 } Mui_Keyboard_Key;
 
-
 //
 // input/output/controller API platform
 //
-
+bool mui_is_key_down(Mui_Keyboard_Key key);
+bool mui_is_key_up(Mui_Keyboard_Key key);
 bool mui_is_key_pressed(Mui_Keyboard_Key key);
 bool mui_is_key_pressed_repeat(Mui_Keyboard_Key key);
 int mui_get_char_pressed();
@@ -408,6 +409,23 @@ bool mui_is_mouse_button_released(int button);
 void mui_set_clipboard_text(char* text);
 const char* mui_clipboard_text();
 Mui_Vector2 mui_get_mouse_position();
+
+// Mouse cursor
+typedef enum {
+    MUI_MOUSE_CURSOR_DEFAULT       = 0,     // Default pointer shape
+    MUI_MOUSE_CURSOR_ARROW         = 1,     // Arrow shape
+    MUI_MOUSE_CURSOR_IBEAM         = 2,     // Text writing cursor shape
+    MUI_MOUSE_CURSOR_CROSSHAIR     = 3,     // Cross shape
+    MUI_MOUSE_CURSOR_POINTING_HAND = 4,     // Pointing hand cursor
+    MUI_MOUSE_CURSOR_RESIZE_EW     = 5,     // Horizontal resize/move arrow shape
+    MUI_MOUSE_CURSOR_RESIZE_NS     = 6,     // Vertical resize/move arrow shape
+    MUI_MOUSE_CURSOR_RESIZE_NWSE   = 7,     // Top-left to bottom-right diagonal resize/move arrow shape
+    MUI_MOUSE_CURSOR_RESIZE_NESW   = 8,     // The top-right to bottom-left diagonal resize/move arrow shape
+    MUI_MOUSE_CURSOR_RESIZE_ALL    = 9,     // The omnidirectional resize/move cursor shape
+    MUI_MOUSE_CURSOR_NOT_ALLOWED   = 10     // The operation-not-allowed shape
+} MUI_MOUSE_CURSOR_TYPES;
+
+void mui_set_mouse_cursor(MUI_MOUSE_CURSOR_TYPES type);
 
 //
 // Some easing functions from easings.net
@@ -443,7 +461,7 @@ int main(void)
     SetTargetFPS(200);
     mui_load_ttf_font("resources/fonts/UbuntuMono-Regular.ttf");
     Mui_Checkbox_State checkbox_state = {0};
-    Mui_Button_State button_states[10] = {0};   
+    Mui_Button_State button_states[10] = {0};
 
     bool active[5] = {false};
 

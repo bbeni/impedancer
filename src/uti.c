@@ -9,10 +9,22 @@
 
 
 #ifdef _WIN32
-#include "dirent_win32ports.h"
-#else
-#include "dirent.h"
+
+// noisy header -> disable warnings
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
+#include "dirent_win32ports.h"
+// resotore warnings
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+#else //_WIN32
+#include "dirent.h"
+#endif  //_WIN32
 
 bool read_entire_file(const char *path, char** content, size_t* out_size) {
     char* mem_block = NULL;
@@ -79,7 +91,7 @@ bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_
         size_t new_length = strlen(entry->d_name);
         size_t new_size = childs[child_index] - childs[0] + new_length + 1;
         if (new_size >= data_capacity) {
-            printf("ERROR: space (%ld > %ld) exeeded inital capacity of %d Mbytes in %s:%d.\nIncrease CHILDREN_DATA_SIZE_INITIAL and recomplile\n", new_size, data_capacity, CHILDREN_DATA_SIZE_INITIAL / (1024 * 1024), __FILE__, __LINE__);
+            printf("ERROR: space (%zu > %zu) exeeded inital capacity of %d Mbytes in %s:%d.\nIncrease CHILDREN_DATA_SIZE_INITIAL and recomplile\n", new_size, data_capacity, CHILDREN_DATA_SIZE_INITIAL / (1024 * 1024), __FILE__, __LINE__);
             exit(1);
         }
 

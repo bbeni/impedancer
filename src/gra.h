@@ -14,8 +14,8 @@ void gra_xy_plot(double *x_data, void *y_data, double (* y_map)(size_t i, void *
     double x_step, double y_step, Mui_Color color, Mui_Rectangle place);
 // draw the grid and labels first. Returns plot_area rectangle.
 Mui_Rectangle gra_xy_plot_labels_and_grid( char* x_label, char* y_label, double x_min, double x_max,
-    double y_min, double y_max, double x_step, double y_step, Mui_Rectangle place);
-// draw all xy data
+    double y_min, double y_max, double x_step, double y_step, bool thick_y_zero, Mui_Rectangle place);
+// draw all xy data. if y_map is NULL we assume y_data to be double
 void gra_xy_plot_data(double *x_data, void *y_data, double (* y_map)(size_t i, void *x), size_t data_length,
     double x_min, double x_max, double y_min, double y_max, Mui_Color color, Mui_Rectangle plot_area);
 // draw the legend last

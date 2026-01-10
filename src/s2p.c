@@ -57,7 +57,7 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
         return 1;
     }
 
-    printf("INFO: read %ld possible s2p files of %ld entries in directory %s\n", infos->count, i, dir);
+    printf("INFO: read %zu possible s2p files of %zu entries in directory %s\n", infos->count, i, dir);
     return 0;
 }
 
@@ -86,16 +86,19 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
 
     for (size_t i = 0; i < infos->count; ++i) {
         struct S2P_Info *info = &infos->items[i];
+        info->freq.count = 0;
         info->s11.count = 0;
         info->s12.count = 0;
         info->s21.count = 0;
         info->s22.count = 0;
-        info->noise.Fmin.count = 0;
+        info->noise.NFmin.count = 0;
         info->noise.GammaOpt.count = 0;
         info->noise.Rn.count = 0;
-        info->freq.count = 0;
+        info->noise.freq.count = 0;
 
         #define INITIAL_CAP 512
+        info->freq.items = malloc(sizeof(*info->freq.items)*INITIAL_CAP);
+        info->freq.capacity = INITIAL_CAP;
         info->s11.items = malloc(sizeof(*info->s11.items)*INITIAL_CAP);
         info->s11.capacity = INITIAL_CAP;
         info->s21.items = malloc(sizeof(*info->s21.items)*INITIAL_CAP);
@@ -104,17 +107,14 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
         info->s12.capacity = INITIAL_CAP;
         info->s22.items = malloc(sizeof(*info->s22.items)*INITIAL_CAP);
         info->s22.capacity = INITIAL_CAP;
-
-        info->noise.Fmin.items = malloc(sizeof(*info->noise.Fmin.items)*INITIAL_CAP);
-        info->noise.Fmin.capacity = INITIAL_CAP;
+        info->noise.NFmin.items = malloc(sizeof(*info->noise.NFmin.items)*INITIAL_CAP);
+        info->noise.NFmin.capacity = INITIAL_CAP;
         info->noise.GammaOpt.items = malloc(sizeof(*info->noise.GammaOpt.items)*INITIAL_CAP);
         info->noise.GammaOpt.capacity = INITIAL_CAP;
         info->noise.Rn.items = malloc(sizeof(*info->noise.Rn.items)*INITIAL_CAP);
         info->noise.Rn.capacity = INITIAL_CAP;
-
-        info->freq.items = malloc(sizeof(*info->freq.items)*INITIAL_CAP);
-        info->freq.capacity = INITIAL_CAP;
-
+        info->noise.freq.items = malloc(sizeof(*info->noise.freq.items)*INITIAL_CAP);
+        info->noise.freq.capacity = INITIAL_CAP;
 
         Nob_String_View content = { .data = info->file__content, .count = info->file__content_size};
 
@@ -174,7 +174,8 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
             else if (scanned == 5) {
                 // Noise Data Line: Freq Fmin Gamma_Mag Gamma_Ang Rn
                 // Freq       Fmin(dB)  Mag(Gopt) Ang(Gopt) Rn/50
-                nob_da_append(&info->noise.Fmin, val[1]);
+                nob_da_append(&info->noise.freq, val[0]);
+                nob_da_append(&info->noise.NFmin, val[1]);
                 nob_da_append(&info->noise.GammaOpt, parse_complex(val[2], val[3], FMT_MA));
                 nob_da_append(&info->noise.Rn, val[4]);
             }
@@ -184,12 +185,15 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
         assert(info->s11.count == info->s21.count);
         assert(info->s11.count == info->s22.count);
 
-        assert(info->noise.Fmin.count == info->noise.GammaOpt.count);
-        assert(info->noise.Fmin.count == info->noise.Rn.count);
+        assert(info->noise.NFmin.count == info->noise.GammaOpt.count);
+        assert(info->noise.NFmin.count == info->noise.Rn.count);
+        assert(info->noise.NFmin.count == info->noise.freq.count);
+
+        assert(info->noise.freq.count == info->freq.count);
 
         uti_temp_reset();
         nob_temp_reset();
-        printf("INFO: Parsed %zu frequency points from %s\n", info->freq.count, info->file_name);
+        //printf("INFO: Parsed %zu frequency points from %s\n", info->freq.count, info->file_name);
     }
 
 
@@ -227,16 +231,19 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
 
             }
 
-            info->zGopt.count = info->noise.Fmin.count;
-            info->zGopt.items = malloc(sizeof(*info->zGopt.items)*info->noise.Fmin.count);
-            info->zGopt.capacity = info->noise.Fmin.count;
-            for (size_t j = 0; j < info->noise.Fmin.count; j++) {
+            size_t n_noise = info->noise.NFmin.count;
+            info->zGopt.count = n_noise;
+            info->zGopt.items = malloc(sizeof(*info->zGopt.items)*n_noise);
+            info->zGopt.capacity = n_noise;
+            for (size_t j = 0; j < n_noise; j++) {
                 struct Complex one_m_G = {1 - info->noise.GammaOpt.items[j].r, -info->noise.GammaOpt.items[j].i};
                 struct Complex one_p_G = {1 + info->noise.GammaOpt.items[j].r,  info->noise.GammaOpt.items[j].i};
                 info->zGopt.items[j] = mma_complex_divide_or_zero(one_p_G, one_m_G);
             }
         }
     }
+
+    printf("INFO: Parsed %zu s2p data sets.\n", infos->count);
 
     return 0;
 }

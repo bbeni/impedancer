@@ -18,8 +18,9 @@ struct Complex_Array {
 };
 
 struct Noise_Data {
+    struct Double_Array freq; // TODO check if it is needed or the same as for s params
     struct Double_Array Rn;
-    struct Double_Array Fmin;
+    struct Double_Array NFmin;
     struct Complex_Array GammaOpt;
 };
 
@@ -45,6 +46,7 @@ struct S2P_Info {
     struct Complex_Array z21;
     struct Complex_Array z22;
     struct Complex_Array zGopt;
+    struct Double_Array NFmin;
 };
 
 struct S2P_Info_Array {

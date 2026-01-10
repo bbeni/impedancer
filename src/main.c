@@ -27,7 +27,6 @@ double mag(size_t i, void* x) {
     struct Complex si = s[i];
     return sqrtf(si.i * si.i + si.r* si.r);
 }
-
 double dB_from_squared(double x) {return 10*log10f(x);}
 double dB(size_t i, void* x) {
     struct Complex *s = (struct Complex *)x;
@@ -92,7 +91,7 @@ int main(int argc, char** argv) {
     Mui_Checkbox_State show_Gopt_checkbox_state = {0};
     Mui_Slider_State slider_state = {0};
     Mui_Slider_State slider_state_2 = {0};
-    Mui_Textinput_Multiline_State textinput_ml_state = {0};
+    //Mui_Textinput_Multiline_State textinput_ml_state = {0};
 
     show_s11_checkbox_state.checked = true;
     show_s21_checkbox_state.checked = true;
@@ -100,7 +99,7 @@ int main(int argc, char** argv) {
     show_s22_checkbox_state.checked = true;
     show_Gopt_checkbox_state.checked = true;
     slider_state.value = 0.5f;
-    slider_state_2.value = 0.5f;
+    slider_state_2.value = 0.2f;
 
     // text selection
     size_t selector_start = 0;
@@ -128,19 +127,17 @@ int main(int argc, char** argv) {
     double *fs;
     struct Complex *s_params[4];
     struct Complex *z_params[4];
+
+    size_t noise_length = infos.items[selected].noise.freq.count;
+    double *noise_fs = infos.items[selected].noise.freq.items;
+    double *NFmins = infos.items[selected].noise.freq.items;
+
+
     // static data
     Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
     char* labels[4] = {"dB(S11)", "dB(S21)", "dB(S12)", "dB(S22)"};
     char* labels_index[4] = {"11", "21", "12", "22"};
-    // ui data
     bool mask[4];
-    double min_y = slider_state_2.value * (-30);
-    double max_y = slider_state_2.value * 60;
-    double step_y = 5;
-    double min_f = 0;
-    double max_f = slider_state.value * 2e11;
-    double step_f = 2e9;
-
 
     bool first_frame = true;
     while (!mui_window_should_close())
@@ -186,6 +183,10 @@ int main(int argc, char** argv) {
             z_params[1] = infos.items[selected].z21.items;
             z_params[2] = infos.items[selected].z12.items;
             z_params[3] = infos.items[selected].z22.items;
+
+            noise_length = infos.items[selected].noise.NFmin.count;
+            NFmins = infos.items[selected].noise.NFmin.items;
+            noise_fs = infos.items[selected].noise.freq.items;
 
         }
 
@@ -256,14 +257,16 @@ int main(int argc, char** argv) {
             mask[1] = show_s21_checkbox_state.checked;
             mask[2] = show_s12_checkbox_state.checked;
             mask[3] = show_s22_checkbox_state.checked;
-            min_y = slider_state_2.value * (-30);
-            max_y = slider_state_2.value * 60;
-            step_y = 10;
-            min_f = 0;
-            max_f = slider_state.value * 2e11;
-            step_f = 2e9;
-
-            Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid("frequency [Hz]", "mag(S11)", min_f, max_f, min_y, max_y, step_f, step_y, r11);
+            double min_y = slider_state_2.value * (-30);
+            double max_y = slider_state_2.value * 60;
+            double min_f = 0;
+            double max_f = slider_state.value * 2e11;
+            double step_f = 2e9;
+            double step_y = 1;
+            //
+            // dB plot
+            //
+            Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid("frequency [Hz]", "mag(S11)", min_f, max_f, min_y, max_y, step_f, step_y, true, r11);
             for (int i = 0; i < 4; i++) {
                 if (mask[i]) {
                     gra_xy_plot_data(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, colors[i], plot_area);
@@ -287,6 +290,19 @@ int main(int argc, char** argv) {
             if (show_Gopt_checkbox_state.checked) {
                 gra_smith_plot_data(fs, zGopt, infos.items[selected].zGopt.count, min_f, max_f, MUI_BROWN, r21c, r21);
             }
+
+            //
+            // noise plot
+            //
+            // F = Fmin + 4*Rn*|Gs - Gopt|^2 / (Z0(1 - |Gopt|^2)*|1+Gopt|^2)
+            // we assume optimal noise match Gs == Gopt for now
+            // -> F = Fmin
+            float min_nfmin = 0;
+            float max_nfmin = 1;
+            float step_nfmin = 0.05;
+            Mui_Rectangle plot_area2 = gra_xy_plot_labels_and_grid("frequency [Hz]", "NFmin", min_f, max_f, min_nfmin, max_nfmin, step_f, step_nfmin, true, r12);
+            gra_xy_plot_data(noise_fs, NFmins, NULL, noise_length, min_f, max_f, min_nfmin, max_nfmin, MUI_GOLD, plot_area2);
+
 
             //
             // Text data view

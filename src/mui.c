@@ -71,9 +71,9 @@ Mui_Theme mui_protos_theme = {
     .textinput_text_size = 32.0f,
 
     .slider_thickness = 8.0f,
-    .slider_wagon_width = 116.0f,
-    .slider_wagon_height = 24.0f,
-    .slider_wagon_corner_radius = 6.0f,
+    .slider_wagon_width = 32.0f,
+    .slider_wagon_height = 32.0f,
+    .slider_wagon_corner_radius = 8.0f,
     .slider_wagon_border_thickness = 2.0f,
 
     .animation_speed_to_hover = 18.0f,
@@ -671,30 +671,27 @@ char* next_occurence_or_null(char* text, size_t start, char c) {
 }
 
 
-size_t _internal_get_cursor_by_position(Mui_Vector2 pos, char* text, size_t* start_cursor, size_t* end_cursor, size_t n_lines, struct Mui_Font* font, float font_size, size_t text_length_total, Mui_Rectangle place)
+size_t _internal_get_cursor_by_position(Mui_Vector2 pos, char* text, size_t* start_cursor, size_t* end_cursor, size_t n_lines, struct Mui_Font* font, float font_size, Mui_Rectangle place)
 {
     int line_clicked = (pos.y - place.y) / font_size;
 
     if (line_clicked < 0) line_clicked = 0;
-    else if (line_clicked >= n_lines) line_clicked = n_lines -1;
+    else if (line_clicked >= (int)n_lines) line_clicked = n_lines -1;
 
-    if (line_clicked >= 0 && line_clicked < n_lines) {
+    size_t line_start = start_cursor[line_clicked];
+    size_t line_end = end_cursor[line_clicked];
 
-        size_t line_start = start_cursor[line_clicked];
-        size_t line_end = end_cursor[line_clicked];
-
-        size_t cursor_offset = 0;
-        for (int i = 0; i < (int)(line_end - line_start); i++) {
-            Mui_Vector2 s = mui_measure_text(font, text, font_size, 0.1f, line_start, line_start + i);
-            if (s.x + place.x > pos.x) {
-                cursor_offset = max(0, i);
-                break;
-            }
-            cursor_offset = max(0, i+1);
+    size_t cursor_offset = 0;
+    for (int i = 0; i < (int)(line_end - line_start); i++) {
+        Mui_Vector2 s = mui_measure_text(font, text, font_size, 0.1f, line_start, line_start + i);
+        if (s.x + place.x > pos.x) {
+            cursor_offset = max(0, i);
+            break;
         }
-
-        return line_start + cursor_offset;
+        cursor_offset = max(0, i+1);
     }
+
+    return line_start + cursor_offset;
 }
 
 // for now we can only have one of these text_selectable elements I guess,
@@ -731,7 +728,7 @@ void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_R
         next = next_occurence_or_null(next, 0, '\n');
         line_nr++;
     }
-    if (prev - text < total_length - 1) {
+    if ((size_t)(prev - text) < total_length - 1) {
         start_cursor[line_nr] = prev - text;
         end_cursor[line_nr] = total_length;
         line_nr++;
@@ -750,7 +747,7 @@ void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_R
     if (mui_is_mouse_button_pressed(0) && mui_is_inside_rectangle(mui_get_mouse_position(), place)) {
         mouse_down_selectable_text = true;
         Mui_Vector2 mouse = mui_get_mouse_position();
-        size_t new_cursor = _internal_get_cursor_by_position(mouse, text, start_cursor, end_cursor, n_lines, font, font_size, total_length, place);
+        size_t new_cursor = _internal_get_cursor_by_position(mouse, text, start_cursor, end_cursor, n_lines, font, font_size, place);
         *selector1 = new_cursor;
         *selector2 = new_cursor;
         mouse_down_pivot_cursor = new_cursor;
@@ -761,7 +758,7 @@ void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_R
 
     if (mouse_down_selectable_text) {
         Mui_Vector2 mouse = mui_get_mouse_position();
-        size_t new_cursor = _internal_get_cursor_by_position(mouse, text, start_cursor, end_cursor, n_lines, font, font_size, total_length, place);
+        size_t new_cursor = _internal_get_cursor_by_position(mouse, text, start_cursor, end_cursor, n_lines, font, font_size, place);
         *selector1 = mouse_down_pivot_cursor;
         *selector2 = mouse_down_pivot_cursor;
         if (new_cursor > mouse_down_pivot_cursor) {

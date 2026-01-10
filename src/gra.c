@@ -9,7 +9,7 @@ Mui_Color _color_bg() {return mui_protos_theme.background_color;}
 Mui_Color _color_border() {return mui_protos_theme.border_color;}
 Mui_Color _color_text() {return mui_protos_theme.text_color;}
 
-void _draw_grid(Mui_Rectangle plot_area, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step) {
+void _draw_grid(Mui_Rectangle plot_area, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step, bool thick_y_zero) {
     // draw border
     mui_draw_rectangle_lines(plot_area, _color_border(), 2.0f);
 
@@ -42,10 +42,15 @@ void _draw_grid(Mui_Rectangle plot_area, double x_min, double x_max, double y_mi
         y = plot_area.y + grid_norm_y * plot_area.height;
         iter++;
     }
+    if (thick_y_zero) {
+        grid_norm_y = 1 - (0 - y_min) / (y_max - y_min);
+        y = plot_area.y + grid_norm_y * plot_area.height;
+        mui_draw_line(x1, y, x2, y, 3.0f, _color_text());
+    }
 }
 
-// draw the grid and labels. Returns plot_area rectangle.
-Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step, Mui_Rectangle place) {
+// draw the grid and labels.
+Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step, bool thick_y_zero, Mui_Rectangle place) {
 
     (void) y_label;
 
@@ -64,7 +69,7 @@ Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x
 
     Mui_Rectangle plot_area = rest;
     mui_draw_rectangle(plot_area, _color_bg());
-    _draw_grid(plot_area, x_min, x_max, y_min, y_max, x_step, y_step);
+    _draw_grid(plot_area, x_min, x_max, y_min, y_max, x_step, y_step, thick_y_zero);
 
     return plot_area;
 }
@@ -82,7 +87,7 @@ void gra_xy_plot(double *x_data,
                  Mui_Rectangle place)
 {
 
-    Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid(x_label, y_label, x_min, x_max, y_min, y_max, x_step, y_step, place);
+    Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid(x_label, y_label, x_min, x_max, y_min, y_max, x_step, y_step, true, place);
 
     for (size_t i = 0; i < data_length; i++) {
         double x = x_data[i];
@@ -126,6 +131,7 @@ void gra_xy_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels
     }
 }
 
+// if y_map is NULL we assume y_data to be double
 void gra_xy_plot_data(double *x_data, void *y_data, double (* y_map)(size_t i, void *x), size_t data_length,
                  double x_min, double x_max, double y_min, double y_max,
                  Mui_Color color,
@@ -133,7 +139,12 @@ void gra_xy_plot_data(double *x_data, void *y_data, double (* y_map)(size_t i, v
 {
     for (size_t i = 0; i < data_length; i++) {
         double x = x_data[i];
-        double y = y_map(i, y_data);
+        double y;
+        if (y_map) {
+            y = y_map(i, y_data);
+        } else {
+            y = ((double*)y_data)[i];
+        }
         if (x >= x_min && x <= x_max && y <= y_max && y >= y_min){
             float norm_x = (x - x_min)/ (x_max - x_min);
             float norm_y = (y - y_min)/ (y_max - y_min);

@@ -1,5 +1,5 @@
-// Copyright (C) 2024 Benjamin Froelich
-// This file is part of https://github.com/bbeni/earth_bender_game
+// Copyright (C) 2026 Benjamin Froelich
+// This file is part of https://github.com/bbeni/impedancer
 // For conditions of distribution and use, see copyright notice in project root.
 #ifndef MMA_H_
 #define MMA_H_
@@ -82,5 +82,22 @@ struct Vec4f mma_matrix_multiply_rightmat4fv4f(struct Mat4f *m, struct Vec4f v);
 struct Vec3f mma_matrix_multiply_rightmat4fv3f(struct Mat4f *m, struct Vec3f v);
 float mma_matrix_detmat4f(struct Mat4f *m);
 
+// spline stuff
+
+// see https://en.wikipedia.org/wiki/Spline_interpolation
+// make sure there is enough space (n_in - 1) in a_out, b_out
+// a_i b_i are used to derive the spline and are related for example to
+//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
+//
+void mma_spline_cubic_natural_ab(const double *x, const double *y, size_t n_in, double *a_out, double *b_out);
+void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_in, double *y_out, size_t n_out, double x_min, double x_max);
+
+
+// utility stuff
+#define MMA_TEMP_BUFFER_CAP_INTERNAL 4096*4096
+void mma_temp_reset(void);
+void *mma_temp_alloc(size_t requested_size);
+void mma_temp_set_restore_point();
+void mma_temp_restore();
 
 #endif // MMA_H_

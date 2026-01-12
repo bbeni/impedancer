@@ -1,3 +1,6 @@
+// Copyright (C) 2026 Benjamin Froelich
+// This file is part of https://github.com/bbeni/impedancer
+// For conditions of distribution and use, see copyright notice in project root.
 #include "s2p.h"
 
 #include "stdio.h"
@@ -132,6 +135,9 @@ int main(int argc, char** argv) {
     double *noise_fs = infos.items[selected].noise.freq.items;
     double *NFmins = infos.items[selected].noise.freq.items;
 
+#define N_INTERPOL 2000
+    double noise_fs_interpolated[N_INTERPOL];
+    double NFmins_interpolated[N_INTERPOL];
 
     // static data
     Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
@@ -259,8 +265,8 @@ int main(int argc, char** argv) {
             mask[3] = show_s22_checkbox_state.checked;
             double min_y = slider_state_2.value * (-30);
             double max_y = slider_state_2.value * 60;
-            double min_f = 0;
-            double max_f = slider_state.value * 2e11;
+            double min_f = 1;
+            double max_f = slider_state.value * 2e11 + min_f;
             double step_f = 2e9;
             double step_y = 1;
             //
@@ -269,7 +275,7 @@ int main(int argc, char** argv) {
             Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid("frequency [Hz]", "mag(S11)", min_f, max_f, min_y, max_y, step_f, step_y, true, r11);
             for (int i = 0; i < 4; i++) {
                 if (mask[i]) {
-                    gra_xy_plot_data(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, colors[i], plot_area);
+                    gra_xy_plot_data_points(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, colors[i], 2.0, plot_area);
                 }
             }
             gra_xy_legend(labels, colors, mask, 4, plot_area);
@@ -298,10 +304,16 @@ int main(int argc, char** argv) {
             // we assume optimal noise match Gs == Gopt for now
             // -> F = Fmin
             float min_nfmin = 0;
-            float max_nfmin = 1;
-            float step_nfmin = 0.05;
+            float max_nfmin = 0.1;
+            float step_nfmin = 0.01;
             Mui_Rectangle plot_area2 = gra_xy_plot_labels_and_grid("frequency [Hz]", "NFmin", min_f, max_f, min_nfmin, max_nfmin, step_f, step_nfmin, true, r12);
-            gra_xy_plot_data(noise_fs, NFmins, NULL, noise_length, min_f, max_f, min_nfmin, max_nfmin, MUI_GOLD, plot_area2);
+
+            for (size_t i = 0; i < N_INTERPOL; i ++) {
+                noise_fs_interpolated[i] = min_f + i * (max_f - min_f) / N_INTERPOL;
+            }
+            mma_spline_cubic_natural_linear(noise_fs, NFmins, noise_length, NFmins_interpolated, N_INTERPOL, min_f, max_f);
+            gra_xy_plot_data_points(noise_fs_interpolated, NFmins_interpolated, NULL, N_INTERPOL, min_f, max_f, min_nfmin, max_nfmin, MUI_GREEN, 1.0f, plot_area2);
+            gra_xy_plot_data_points(noise_fs, NFmins, NULL, noise_length, min_f, max_f, min_nfmin, max_nfmin, MUI_BLUE, 3.0f, plot_area2);
 
 
             //

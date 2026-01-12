@@ -1,3 +1,6 @@
+// Copyright (C) 2026 Benjamin Froelich
+// This file is part of https://github.com/bbeni/impedancer
+// For conditions of distribution and use, see copyright notice in project root.
 /* Mui library
 
 Copyright 2024 - 2026 Benjamin Froelich
@@ -7,10 +10,7 @@ Files needed:
     -mui.h
     -mui.c
     -mui_platform_raylib.c (or whatever platform we are on)
-
-for exmample program, see end of this header file.
 */
-
 #ifndef MUI_H_
 #define MUI_H_
 

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 Benjamin Froelich
+// This file is part of https://github.com/bbeni/impedancer
+// For conditions of distribution and use, see copyright notice in project root.
 #include "s2p.h"
 #include "uti.h"
 

@@ -1,3 +1,6 @@
+// Copyright (C) 2026 Benjamin Froelich
+// This file is part of https://github.com/bbeni/impedancer
+// For conditions of distribution and use, see copyright notice in project root.
 //
 // Graphing Functions
 //
@@ -132,10 +135,9 @@ void gra_xy_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels
 }
 
 // if y_map is NULL we assume y_data to be double
-void gra_xy_plot_data(double *x_data, void *y_data, double (* y_map)(size_t i, void *x), size_t data_length,
+void gra_xy_plot_data_points(double *x_data, void *y_data, double (* y_map)(size_t i, void *x), size_t data_length,
                  double x_min, double x_max, double y_min, double y_max,
-                 Mui_Color color,
-                 Mui_Rectangle plot_area)
+                 Mui_Color color, float pt_radius, Mui_Rectangle plot_area)
 {
     for (size_t i = 0; i < data_length; i++) {
         double x = x_data[i];
@@ -152,7 +154,7 @@ void gra_xy_plot_data(double *x_data, void *y_data, double (* y_map)(size_t i, v
                 norm_x * plot_area.width + plot_area.x,
                 (1 - norm_y) * plot_area.height + plot_area.y
             };
-            mui_draw_circle(screen_coords, 3.0f, color);
+            mui_draw_circle(screen_coords, pt_radius, color);
         }
     }
 }

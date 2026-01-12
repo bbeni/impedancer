@@ -1,3 +1,6 @@
+// Copyright (C) 2026 Benjamin Froelich
+// This file is part of https://github.com/bbeni/impedancer
+// For conditions of distribution and use, see copyright notice in project root.
 //
 // Graphing Functions
 //
@@ -16,13 +19,15 @@ void gra_xy_plot(double *x_data, void *y_data, double (* y_map)(size_t i, void *
 Mui_Rectangle gra_xy_plot_labels_and_grid( char* x_label, char* y_label, double x_min, double x_max,
     double y_min, double y_max, double x_step, double y_step, bool thick_y_zero, Mui_Rectangle place);
 // draw all xy data. if y_map is NULL we assume y_data to be double
-void gra_xy_plot_data(double *x_data, void *y_data, double (* y_map)(size_t i, void *x), size_t data_length,
-    double x_min, double x_max, double y_min, double y_max, Mui_Color color, Mui_Rectangle plot_area);
+void gra_xy_plot_data_points(double *x_data, void *y_data, double (* y_map)(size_t i, void *x), size_t data_length,
+                 double x_min, double x_max, double y_min, double y_max,
+                 Mui_Color color, float pt_radius, Mui_Rectangle plot_area);
 // draw the legend last
 void gra_xy_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels_, Mui_Rectangle plot_area);
 void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, double *custom_cicles,
     size_t n_custom_circles, Mui_Rectangle plot_area);
 void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_length,
     double f_min, double f_max, Mui_Color color, Mui_Vector2 smith_center, Mui_Rectangle plot_area);
+// if y_map is NULL we assume y_data to be double
 
 #endif //GRA_H_

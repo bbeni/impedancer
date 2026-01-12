@@ -1,46 +1,12 @@
-// Copyright (C) 2024 Benjamin Froelich
-// This file is part of https://github.com/bbeni/earth_bender_game
+// Copyright (C) 2026 Benjamin Froelich
+// This file is part of https://github.com/bbeni/impedancer
 // For conditions of distribution and use, see copyright notice in project root.
 
 #include "mma.h"
 #include "math.h"
 #include "assert.h"
-
-
-struct Complex mma_complex_add(struct Complex a, struct Complex b) {
-	return (struct Complex) {
-		.r = a.r + b.r,
-		.i = a.i + b.i
-	};
-}
-
-struct Complex mma_complex_subtract(struct Complex a, struct Complex b) {
-	return (struct Complex) {
-		.r = a.r - b.r,
-		.i = a.i - b.i
-	};
-}
-
-struct Complex mma_complex_mult(struct Complex a, struct Complex b) {
-	return (struct Complex) {
-		.r = a.r*b.r - a.i*b.i,
-		.i = a.r*b.i + b.r*a.i
-	};
-}
-
-
-struct Complex mma_complex_divide_or_zero(struct Complex a, struct Complex b) {
-	if (b.i == 0.0 && b.r == 0.0) {
-		return (struct Complex) {0.0, 0.0};
-	}
-
-	double denom = b.r*b.r + b.i*b.i;
-
-	return (struct Complex) {
-		.r = (a.r*b.r + a.i*b.i) / denom,
-		.i = (a.i*b.r - a.r*b.i) / denom
-	};
-}
+#include "stdio.h"
+#include "stdlib.h"
 
 void mma_clampf(float* v, float lower, float upper) {
 	if (*v < lower) {
@@ -122,6 +88,119 @@ void mma_move_towards_on_circlef(float* angle, float target,  float speed, float
 		mma_move_towardsf(angle, target, speed, dt);
 	}
 }
+
+//thomas algorithm O(n) see https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
+void mma_solve_tridiagonal_matrix(const size_t N, const double *a, const double *b,
+            const double *c, double *x_out, double *scratch_buffer) {
+    /*
+     solves Ax = d, where A is a tridiagonal matrix consisting of vectors a, b, c
+     N = number of equations
+     x[] = initially contains the input, d, and returns x. indexed from [0, ..., N - 1]
+     a[] = subdiagonal, indexed from [1, ..., N - 1]
+     b[] = main diagonal, indexed from [0, ..., N - 1]
+     c[] = superdiagonal, indexed from [0, ..., N - 2]
+     scratch_buffer[] = scratch_buffer space of length N, provided by caller, allowing a, b, c to be const
+     not performed in this example: manual expensive common subexpression elimination
+     */
+    scratch_buffer[0] = c[0] / b[0];
+    x_out[0] = x_out[0] / b[0];
+
+    /* loop from 1 to N - 1 inclusive */
+    for (size_t ix = 1; ix < N; ix++) {
+        if (ix < N-1){
+        scratch_buffer[ix] = c[ix] / (b[ix] - a[ix] * scratch_buffer[ix - 1]);
+        }
+        x_out[ix] = (x_out[ix] - a[ix] * x_out[ix - 1]) / (b[ix] - a[ix] * scratch_buffer[ix - 1]);
+    }
+
+    /* loop from N - 2 to 0 inclusive */
+    for (size_t ix = N - 1; ix > 0; ix--)
+        x_out[ix-1] -= scratch_buffer[ix-1] * x_out[ix];
+}
+
+// S''(x0) = S''(x(n-1)) = 0
+// make sure there is enough space in y_out
+void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_in, double *y_out, size_t n_out, double x_min, double x_max) {
+	assert(n_out >= 2);
+	assert(x_min >= x[0]);
+	assert(x_max <= x[n_in - 1]);
+	assert(x_max >= x_min);
+
+	double x_step = (x_max - x_min) / (n_out - 1);
+	mma_temp_set_restore_point();
+	double *a = mma_temp_alloc(sizeof(double) * (n_in - 1));
+	double *b = mma_temp_alloc(sizeof(double) * (n_in - 1));
+	mma_spline_cubic_natural_ab(x, y, n_in, a, b);
+	// a_i b_i are used to derive the spline and are related for example to
+	//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
+
+	size_t j = 0;
+	for (size_t i = 0; i < n_out - 1; i ++) {
+		double x_now = i * x_step + x[0];
+		// we increase j until x is in [x[j], x[j+1]]
+		while (x_now > x[j + 1]) {
+			j++;
+		}
+
+		double t = (x_now - x[j]) / (x[j + 1] - x[j]);
+		assert(t >= 0);
+		y_out[i] = (1 - t) * y[j] + t * y[j + 1] + t * (1 - t) * ((1 - t) * a[j] + t * b[j]);
+	}
+
+	mma_temp_restore();
+
+}
+
+// see https://en.wikipedia.org/wiki/Spline_interpolation
+// make sure there is enough space (n_in - 1) in a_out, b_out
+// a_i b_i are used to derive the spline and are related for example to
+//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
+//
+void mma_spline_cubic_natural_ab(const double *x, const double *y, size_t n_in, double *a_out, double *b_out) {
+	assert(n_in >= 2);
+	mma_temp_set_restore_point();
+	double *a_sub = mma_temp_alloc(n_in*sizeof(double));
+	double *a = mma_temp_alloc(n_in*sizeof(double));
+	double *a_sup = mma_temp_alloc(n_in*sizeof(double));
+	double *k = mma_temp_alloc(n_in*sizeof(double)); // out k, initally holds b
+	// diagonal a_ii
+	a[0] = 2.0 / (x[1] - x[0]);
+	a[n_in - 1] = 2.0 / (x[n_in - 1] - x[n_in - 2]);
+	for (size_t i = 1; i < n_in-1; i ++) {
+		a[i] = 2.0 * (1.0 / (x[i] - x[i - 1]) + 1.0/ (x[i + 1] - x[i]));
+	}
+
+	// sub and super diagonal elements
+	for (size_t i = 1; i < n_in; i ++) {
+		a_sub[i] = 1.0 / (x[i] - x[i - 1]);
+		a_sup[i - 1] = 1.0 / (x[i] - x[i - 1]);
+	}
+
+	// b vector is stored in k
+	k[0] = 3.0 * (y[1] - y[0]) / ((x[1] - x[0]) * (x[1] - x[0]));
+	k[n_in - 1] = 3.0 * (y[n_in - 1] - y[n_in - 2]) / ((x[n_in - 1] - x[n_in - 2]) * (x[n_in - 1] - x[n_in - 2]));
+	for (size_t i = 1; i < n_in - 1; i++) {
+		k[i] = 3.0 * ((y[i] - y[i - 1]) / ((x[i] - x[i - 1]) * (x[i] - x[i - 1]))  + (y[i + 1] - y[i]) / ((x[i + 1] - x[i]) * (x[i + 1] - x[i])));
+	}
+
+	double *scratch = mma_temp_alloc(n_in*sizeof(double));
+	mma_solve_tridiagonal_matrix(n_in, a_sub, a, a_sup, k, scratch);
+
+	// calc a_out b_out
+	for (size_t i = 0; i < n_in - 1; i++) {
+		a_out[i] = k[i] * (x[i+1] - x[i]) - (y[i+1] - y[i]);
+		b_out[i] = -k[i+1] * (x[i+1] - x[i]) + (y[i+1] - y[i]);
+	}
+
+	mma_temp_restore();
+}
+
+// S'(x0) = y0', S'(x(n-1)) = y(n-1)'
+// make sure there is enough space in y_out
+//void mma_spline_cubic_clamped(double *x, double *y, size_t n_in, double *y_out, size_t n_out) {
+//
+//}
+
 
 float mma_next_multiple_of(float start, float step) {
     float x = ceilf(start / step) * step;
@@ -278,6 +357,43 @@ bool mma_not_equalsv2f(struct Vec2f a, struct Vec2f b) {
 bool mma_equalsv2f(struct Vec2f a, struct Vec2f b) {
 	return a.x == b.x && a.y == b.y;
 }
+
+
+struct Complex mma_complex_add(struct Complex a, struct Complex b) {
+	return (struct Complex) {
+		.r = a.r + b.r,
+		.i = a.i + b.i
+	};
+}
+
+struct Complex mma_complex_subtract(struct Complex a, struct Complex b) {
+	return (struct Complex) {
+		.r = a.r - b.r,
+		.i = a.i - b.i
+	};
+}
+
+struct Complex mma_complex_mult(struct Complex a, struct Complex b) {
+	return (struct Complex) {
+		.r = a.r*b.r - a.i*b.i,
+		.i = a.r*b.i + b.r*a.i
+	};
+}
+
+
+struct Complex mma_complex_divide_or_zero(struct Complex a, struct Complex b) {
+	if (b.i == 0.0 && b.r == 0.0) {
+		return (struct Complex) {0.0, 0.0};
+	}
+
+	double denom = b.r*b.r + b.i*b.i;
+
+	return (struct Complex) {
+		.r = (a.r*b.r + a.i*b.i) / denom,
+		.i = (a.i*b.r - a.r*b.i) / denom
+	};
+}
+
 
 
 const struct Mat4f mma_unit_mat4f =
@@ -554,3 +670,36 @@ Mat4 model_rotation_270() {
 }
 
 */
+
+// TEMP buffer
+static char mma_temp_buffer_internal[MMA_TEMP_BUFFER_CAP_INTERNAL] = {0};
+static size_t mma_temp_size_internal = 0;
+void mma_temp_reset(void){ mma_temp_size_internal = 0; }
+void *mma_temp_alloc(size_t requested_size) {
+    size_t word_size = sizeof(uintptr_t);
+    size_t size = (requested_size + word_size - 1)/word_size*word_size;
+    if (mma_temp_size_internal + size > MMA_TEMP_BUFFER_CAP_INTERNAL) {
+		printf("ERROR: mma_temp_alloc(): the buffer requested_size is too large for it to fit in %d kB\n", MMA_TEMP_BUFFER_CAP_INTERNAL/1024);
+		return 0;
+	}
+    void *result = &mma_temp_buffer_internal[mma_temp_size_internal];
+    mma_temp_size_internal += size;
+    return result;
+}
+#define MMA_RESTORE_STACK_SIZE 1024
+static size_t mma_restore_points_stack_internal[MMA_RESTORE_STACK_SIZE];
+static size_t mma_restore_points_stack_pointer_internal = 0;
+
+void mma_temp_set_restore_point() {
+	assert(mma_restore_points_stack_pointer_internal < MMA_RESTORE_STACK_SIZE-1);
+	mma_restore_points_stack_internal[mma_restore_points_stack_pointer_internal++] = mma_temp_size_internal;
+}
+void mma_temp_restore() {
+	if (mma_restore_points_stack_pointer_internal > 0) {
+		mma_restore_points_stack_pointer_internal--;
+		mma_temp_size_internal = mma_restore_points_stack_internal[mma_restore_points_stack_pointer_internal];
+	}
+}
+
+
+// end temp allocator

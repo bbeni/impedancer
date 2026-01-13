@@ -91,6 +91,8 @@ float mma_matrix_detmat4f(struct Mat4f *m);
 //
 void mma_spline_cubic_natural_ab(const double *x, const double *y, size_t n_in, double *a_out, double *b_out);
 void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_in, double *y_out, size_t n_out, double x_min, double x_max);
+void mma_spline_cubic_natural_ab_complex(const double *x, const struct Complex *z, size_t n_in, struct Complex *a_out, struct Complex *b_out);
+void mma_spline_cubic_natural_linear_complex(const double *x, const struct Complex *z, size_t n_in, struct Complex *z_out, size_t n_out, double x_min, double x_max);
 
 
 // utility stuff

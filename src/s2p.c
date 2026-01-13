@@ -218,20 +218,10 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
             info->z22.capacity = n;
 
             for (size_t j = 0; j < n; j++) {
-                // no z0 calculated
-                struct Complex one_m_s11 = {1 - info->s11.items[j].r, -info->s11.items[j].i};
-                struct Complex one_m_s22 = {1 - info->s22.items[j].r, -info->s22.items[j].i};
-                struct Complex one_p_s11 = {1 + info->s11.items[j].r,  info->s11.items[j].i};
-                struct Complex one_p_s22 = {1 + info->s22.items[j].r,  info->s22.items[j].i};
-                struct Complex s12s21 = mma_complex_mult(info->s12.items[j], info->s21.items[j]);
-                struct Complex delta_s = mma_complex_subtract(mma_complex_mult(one_m_s11, one_m_s22), s12s21);
-                info->z11.items[j] = mma_complex_divide_or_zero(mma_complex_add(mma_complex_mult(one_p_s11, one_m_s22), s12s21), delta_s);
-                info->z22.items[j] = mma_complex_divide_or_zero(mma_complex_add(mma_complex_mult(one_m_s11, one_p_s22), s12s21), delta_s);
-                info->z12.items[j] = mma_complex_divide_or_zero(info->s12.items[j], delta_s);
-                info->z12.items[j].r *= 2; info->z12.items[j].i *= 2;
-                info->z21.items[j] = mma_complex_divide_or_zero(info->s21.items[j], delta_s);
-                info->z21.items[j].r *= 2; info->z21.items[j].i *= 2;
-
+                calc_z_from_s(
+                    (struct Complex[2][2]){{info->s11.items[j], info->s21.items[j]},{info->s12.items[j],info->s22.items[j]}},
+                    (struct Complex*[2][2]){{&info->z11.items[j], &info->z21.items[j]},{&info->z12.items[j],&info->z22.items[j]}}
+                );
             }
 
             size_t n_noise = info->noise.NFmin.count;
@@ -239,9 +229,8 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
             info->zGopt.items = malloc(sizeof(*info->zGopt.items)*n_noise);
             info->zGopt.capacity = n_noise;
             for (size_t j = 0; j < n_noise; j++) {
-                struct Complex one_m_G = {1 - info->noise.GammaOpt.items[j].r, -info->noise.GammaOpt.items[j].i};
-                struct Complex one_p_G = {1 + info->noise.GammaOpt.items[j].r,  info->noise.GammaOpt.items[j].i};
-                info->zGopt.items[j] = mma_complex_divide_or_zero(one_p_G, one_m_G);
+                struct Complex gamma = info->noise.GammaOpt.items[j];
+                calc_z_from_gamma(gamma, &info->zGopt.items[j]);
             }
         }
     }
@@ -251,3 +240,24 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
     return 0;
 }
 
+void calc_z_from_s(struct Complex s[2][2], struct Complex *z_out[2][2]) {
+    // no z0 calculated
+    struct Complex one_m_s11 = {1 - s[0][0].r, -s[0][0].i};
+    struct Complex one_m_s22 = {1 - s[1][1].r, -s[1][1].i};
+    struct Complex one_p_s11 = {1 + s[0][0].r,  s[0][0].i};
+    struct Complex one_p_s22 = {1 + s[1][1].r,  s[1][1].i};
+    struct Complex s12s21 = mma_complex_mult(s[0][1], s[1][0]);
+    struct Complex delta_s = mma_complex_subtract(mma_complex_mult(one_m_s11, one_m_s22), s12s21);
+    *z_out[0][0] = mma_complex_divide_or_zero(mma_complex_add(mma_complex_mult(one_p_s11, one_m_s22), s12s21), delta_s);
+    *z_out[1][1] = mma_complex_divide_or_zero(mma_complex_add(mma_complex_mult(one_m_s11, one_p_s22), s12s21), delta_s);
+    *z_out[0][1] = mma_complex_divide_or_zero(s[0][1], delta_s);
+    z_out[0][1]->r *= 2; z_out[0][1]->i *= 2;
+    *z_out[1][0] = mma_complex_divide_or_zero(s[1][0], delta_s);
+    z_out[1][0]->r *= 2; z_out[1][0]->i *= 2;
+}
+
+void calc_z_from_gamma(struct Complex gamma, struct Complex *z_out) {
+    struct Complex one_m_G = {1 - gamma.r, -gamma.i};
+    struct Complex one_p_G = {1 + gamma.r,  gamma.i};
+    *z_out = mma_complex_divide_or_zero(one_p_G, one_m_G);
+}

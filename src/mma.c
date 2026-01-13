@@ -135,7 +135,7 @@ void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_
 	//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
 
 	size_t j = 0;
-	for (size_t i = 0; i < n_out - 1; i ++) {
+	for (size_t i = 0; i < n_out; i ++) {
 		double x_now = i * x_step + x[0];
 		// we increase j until x is in [x[j], x[j+1]]
 		while (x_now > x[j + 1]) {
@@ -149,6 +149,37 @@ void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_
 
 	mma_temp_restore();
 
+}
+
+void mma_spline_cubic_natural_linear_complex(const double *x, const struct Complex *z, size_t n_in, struct Complex *z_out, size_t n_out, double x_min, double x_max) {
+	assert(n_out >= 2);
+	assert(x_min >= x[0]);
+	assert(x_max <= x[n_in - 1]);
+	assert(x_max >= x_min);
+
+	double x_step = (x_max - x_min) / (n_out - 1);
+	mma_temp_set_restore_point();
+	struct Complex *a = mma_temp_alloc(sizeof(struct Complex) * (n_in - 1));
+	struct Complex *b = mma_temp_alloc(sizeof(struct Complex) * (n_in - 1));
+	mma_spline_cubic_natural_ab_complex(x, z, n_in, a, b);
+	// a_i b_i are used to derive the spline and are related for example to
+	//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
+
+	size_t j = 0;
+	for (size_t i = 0; i < n_out ; i ++) {
+		double x_now = i * x_step + x[0];
+		// we increase j until x is in [x[j], x[j+1]]
+		while (x_now > x[j + 1]) {
+			j++;
+		}
+
+		double t = (x_now - x[j]) / (x[j + 1] - x[j]);
+		assert(t >= 0);
+		z_out[i].r = (1 - t) * z[j].r + t * z[j + 1].r + t * (1 - t) * ((1 - t) * a[j].r + t * b[j].r);
+		z_out[i].i = (1 - t) * z[j].i + t * z[j + 1].i + t * (1 - t) * ((1 - t) * a[j].i + t * b[j].i);
+	}
+
+	mma_temp_restore();
 }
 
 // see https://en.wikipedia.org/wiki/Spline_interpolation
@@ -195,10 +226,86 @@ void mma_spline_cubic_natural_ab(const double *x, const double *y, size_t n_in, 
 	mma_temp_restore();
 }
 
+// see https://en.wikipedia.org/wiki/Spline_interpolation
+// make sure there is enough space (n_in - 1) in a_out, b_out
+// a_i b_i are used to derive the spline and are related for example to
+//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
+//
+void mma_spline_cubic_natural_ab_complex(const double *x, const struct Complex *z, size_t n_in, struct Complex *a_out, struct Complex *b_out) {
+	assert(n_in >= 2);
+	mma_temp_set_restore_point();
+	double *a_sub = mma_temp_alloc(n_in*sizeof(double));
+	double *a = mma_temp_alloc(n_in*sizeof(double));
+	double *a_sup = mma_temp_alloc(n_in*sizeof(double));
+	double *k = mma_temp_alloc(n_in*sizeof(double)); // out k, initally holds b
+	double *ia_sub = mma_temp_alloc(n_in*sizeof(double));
+	double *ia = mma_temp_alloc(n_in*sizeof(double));
+	double *ia_sup = mma_temp_alloc(n_in*sizeof(double));
+	double *ik = mma_temp_alloc(n_in*sizeof(double)); // out k, initally holds b
+
+
+	// diagonal a_ii
+	a[0] = 2.0 / (x[1] - x[0]);
+	a[n_in - 1] = 2.0 / (x[n_in - 1] - x[n_in - 2]);
+	for (size_t i = 1; i < n_in-1; i ++) {
+		a[i] = 2.0 * (1.0 / (x[i] - x[i - 1]) + 1.0/ (x[i + 1] - x[i]));
+	}
+
+	// sub and super diagonal elements
+	for (size_t i = 1; i < n_in; i ++) {
+		a_sub[i] = 1.0 / (x[i] - x[i - 1]);
+		a_sup[i - 1] = 1.0 / (x[i] - x[i - 1]);
+	}
+
+	// b vector is stored in k
+	k[0] = 3.0 * (z[1].r - z[0].r) / ((x[1] - x[0]) * (x[1] - x[0]));
+	k[n_in - 1] = 3.0 * (z[n_in - 1].r - z[n_in - 2].r) / ((x[n_in - 1] - x[n_in - 2]) * (x[n_in - 1] - x[n_in - 2]));
+	for (size_t i = 1; i < n_in - 1; i++) {
+		k[i] = 3.0 * ((z[i].r - z[i - 1].r) / ((x[i] - x[i - 1]) * (x[i] - x[i - 1]))  + (z[i + 1].r - z[i].r) / ((x[i + 1] - x[i]) * (x[i + 1] - x[i])));
+	}
+
+	// imag part
+	// diagonal a_ii
+	ia[0] = 2.0 / (x[1] - x[0]);
+	ia[n_in - 1] = 2.0 / (x[n_in - 1] - x[n_in - 2]);
+	for (size_t i = 1; i < n_in-1; i ++) {
+		ia[i] = 2.0 * (1.0 / (x[i] - x[i - 1]) + 1.0/ (x[i + 1] - x[i]));
+	}
+
+	// sub and super diagonal elements
+	for (size_t i = 1; i < n_in; i ++) {
+		ia_sub[i] = 1.0 / (x[i] - x[i - 1]);
+		ia_sup[i - 1] = 1.0 / (x[i] - x[i - 1]);
+	}
+
+	// b vector is stored in k
+	ik[0] = 3.0 * (z[1].i - z[0].i) / ((x[1] - x[0]) * (x[1] - x[0]));
+	ik[n_in - 1] = 3.0 * (z[n_in - 1].i - z[n_in - 2].i) / ((x[n_in - 1] - x[n_in - 2]) * (x[n_in - 1] - x[n_in - 2]));
+	for (size_t i = 1; i < n_in - 1; i++) {
+		ik[i] = 3.0 * ((z[i].i - z[i - 1].i) / ((x[i] - x[i - 1]) * (x[i] - x[i - 1]))  + (z[i + 1].i - z[i].i) / ((x[i + 1] - x[i]) * (x[i + 1] - x[i])));
+	}
+
+
+	double *scratch = mma_temp_alloc(n_in*sizeof(double));
+	mma_solve_tridiagonal_matrix(n_in, a_sub, a, a_sup, k, scratch);
+	mma_solve_tridiagonal_matrix(n_in, ia_sub, ia, ia_sup, ik, scratch);
+
+	// calc a_out b_out
+	for (size_t i = 0; i < n_in - 1; i++) {
+		a_out[i].r = k[i] * (x[i+1] - x[i]) - (z[i+1].r - z[i].r);
+		b_out[i].r = -k[i+1] * (x[i+1] - x[i]) + (z[i+1].r - z[i].r);
+		a_out[i].i = ik[i] * (x[i+1] - x[i]) - (z[i+1].i - z[i].i);
+		b_out[i].i = -ik[i+1] * (x[i+1] - x[i]) + (z[i+1].i - z[i].i);
+	}
+
+	mma_temp_restore();
+}
+
+
 // S'(x0) = y0', S'(x(n-1)) = y(n-1)'
 // make sure there is enough space in y_out
 //void mma_spline_cubic_clamped(double *x, double *y, size_t n_in, double *y_out, size_t n_out) {
-//
+//	TODO
 //}
 
 

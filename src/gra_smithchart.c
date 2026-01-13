@@ -66,24 +66,51 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
 
 }
 
-
+// fmt_marker options: 'o', '-'
 void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_length,
-                 double f_min, double f_max, Mui_Color color, Mui_Vector2 smith_center, Mui_Rectangle plot_area)
+                 double f_min, double f_max, Mui_Color color, Mui_Vector2 smith_center,
+                 char fmt_marker, double marker_size, Mui_Rectangle plot_area)
 {
     float r_outer = fmin(plot_area.height, plot_area.width) * 0.49f;
 
-    for (size_t i = 0; i < data_length; i++) {
-        double f = f_data[i];
-        double q = (z_data[i].r+1)*(z_data[i].r+1) + z_data[i].i*z_data[i].i;
-        double x = ((z_data[i].r+1)*(z_data[i].r-1) + z_data[i].i*z_data[i].i) / q;
-        double y = 2*z_data[i].i/q;
+    if (fmt_marker == 'o') {
+        for (size_t i = 0; i < data_length; i++) {
+            double f = f_data[i];
 
-        if (f >= f_min && f <= f_max){
-            Mui_Vector2 screen_coords = {
-                smith_center.x + x * r_outer,
-                smith_center.y - y * r_outer
-            };
-            mui_draw_circle(screen_coords, 3.0f, color);
+            if (f >= f_min && f <= f_max){
+                double q = (z_data[i].r+1)*(z_data[i].r+1) + z_data[i].i*z_data[i].i;
+                double x = ((z_data[i].r+1)*(z_data[i].r-1) + z_data[i].i*z_data[i].i) / q;
+                double y = 2*z_data[i].i/q;
+
+                Mui_Vector2 screen_coords = {
+                    smith_center.x + x * r_outer,
+                    smith_center.y - y * r_outer
+                };
+                mui_draw_circle(screen_coords, marker_size, color);
+            }
+        }
+    } else if(fmt_marker == '-') {
+        double x_last, y_last;
+        for (size_t i = 0; i < data_length; i++) {
+            double f = f_data[i];
+            double q = (z_data[i].r+1)*(z_data[i].r+1) + z_data[i].i*z_data[i].i;
+            double x = ((z_data[i].r+1)*(z_data[i].r-1) + z_data[i].i*z_data[i].i) / q;
+            double y = 2*z_data[i].i/q;
+            // skip the first round to get x_last, y_last
+            if (i > 0 && f >= f_min && f <= f_max){
+                Mui_Vector2 screen_coords_1 = {
+                    smith_center.x + x_last * r_outer,
+                    smith_center.y - y_last * r_outer
+                };
+                Mui_Vector2 screen_coords_2 = {
+                    smith_center.x + x * r_outer,
+                    smith_center.y - y * r_outer
+                };
+
+                mui_draw_line(screen_coords_1.x, screen_coords_1.y, screen_coords_2.x, screen_coords_2.y, marker_size, color);
+            }
+            x_last = x;
+            y_last = y;
         }
     }
 }

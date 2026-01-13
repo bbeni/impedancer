@@ -129,20 +129,35 @@ int main(int argc, char** argv) {
     size_t length;
     double *fs;
     struct Complex *s_params[4];
+    struct Complex *Gopt;
     struct Complex *z_params[4];
+    struct Complex *zGopt;
+
 
     size_t noise_length = infos.items[selected].noise.freq.count;
     double *noise_fs = infos.items[selected].noise.freq.items;
     double *NFmins = infos.items[selected].noise.freq.items;
 
+    // interpolated data
 #define N_INTERPOL 2000
-    double noise_fs_interpolated[N_INTERPOL];
+    double fs_interpolated[N_INTERPOL];
     double NFmins_interpolated[N_INTERPOL];
+    struct Complex s_params_interpolated[4][N_INTERPOL];
+    struct Complex z_params_interpolated[4][N_INTERPOL];
+    struct Complex Gopt_interpolated[N_INTERPOL];
+    struct Complex zGopt_interpolated[N_INTERPOL];
+
 
     // static data
     Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
     char* labels[4] = {"dB(S11)", "dB(S21)", "dB(S12)", "dB(S22)"};
     char* labels_index[4] = {"11", "21", "12", "22"};
+
+
+    double min_f_before;
+    double max_f_before;
+    double min_f;
+    double max_f;
     bool mask[4];
 
     bool first_frame = true;
@@ -189,11 +204,13 @@ int main(int argc, char** argv) {
             z_params[1] = infos.items[selected].z21.items;
             z_params[2] = infos.items[selected].z12.items;
             z_params[3] = infos.items[selected].z22.items;
+            Gopt = infos.items[selected].noise.GammaOpt.items;
+            zGopt = infos.items[selected].zGopt.items;
+
 
             noise_length = infos.items[selected].noise.NFmin.count;
             NFmins = infos.items[selected].noise.NFmin.items;
             noise_fs = infos.items[selected].noise.freq.items;
-
         }
 
 
@@ -239,11 +256,17 @@ int main(int argc, char** argv) {
 
             // 4 plot windows.
             Mui_Rectangle r11, r12, r21, r22;
-            mui_grid_22(right, 0.667f, 0.5f, &r11, &r12, &r21, &r22);
+            mui_grid_22(right, 0.5f, 0.5f, &r11, &r12, &r21, &r22);
             r11 = mui_shrink(r11, padding);
             r12 = mui_shrink(r12, padding);
             r21 = mui_shrink(r21, padding);
             r22 = mui_shrink(r22, padding);
+
+            const float offset = 100;
+            r21.height += offset;
+            r22.height -= offset;
+            r22.y += offset;
+
 
             Mui_Rectangle slider_rect;
             r11 = mui_cut_top(r11, 50, &slider_rect);
@@ -259,60 +282,87 @@ int main(int argc, char** argv) {
             mui_simple_slider(&slider_state_2, true, slider_rect2);
 
 
+            //
+            // update data
+            //
+            min_f_before = min_f;
+            max_f_before = max_f;
             mask[0] = show_s11_checkbox_state.checked;
             mask[1] = show_s21_checkbox_state.checked;
             mask[2] = show_s12_checkbox_state.checked;
             mask[3] = show_s22_checkbox_state.checked;
             double min_y = slider_state_2.value * (-30);
             double max_y = slider_state_2.value * 60;
-            double min_f = 1;
-            double max_f = slider_state.value * 2e11 + min_f;
+            min_f = 1;
+            max_f = slider_state.value * 1.9999999999e11 + min_f + 0.00000000001;
             double step_f = 2e9;
             double step_y = 1;
+            double min_nfmin = 0;
+            double max_nfmin = 0.1;
+            double step_nfmin = 0.01;
             //
-            // dB plot
+            // interpoaltion
+            //
+            // F = Fmin + 4*Rn*|Gs - Gopt|^2 / (Z0(1 - |Gopt|^2)*|1+Gopt|^2)
+            // we assume optimal noise match Gs == Gopt for now
+            // -> F = Fmin
+            if (selected_before != selected || first_frame || min_f != min_f_before || max_f != max_f_before) {
+                for (size_t i = 0; i < N_INTERPOL; i ++) {
+                    fs_interpolated[i] = min_f + i * (max_f - min_f) / N_INTERPOL;
+                }
+
+                mma_spline_cubic_natural_linear_complex(noise_fs, Gopt, noise_length, Gopt_interpolated, N_INTERPOL, min_f, max_f);
+                mma_spline_cubic_natural_linear(noise_fs, NFmins, noise_length, NFmins_interpolated, N_INTERPOL, min_f, max_f);
+                for (size_t i = 0; i < 4; i ++) {
+                    mma_spline_cubic_natural_linear_complex(fs, s_params[i], length, s_params_interpolated[i], N_INTERPOL, min_f, max_f);
+                }
+            }
+
+            // insted of this just calculate z again
+            //mma_spline_cubic_natural_linear_complex(fs, z_params[i], length, z_params_interpolated[i], N_INTERPOL, min_f, max_f);
+            for (size_t j = 0; j < N_INTERPOL; j ++) {
+                calc_z_from_s(
+                    (struct Complex [2][2]){{ s_params_interpolated[0][j],  s_params_interpolated[1][j]},{ s_params_interpolated[2][j],  s_params_interpolated[3][j]}},
+                    (struct Complex*[2][2]){{&z_params_interpolated[0][j], &z_params_interpolated[1][j]},{&z_params_interpolated[2][j], &z_params_interpolated[3][j]}}
+                );
+                calc_z_from_gamma(Gopt_interpolated[j], &zGopt_interpolated[j]);
+            }
+
+
+
+            //
+            // dB plot draw
             //
             Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid("frequency [Hz]", "mag(S11)", min_f, max_f, min_y, max_y, step_f, step_y, true, r11);
             for (int i = 0; i < 4; i++) {
                 if (mask[i]) {
-                    gra_xy_plot_data_points(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, colors[i], 2.0, plot_area);
+                    gra_xy_plot_data_points(fs_interpolated, s_params_interpolated[i], dB, N_INTERPOL, min_f, max_f, min_y, max_y, colors[i], 1.0, plot_area);
+                    //gra_xy_plot_data_points(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, MUI_RED, 2.0, plot_area);
                 }
             }
             gra_xy_legend(labels, colors, mask, 4, plot_area);
 
             //
-            // smith chart
+            // smith chart draw
             //
             draw_smith_grid(true, true, NULL, 0, r21);
             Mui_Vector2 r21c = mui_center_of_rectangle(r21);
             for (int i = 0; i < 4; i++) {
                 if (mask[i]) {
-                    gra_smith_plot_data(fs, z_params[i], length, min_f, max_f, colors[i], r21c, r21);
-                    //printf("%s@200GHz = %f + %f * i\n, z = %f + %f * i\n",labels[i], s_params[i][length-1].r, s_params[i][length-1].i, z_params[i][length-1].r, z_params[i][length-1].i);
+                    gra_smith_plot_data(fs_interpolated, z_params_interpolated[i], N_INTERPOL, min_f, max_f, colors[i], r21c, '-', 2, r21);
+                    //gra_smith_plot_data(fs, z_params[i], length, min_f, max_f, colors[i], r21c, 'o', 4, r21);
                 }
             }
-
-            struct Complex *zGopt = infos.items[selected].zGopt.items;
             if (show_Gopt_checkbox_state.checked) {
-                gra_smith_plot_data(fs, zGopt, infos.items[selected].zGopt.count, min_f, max_f, MUI_BROWN, r21c, r21);
+                gra_smith_plot_data(fs_interpolated, zGopt_interpolated, N_INTERPOL-1, min_f, max_f, MUI_BEIGE, r21c, '-', 2, r21);
+                //gra_smith_plot_data(fs, zGopt, infos.items[selected].zGopt.count, min_f, max_f, MUI_BROWN, r21c, 'o', 5, r21);
             }
 
             //
-            // noise plot
+            // noise plot draw
             //
-            // F = Fmin + 4*Rn*|Gs - Gopt|^2 / (Z0(1 - |Gopt|^2)*|1+Gopt|^2)
-            // we assume optimal noise match Gs == Gopt for now
-            // -> F = Fmin
-            float min_nfmin = 0;
-            float max_nfmin = 0.1;
-            float step_nfmin = 0.01;
             Mui_Rectangle plot_area2 = gra_xy_plot_labels_and_grid("frequency [Hz]", "NFmin", min_f, max_f, min_nfmin, max_nfmin, step_f, step_nfmin, true, r12);
-
-            for (size_t i = 0; i < N_INTERPOL; i ++) {
-                noise_fs_interpolated[i] = min_f + i * (max_f - min_f) / N_INTERPOL;
-            }
-            mma_spline_cubic_natural_linear(noise_fs, NFmins, noise_length, NFmins_interpolated, N_INTERPOL, min_f, max_f);
-            gra_xy_plot_data_points(noise_fs_interpolated, NFmins_interpolated, NULL, N_INTERPOL, min_f, max_f, min_nfmin, max_nfmin, MUI_GREEN, 1.0f, plot_area2);
+            gra_xy_plot_data_points(fs_interpolated, NFmins_interpolated, NULL, N_INTERPOL, min_f, max_f, min_nfmin, max_nfmin, MUI_GREEN, 1.0f, plot_area2);
             gra_xy_plot_data_points(noise_fs, NFmins, NULL, noise_length, min_f, max_f, min_nfmin, max_nfmin, MUI_BLUE, 3.0f, plot_area2);
 
 

@@ -29,7 +29,7 @@
 #include "dirent.h"
 #endif  //_WIN32
 
-bool read_entire_file(const char *path, char** content, size_t* out_size) {
+bool uti_read_entire_file(const char *path, char** content, size_t* out_size) {
     char* mem_block = NULL;
     FILE *file = fopen(path, "rb");
     if (!file) goto error;
@@ -70,7 +70,7 @@ error:
 }
 
 
-bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_count) {
+bool uti_read_entire_dir(const char *parent_dir, char*** children, size_t *children_count) {
     DIR* d;
 	d = opendir(parent_dir);
 	if (!d) {

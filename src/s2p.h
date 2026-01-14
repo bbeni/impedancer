@@ -37,8 +37,8 @@ struct S2P_Info {
     struct Complex_Array s22;
     char file_name[512];
     char full_path[512];
-    char* file__content;
-    size_t file__content_size;
+    char* file_content;
+    size_t file_content_size;
 
     // maybe here values
     struct Noise_Data noise;

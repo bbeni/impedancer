@@ -68,10 +68,11 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
 
 // fmt_marker options: 'o', '-'
 void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_length,
-                 double f_min, double f_max, Mui_Color color, Mui_Vector2 smith_center,
+                 double f_min, double f_max, Mui_Color color,
                  char fmt_marker, double marker_size, Mui_Rectangle plot_area)
 {
     float r_outer = fmin(plot_area.height, plot_area.width) * 0.49f;
+    Mui_Vector2 smith_center = mui_center_of_rectangle(plot_area);
 
     if (fmt_marker == 'o') {
         for (size_t i = 0; i < data_length; i++) {

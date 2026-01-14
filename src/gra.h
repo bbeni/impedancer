@@ -30,7 +30,7 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
     size_t n_custom_circles, Mui_Rectangle plot_area);
 // fmt_marker options: 'o': circles, '-': lines
 void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_length,
-                 double f_min, double f_max, Mui_Color color, Mui_Vector2 smith_center,
+                 double f_min, double f_max, Mui_Color color,
                  char fmt_marker, double marker_size, Mui_Rectangle plot_area);
 
 #endif //GRA_H_

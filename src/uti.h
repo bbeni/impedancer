@@ -8,8 +8,8 @@
 #include "stddef.h"
 
 // allocate space for file content + \0 terminator and read into it. out size is without \0 terminator.
-bool read_entire_file(const char *path, char** content, size_t* out_size);
-bool read_entire_dir(const char *parent_dir, char*** children, size_t *children_count);
+bool uti_read_entire_file(const char *path, char** content, size_t* out_size);
+bool uti_read_entire_dir(const char *parent_dir, char*** children, size_t *children_count);
 
 // Adopted from nob.h:
 // TEMP buffer because we need copy strings to null terminated. Raylib MeaserTexteEx, etc.. uses only null terminated

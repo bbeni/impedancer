@@ -24,7 +24,7 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
 
     char** file_names;
     size_t file_names_count;
-    if (!read_entire_dir(dir, &file_names, &file_names_count)) return 1;
+    if (!uti_read_entire_dir(dir, &file_names, &file_names_count)) return 1;
 
     // naively allocate enough space
     infos->capacity = file_names_count;
@@ -48,7 +48,7 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
         sprintf(info->full_path, "%s/%s", dir, file_names[i]);
         sprintf(info->file_name, "%s", file_names[i]);
 
-        if (!read_entire_file(info->full_path, &info->file__content, &info->file__content_size)) {
+        if (!uti_read_entire_file(info->full_path, &info->file_content, &info->file_content_size)) {
             infos->count--;
             exit(3);
             continue;
@@ -119,7 +119,7 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
         info->noise.freq.items = malloc(sizeof(*info->noise.freq.items)*INITIAL_CAP);
         info->noise.freq.capacity = INITIAL_CAP;
 
-        Nob_String_View content = { .data = info->file__content, .count = info->file__content_size};
+        Nob_String_View content = { .data = info->file_content, .count = info->file_content_size};
 
         double freq_multiplier = 1.0;
         info->R_ref = 50.0;

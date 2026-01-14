@@ -76,12 +76,12 @@ Mui_Theme mui_protos_theme = {
     .slider_thickness = 8.0f,
     .slider_wagon_width = 32.0f,
     .slider_wagon_height = 32.0f,
-    .slider_wagon_corner_radius = 8.0f,
+    .slider_wagon_corner_radius = 6.0f,
     .slider_wagon_border_thickness = 2.0f,
 
     .animation_speed_to_hover = 18.0f,
     .animation_speed_to_normal = 11.0f,
-    .corner_radius = 10.0f,
+    .corner_radius = 4.0f,
 };
 
 Mui_Color mui_interpolate_color(Mui_Color a, Mui_Color b, float t) {
@@ -205,6 +205,50 @@ void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle 
 }
 
 
+// TODO: this function is not in the philosophy of the mui library -> delete me!
+Mui_Rectangle mui_column_stack(float left_x, float top_y, Mui_Rectangle* elements, size_t elements_count, MUI_ELEMENT_ALIGNMENT_TYPE alignment) {
+    float max_width = 0;
+    for (size_t i = 0; i < elements_count; i++) {
+        if (elements[i].width > max_width) max_width = elements[i].width;
+    }
+
+    float current_y = top_y;
+    switch (alignment) {
+    case MUI_ELEMENT_ALIGNMENT_STRETCH:
+        for (size_t i = 0; i < elements_count; i++) {
+            elements[i].width = max_width;
+            elements[i].x = left_x;
+            elements[i].y = current_y;
+            current_y += elements[i].height;
+        }
+    break;
+    case MUI_ELEMENT_ALIGNMENT_LEFT:
+        for (size_t i = 0; i < elements_count; i++) {
+            elements[i].x = left_x;
+            elements[i].y = current_y;
+            current_y += elements[i].height;
+        }
+    break;
+    case MUI_ELEMENT_ALIGNMENT_CENTER:
+        for (size_t i = 0; i < elements_count; i++) {
+            elements[i].x = left_x + (max_width - elements[i].width) * 0.5f;
+            elements[i].y = current_y;
+            current_y += elements[i].height;
+        }
+    break;
+    case MUI_ELEMENT_ALIGNMENT_RIGHT:
+        for (size_t i = 0; i < elements_count; i++) {
+            elements[i].x = left_x + max_width - elements[i].width;
+            elements[i].y = current_y;
+            current_y += elements[i].height;
+        }
+    break;
+    default:
+        assert(false && "MUI_ELEMENT_ALIGNMENT_COUNT exceeded" );
+    break;
+    }
+}
+
 bool mui_is_inside_rectangle(Mui_Vector2 pos, Mui_Rectangle rect) {
     return pos.x >= rect.x &&
            pos.x <  rect.x + rect.width &&
@@ -235,7 +279,7 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     (void) to_the_right;
 
 
-    float w_to_h_ratio = 4.71f;
+    float w_to_h_ratio = 3.71f;
     float w_component = w_to_h_ratio * height / 3;
 
     Mui_Color color = mui_protos_theme.text_color;
@@ -375,7 +419,50 @@ void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {
     mui_draw_text_line(theme->label_font, position, 0.1, theme->label_text_size, text, theme->label_text_color, 0, l);
 }
 
+bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, Mui_Rectangle place) {
+    Mui_Theme *theme = state->theme;
+    if (theme == NULL) theme = &mui_protos_theme;
 
+    // Update the time
+    float dt = mui_get_time() - state->last_time;
+    state->last_time = mui_get_time();
+
+    if (mui_is_inside_rectangle(mui_get_mouse_position(), place)) {
+        if (mui_is_mouse_button_pressed(0)) {
+            state->open = !state->open;
+        }
+        mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
+    } else {
+        mui_move_towards(&(state->hover_t), 0, theme->animation_speed_to_normal, dt);
+    }
+
+    Mui_Color bg = mui_interpolate_color(theme->background_color, theme->background_hover_color, state->hover_t);
+    Mui_Color fg = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
+
+    Mui_Rectangle triangle_space;
+    Mui_Rectangle text_space = mui_cut_left(place, place.height, &triangle_space); // place for triangle
+
+    mui_draw_rectangle_rounded(place, theme->corner_radius, bg);
+    float x_s = triangle_space.height / 4;
+    Mui_Vector2 center = mui_center_of_rectangle(triangle_space);
+
+    if (state->open) {
+        //
+        mui_draw_line(center.x, center.y + x_s, center.x - x_s, center.y - x_s * sqrtf(0.5f), 2.0f, fg);
+        mui_draw_line(center.x, center.y + x_s, center.x + x_s, center.y - x_s * sqrtf(0.5f), 2.0f, fg);
+    } else {
+        mui_draw_line(center.x + x_s, center.y, center.x - x_s * sqrtf(0.5f), center.y + x_s, 2.0f, fg);
+        mui_draw_line(center.x + x_s, center.y, center.x - x_s * sqrtf(0.5f), center.y - x_s, 2.0f, fg);
+    }
+
+    if (text) {
+        float font_size = theme->text_size;
+        Mui_Vector2 pos = {.x = text_space.x, .y = text_space.y + (text_space.height - font_size) * 0.5f};
+        mui_draw_text_line(theme->font, pos,0.1f, theme->text_size, text, fg, 0, strlen(text));
+    }
+
+    return state->open;
+}
 
 void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place) {
 

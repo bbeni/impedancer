@@ -11,9 +11,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "mma.h"
-
-#define NOB_NO_MINIRENT
-#include "nob.h"
+#include "assert.h"
 
 typedef enum { FMT_RI, FMT_MA, FMT_DB } S_Format;
 
@@ -28,7 +26,7 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
 
     // naively allocate enough space
     infos->capacity = file_names_count;
-    infos->count = 0;
+    infos->length = 0;
     infos->items = malloc(sizeof(infos->items[0])*infos->capacity);
     memset(infos->items, 0xCD, sizeof(infos->items[0])*infos->capacity);
 
@@ -43,24 +41,24 @@ int read_s2p_files(const char* dir, struct S2P_Info_Array *infos) {
             continue;
         }
 
-        struct S2P_Info * info = &infos->items[infos->count++];
+        struct S2P_Info * info = &infos->items[infos->length++];
 
         sprintf(info->full_path, "%s/%s", dir, file_names[i]);
         sprintf(info->file_name, "%s", file_names[i]);
 
         if (!uti_read_entire_file(info->full_path, &info->file_content, &info->file_content_size)) {
-            infos->count--;
+            infos->length--;
             exit(3);
             continue;
         }
     }
 
-    if (infos->count == 0) {
+    if (infos->length == 0) {
         printf("ERROR: No .s2p files found in directory %s\n", dir);
         return 1;
     }
 
-    printf("INFO: read %zu possible s2p files of %zu entries in directory %s\n", infos->count, i, dir);
+    printf("INFO: read %zu possible s2p files of %zu entries in directory %s\n", infos->length, i, dir);
     return 0;
 }
 
@@ -87,53 +85,42 @@ struct Complex parse_complex(double v1, double v2, S_Format fmt) {
 
 int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
 
-    for (size_t i = 0; i < infos->count; ++i) {
+    for (size_t i = 0; i < infos->length; ++i) {
         struct S2P_Info *info = &infos->items[i];
-        info->freq.count = 0;
-        info->s11.count = 0;
-        info->s12.count = 0;
-        info->s21.count = 0;
-        info->s22.count = 0;
-        info->noise.NFmin.count = 0;
-        info->noise.GammaOpt.count = 0;
-        info->noise.Rn.count = 0;
-        info->noise.freq.count = 0;
+
 
         #define INITIAL_CAP 512
-        info->freq.items = malloc(sizeof(*info->freq.items)*INITIAL_CAP);
-        info->freq.capacity = INITIAL_CAP;
-        info->s11.items = malloc(sizeof(*info->s11.items)*INITIAL_CAP);
-        info->s11.capacity = INITIAL_CAP;
-        info->s21.items = malloc(sizeof(*info->s21.items)*INITIAL_CAP);
-        info->s21.capacity = INITIAL_CAP;
-        info->s12.items = malloc(sizeof(*info->s12.items)*INITIAL_CAP);
-        info->s12.capacity = INITIAL_CAP;
-        info->s22.items = malloc(sizeof(*info->s22.items)*INITIAL_CAP);
-        info->s22.capacity = INITIAL_CAP;
-        info->noise.NFmin.items = malloc(sizeof(*info->noise.NFmin.items)*INITIAL_CAP);
-        info->noise.NFmin.capacity = INITIAL_CAP;
-        info->noise.GammaOpt.items = malloc(sizeof(*info->noise.GammaOpt.items)*INITIAL_CAP);
-        info->noise.GammaOpt.capacity = INITIAL_CAP;
-        info->noise.Rn.items = malloc(sizeof(*info->noise.Rn.items)*INITIAL_CAP);
-        info->noise.Rn.capacity = INITIAL_CAP;
-        info->noise.freq.items = malloc(sizeof(*info->noise.freq.items)*INITIAL_CAP);
-        info->noise.freq.capacity = INITIAL_CAP;
+        info->freq = malloc(sizeof(*info->freq)*INITIAL_CAP);
+        info->s11 = malloc(sizeof(*info->s11)*INITIAL_CAP);
+        info->s21 = malloc(sizeof(*info->s21)*INITIAL_CAP);
+        info->s12 = malloc(sizeof(*info->s12)*INITIAL_CAP);
+        info->s22 = malloc(sizeof(*info->s22)*INITIAL_CAP);
+        info->data_capacity = INITIAL_CAP;
+        info->data_length = 0;
 
-        Nob_String_View content = { .data = info->file_content, .count = info->file_content_size};
+
+        info->noise.NFmin = malloc(sizeof(*info->noise.NFmin)*INITIAL_CAP);
+        info->noise.GammaOpt = malloc(sizeof(*info->noise.GammaOpt)*INITIAL_CAP);
+        info->noise.Rn = malloc(sizeof(*info->noise.Rn)*INITIAL_CAP);
+        info->noise.freq = malloc(sizeof(*info->noise.freq)*INITIAL_CAP);
+        info->noise.length = 0;
+        info->noise.capacity = INITIAL_CAP;
+
+        struct Uti_String_View content = {.text = info->file_content, .length = info->file_content_size};
 
         double freq_multiplier = 1.0;
         info->R_ref = 50.0;
         S_Format format = FMT_RI;
 
-        while (content.count > 0) {
-            Nob_String_View line = nob_sv_trim(nob_sv_chop_by_delim(&content, '\n'));
-            if (line.count == 0 || *line.data == '!') continue;
+        while (content.length > 0) {
+            struct Uti_String_View line = uti_sv_trim(uti_sv_chop_by_delim(&content, '\n'));
+            if (line.length == 0 || *line.text == '!') continue;
 
-            char *line_cstr = nob_temp_sprintf("%.*s", (int)line.count, line.data);
+            char* line_cstr = uti_temp_strndup(line.text, line.length);
 
             // Rules for Version 1.0, Version 2.0, and Version 2.1 files:
             // For 2-port files: # [Hz|kHz|MHz|GHz] [S|Y|Z|G|H] [DB|MA|RI] [R n]
-            if (*line.data == '#') {
+            if (*line.text == '#') {
 
                 if (strstr(line_cstr, "GHz")) freq_multiplier = 1e9;
                 else if (strstr(line_cstr, "MHz")) freq_multiplier = 1e6;
@@ -168,46 +155,55 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
 
             if (scanned == 9) {
                 // S-Parameter Line: Freq S11.1 S11.2 S21.1 S21.2 S12.1 S12.2 S22.1 S22.2
-                nob_da_append(&info->freq, val[0] * freq_multiplier);
-                nob_da_append(&info->s11, parse_complex(val[1], val[2], format));
-                nob_da_append(&info->s21, parse_complex(val[3], val[4], format));
-                nob_da_append(&info->s12, parse_complex(val[5], val[6], format));
-                nob_da_append(&info->s22, parse_complex(val[7], val[8], format));
+                if (info->data_length + 1 >= info->data_capacity) {
+                    info->data_capacity *= 2;
+                    info->freq = realloc(info->freq, sizeof(*info->freq)*info->data_capacity);
+                    info->s11 = realloc(info->s11, sizeof(*info->s11)*info->data_capacity);
+                    info->s12 = realloc(info->s12, sizeof(*info->s12)*info->data_capacity);
+                    info->s21 = realloc(info->s21, sizeof(*info->s21)*info->data_capacity);
+                    info->s22 = realloc(info->s22, sizeof(*info->s22)*info->data_capacity);
+                }
+
+                info->freq[info->data_length] = val[0] * freq_multiplier;
+                info->s11[info->data_length] =  parse_complex(val[1], val[2], format);
+                info->s21[info->data_length] =  parse_complex(val[3], val[4], format);
+                info->s12[info->data_length] =  parse_complex(val[5], val[6], format);
+                info->s22[info->data_length] =  parse_complex(val[7], val[8], format);
+                info->data_length++;
             }
             else if (scanned == 5) {
                 // Noise Data Line: Freq Fmin Gamma_Mag Gamma_Ang Rn
                 // Freq       Fmin(dB)  Mag(Gopt) Ang(Gopt) Rn/50
-                nob_da_append(&info->noise.freq, val[0]);
-                nob_da_append(&info->noise.NFmin, val[1]);
-                nob_da_append(&info->noise.GammaOpt, parse_complex(val[2], val[3], FMT_MA));
-                nob_da_append(&info->noise.Rn, val[4]);
+                if (info->noise.length + 1 >= info->noise.capacity) {
+                    info->noise.capacity *= 2;
+                    info->noise.freq = realloc(info->noise.freq, sizeof(*info->noise.freq)*info->noise.capacity);
+                    info->noise.NFmin = realloc(info->noise.NFmin, sizeof(*info->noise.NFmin)*info->noise.capacity);
+                    info->noise.GammaOpt = realloc(info->noise.GammaOpt, sizeof(*info->noise.GammaOpt)*info->noise.capacity);
+                    info->noise.Rn = realloc(info->noise.Rn, sizeof(*info->noise.Rn)*info->noise.capacity);
+                }
+                info->noise.freq[info->noise.length] = val[0];
+                info->noise.NFmin[info->noise.length] = val[1];
+                info->noise.GammaOpt[info->noise.length] = parse_complex(val[2], val[3], FMT_MA);
+                info->noise.Rn[info->noise.length] = val[4];
+                info->noise.length++;
             }
         }
 
-        assert(info->s11.count == info->s12.count);
-        assert(info->s11.count == info->s21.count);
-        assert(info->s11.count == info->s22.count);
-
-        assert(info->noise.NFmin.count == info->noise.GammaOpt.count);
-        assert(info->noise.NFmin.count == info->noise.Rn.count);
-        assert(info->noise.NFmin.count == info->noise.freq.count);
-
-        assert(info->noise.freq.count == info->freq.count);
+        assert(info->noise.length == info->data_length);
 
         uti_temp_reset();
-        nob_temp_reset();
-        //printf("INFO: Parsed %zu frequency points from %s\n", info->freq.count, info->file_name);
+        //printf("INFO: Parsed %zu frequency points from %s\n", info->freq.length, info->file_name);
     }
 
 
     if (calc_z) {
-        for (size_t i = 0; i < infos->count; ++i) {
+        for (size_t i = 0; i < infos->length; ++i) {
             struct S2P_Info *info = &infos->items[i];
-            size_t n = info->s11.count;
-            info->z11.count = n;
-            info->z12.count = n;
-            info->z21.count = n;
-            info->z22.count = n;
+            size_t n = info->data_length;
+            info->z11.length = n;
+            info->z12.length = n;
+            info->z21.length = n;
+            info->z22.length = n;
             info->z11.items = malloc(sizeof(*info->z11.items)*n);
             info->z11.capacity = n;
             info->z21.items = malloc(sizeof(*info->z21.items)*n);
@@ -219,23 +215,23 @@ int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
 
             for (size_t j = 0; j < n; j++) {
                 calc_z_from_s(
-                    (struct Complex[2][2]){{info->s11.items[j], info->s21.items[j]},{info->s12.items[j],info->s22.items[j]}},
+                    (struct Complex[2][2]){{info->s11[j], info->s21[j]},{info->s12[j],info->s22[j]}},
                     (struct Complex*[2][2]){{&info->z11.items[j], &info->z21.items[j]},{&info->z12.items[j],&info->z22.items[j]}}
                 );
             }
 
-            size_t n_noise = info->noise.NFmin.count;
-            info->zGopt.count = n_noise;
+            size_t n_noise = info->noise.length;
+            info->zGopt.length = n_noise;
             info->zGopt.items = malloc(sizeof(*info->zGopt.items)*n_noise);
             info->zGopt.capacity = n_noise;
             for (size_t j = 0; j < n_noise; j++) {
-                struct Complex gamma = info->noise.GammaOpt.items[j];
+                struct Complex gamma = info->noise.GammaOpt[j];
                 calc_z_from_gamma(gamma, &info->zGopt.items[j]);
             }
         }
     }
 
-    printf("INFO: Parsed %zu s2p data sets.\n", infos->count);
+    printf("INFO: Parsed %zu s2p data sets.\n", infos->length);
 
     return 0;
 }

@@ -16,7 +16,6 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-
 #define NOB_NO_MINIRENT
 #define NOB_IMPLEMENTATION
 #include "nob.h"

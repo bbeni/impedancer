@@ -20,11 +20,6 @@ char* next(int* count, char*** argv) {
     return *((*argv)++);
 }
 
-struct Complex_Array sel_s11(struct S2P_Info* info) {return info->s11;}
-struct Complex_Array sel_s21(struct S2P_Info* info) {return info->s21;}
-struct Complex_Array sel_s12(struct S2P_Info* info) {return info->s12;}
-struct Complex_Array sel_s22(struct S2P_Info* info) {return info->s22;}
-
 double mag(size_t i, void* x) {
     struct Complex *s = (struct Complex *)x;
     struct Complex si = s[i];
@@ -35,32 +30,6 @@ double dB(size_t i, void* x) {
     struct Complex *s = (struct Complex *)x;
     struct Complex si = s[i];
     return dB_from_squared(si.i * si.i + si.r* si.r);
-}
-
-void draw_graph(struct S2P_Info info, int posx, int posy, int width, int height, struct Complex_Array (* selector)(struct S2P_Info* info), Mui_Color color) {
-    double max_f = info.freq.items[info.freq.count-1];
-    double min_f = info.freq.items[0];
-
-    double mag_min = INFINITY;
-    double mag_max = -INFINITY;
-
-    struct Complex_Array arr = selector(&info);
-
-    for (size_t i=0; i < info.freq.count; i++) {
-        struct Complex s = arr.items[i];
-        double mag_s = s.r*s.r + s.i * s.i;
-        if (mag_s < mag_min) mag_min = mag_s;
-        if (mag_s > mag_max) mag_max = mag_s;
-    }
-
-    for (size_t i=0; i < info.freq.count; i++) {
-        struct Complex s = arr.items[i];
-        double mag_s = s.r*s.r + s.i * s.i;
-        double f = info.freq.items[i];
-        int x = (f-min_f)/(max_f - min_f) * width + posx;
-        int y = height - (mag_s-mag_min)/(mag_max - mag_min)*height + posy;
-        mui_draw_circle((Mui_Vector2){.x=x,.y=y}, 2, color);
-    }
 }
 
 
@@ -169,21 +138,21 @@ void stage_view_update_active_setting(struct Stage_View* stage_view, size_t new_
     size_t active_setting = stage_view->active_setting;
     struct S2P_Info* info = &stage_view->infos->items[active_setting];
 
-    stage_view->length = info->freq.count;
-    stage_view->fs = info->freq.items;
-    stage_view->s_params[0] = info->s11.items;
-    stage_view->s_params[1] = info->s21.items;
-    stage_view->s_params[2] = info->s12.items;
-    stage_view->s_params[3] = info->s22.items;
+    stage_view->length = info->data_length;
+    stage_view->fs = info->freq;
+    stage_view->s_params[0] = info->s11;
+    stage_view->s_params[1] = info->s21;
+    stage_view->s_params[2] = info->s12;
+    stage_view->s_params[3] = info->s22;
     stage_view->z_params[0] = info->z11.items;
     stage_view->z_params[1] = info->z21.items;
     stage_view->z_params[2] = info->z12.items;
     stage_view->z_params[3] = info->z22.items;
-    stage_view->Gopt = info->noise.GammaOpt.items;
+    stage_view->Gopt = info->noise.GammaOpt;
     stage_view->zGopt = info->zGopt.items;
-    stage_view->noise_length = info->noise.NFmin.count;
-    stage_view->NFmins = info->noise.NFmin.items;
-    stage_view->noise_fs = info->noise.freq.items;
+    stage_view->noise_length = info->noise.length;
+    stage_view->NFmins = info->noise.NFmin;
+    stage_view->noise_fs = info->noise.freq;
 
     size_t i = 0;
     double Z0 = info->R_ref;
@@ -419,11 +388,11 @@ int main(int argc, char** argv) {
         size_t selected_before = stage_view.active_setting;
         size_t active_setting = selected_before;
         if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN)) {
-            active_setting = (active_setting + 1) % infos.count;
+            active_setting = (active_setting + 1) % infos.length;
         }
         if (mui_is_key_pressed(MUI_KEY_UP) || mui_is_key_pressed_repeat(MUI_KEY_UP)) {
-            if (active_setting == 0) active_setting = infos.count-1;
-            active_setting = (active_setting - 1) % infos.count;
+            if (active_setting == 0) active_setting = infos.length-1;
+            active_setting = (active_setting - 1) % infos.length;
         }
 
         if (mui_is_key_down(MUI_KEY_LEFT_CONTROL) || mui_is_key_down(MUI_KEY_RIGHT_CONTROL)) {

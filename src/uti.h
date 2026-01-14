@@ -20,4 +20,20 @@ char *uti_temp_strndup(const char *s, size_t n);
 // end temp allocator stuff
 
 
+struct Uti_String_View {
+    const char* text;
+    size_t length;
+};
+
+struct Uti_String_View uti_sv_chop_by_delim(struct Uti_String_View *sv, char delim);
+struct Uti_String_View uti_sv_chop_left(struct Uti_String_View *sv, size_t n);
+struct Uti_String_View uti_sv_from_parts(const char *text, size_t length);
+struct Uti_String_View uti_sv_trim_left(struct Uti_String_View sv);
+struct Uti_String_View uti_sv_trim_right(struct Uti_String_View sv);
+struct Uti_String_View uti_sv_trim(struct Uti_String_View sv);
+struct Uti_String_View uti_sv_from_cstr(const char *cstr);
+bool uti_sv_eq(struct Uti_String_View a, struct Uti_String_View b);
+bool uti_sv_end_with(struct Uti_String_View sv, const char *cstr);
+bool uti_sv_starts_with(struct Uti_String_View sv, struct Uti_String_View expected_prefix);
+
 #endif //UTI_H_

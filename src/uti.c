@@ -150,3 +150,109 @@ char *uti_temp_strndup(const char *s, size_t n) {
 }
 
 // end temp allocator
+
+// Adopted too
+
+struct Uti_String_View uti_sv_chop_by_delim(struct Uti_String_View *sv, char delim)
+{
+    size_t i = 0;
+    while (i < sv->length && sv->text[i] != delim) {
+        i += 1;
+    }
+
+    struct Uti_String_View result = uti_sv_from_parts(sv->text, i);
+
+    if (i < sv->length) {
+        sv->length -= i + 1;
+        sv->text  += i + 1;
+    } else {
+        sv->length -= i;
+        sv->text  += i;
+    }
+
+    return result;
+}
+
+struct Uti_String_View uti_sv_chop_left(struct Uti_String_View *sv, size_t n)
+{
+    if (n > sv->length) {
+        n = sv->length;
+    }
+
+    struct Uti_String_View result = uti_sv_from_parts(sv->text, n);
+
+    sv->text  += n;
+    sv->length -= n;
+
+    return result;
+}
+
+struct Uti_String_View uti_sv_from_parts(const char *text, size_t length)
+{
+    struct Uti_String_View sv;
+    sv.length = length;
+    sv.text = text;
+    return sv;
+}
+
+struct Uti_String_View uti_sv_trim_left(struct Uti_String_View sv)
+{
+    size_t i = 0;
+    while (i < sv.length && isspace(sv.text[i])) {
+        i += 1;
+    }
+
+    return uti_sv_from_parts(sv.text + i, sv.length - i);
+}
+
+struct Uti_String_View uti_sv_trim_right(struct Uti_String_View sv)
+{
+    size_t i = 0;
+    while (i < sv.length && isspace(sv.text[sv.length - 1 - i])) {
+        i += 1;
+    }
+
+    return uti_sv_from_parts(sv.text, sv.length - i);
+}
+
+struct Uti_String_View uti_sv_trim(struct Uti_String_View sv)
+{
+    return uti_sv_trim_right(uti_sv_trim_left(sv));
+}
+
+struct Uti_String_View uti_sv_from_cstr(const char *cstr)
+{
+    return uti_sv_from_parts(cstr, strlen(cstr));
+}
+
+bool uti_sv_eq(struct Uti_String_View a, struct Uti_String_View b)
+{
+    if (a.length != b.length) {
+        return false;
+    } else {
+        return memcmp(a.text, b.text, a.length) == 0;
+    }
+}
+
+bool uti_sv_end_with(struct Uti_String_View sv, const char *cstr)
+{
+    size_t cstr_length = strlen(cstr);
+    if (sv.length >= cstr_length) {
+        size_t ending_start = sv.length - cstr_length;
+        struct Uti_String_View sv_ending = uti_sv_from_parts(sv.text + ending_start, cstr_length);
+        return uti_sv_eq(sv_ending, uti_sv_from_cstr(cstr));
+    }
+    return false;
+}
+
+
+bool uti_sv_starts_with(struct Uti_String_View sv, struct Uti_String_View expected_prefix)
+{
+    if (expected_prefix.length <= sv.length) {
+        struct Uti_String_View actual_prefix = uti_sv_from_parts(sv.text, expected_prefix.length);
+        return uti_sv_eq(expected_prefix, actual_prefix);
+    }
+
+    return false;
+}
+

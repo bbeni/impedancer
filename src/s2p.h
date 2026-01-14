@@ -10,31 +10,37 @@
 
 struct Double_Array {
     double *items;
-    size_t count;
+    size_t length;
     size_t capacity;
 };
 
 struct Complex_Array {
     struct Complex *items;
-    size_t count;
+    size_t length;
     size_t capacity;
 };
 
 struct Noise_Data {
-    struct Double_Array freq; // TODO check if it is needed or the same as for s params
-    struct Double_Array Rn;
-    struct Double_Array NFmin;
-    struct Complex_Array GammaOpt;
+    double* freq; // TODO check if it is needed or the same as for s params
+    double* Rn;
+    double* NFmin;
+    struct Complex* GammaOpt;
+    size_t length;
+    size_t capacity;
 };
 
 struct S2P_Info {
     // must be here values
     double R_ref;
-    struct Double_Array freq;
-    struct Complex_Array s11;
-    struct Complex_Array s12;
-    struct Complex_Array s21;
-    struct Complex_Array s22;
+
+    double* freq;
+    struct Complex* s11;
+    struct Complex* s12;
+    struct Complex* s21;
+    struct Complex* s22;
+    size_t data_length;
+    size_t data_capacity;
+
     char file_name[512];
     char full_path[512];
     char* file_content;
@@ -54,7 +60,7 @@ struct S2P_Info {
 
 struct S2P_Info_Array {
     struct S2P_Info* items;
-    size_t count;
+    size_t length;
     size_t capacity;
 };
 

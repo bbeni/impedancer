@@ -7,6 +7,8 @@
 #include "assert.h"
 #include "stdio.h"
 #include "stdlib.h"
+#include "stdint.h"
+
 
 void mma_clampf(float* v, float lower, float upper) {
 	if (*v < lower) {
@@ -782,7 +784,7 @@ Mat4 model_rotation_270() {
 static char mma_temp_buffer_internal[MMA_TEMP_BUFFER_CAP_INTERNAL] = {0};
 static size_t mma_temp_size_internal = 0;
 void mma_temp_reset(void){ mma_temp_size_internal = 0; }
-void *mma_temp_alloc(size_t requested_size) {
+void* mma_temp_alloc(size_t requested_size) {
     size_t word_size = sizeof(uintptr_t);
     size_t size = (requested_size + word_size - 1)/word_size*word_size;
     if (mma_temp_size_internal + size > MMA_TEMP_BUFFER_CAP_INTERNAL) {
@@ -792,7 +794,8 @@ void *mma_temp_alloc(size_t requested_size) {
     void *result = &mma_temp_buffer_internal[mma_temp_size_internal];
     mma_temp_size_internal += size;
     return result;
-}
+};
+
 #define MMA_RESTORE_STACK_SIZE 1024
 static size_t mma_restore_points_stack_internal[MMA_RESTORE_STACK_SIZE];
 static size_t mma_restore_points_stack_pointer_internal = 0;

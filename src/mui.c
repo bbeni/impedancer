@@ -8,6 +8,15 @@
 #include "stdio.h"
 #include "assert.h"
 
+#ifndef max
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
+
 #define NOB_NO_MINIRENT
 #define NOB_IMPLEMENTATION
 #include "nob.h"
@@ -201,51 +210,6 @@ void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle 
         out_22->y = r.y + r.height * factor_y;
         out_22->width = r.width * (1-factor_x);
         out_22->height = r.height * (1-factor_y);
-    }
-}
-
-
-// TODO: this function is not in the philosophy of the mui library -> delete me!
-Mui_Rectangle mui_column_stack(float left_x, float top_y, Mui_Rectangle* elements, size_t elements_count, MUI_ELEMENT_ALIGNMENT_TYPE alignment) {
-    float max_width = 0;
-    for (size_t i = 0; i < elements_count; i++) {
-        if (elements[i].width > max_width) max_width = elements[i].width;
-    }
-
-    float current_y = top_y;
-    switch (alignment) {
-    case MUI_ELEMENT_ALIGNMENT_STRETCH:
-        for (size_t i = 0; i < elements_count; i++) {
-            elements[i].width = max_width;
-            elements[i].x = left_x;
-            elements[i].y = current_y;
-            current_y += elements[i].height;
-        }
-    break;
-    case MUI_ELEMENT_ALIGNMENT_LEFT:
-        for (size_t i = 0; i < elements_count; i++) {
-            elements[i].x = left_x;
-            elements[i].y = current_y;
-            current_y += elements[i].height;
-        }
-    break;
-    case MUI_ELEMENT_ALIGNMENT_CENTER:
-        for (size_t i = 0; i < elements_count; i++) {
-            elements[i].x = left_x + (max_width - elements[i].width) * 0.5f;
-            elements[i].y = current_y;
-            current_y += elements[i].height;
-        }
-    break;
-    case MUI_ELEMENT_ALIGNMENT_RIGHT:
-        for (size_t i = 0; i < elements_count; i++) {
-            elements[i].x = left_x + max_width - elements[i].width;
-            elements[i].y = current_y;
-            current_y += elements[i].height;
-        }
-    break;
-    default:
-        assert(false && "MUI_ELEMENT_ALIGNMENT_COUNT exceeded" );
-    break;
     }
 }
 

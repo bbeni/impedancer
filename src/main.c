@@ -258,7 +258,6 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
 
     stage_view_update_data(stage_view);
 
-
     float padding = 5;
     Mui_Rectangle top_lable_rect;
     Mui_Rectangle rest = mui_cut_top(widget_area, 50, &top_lable_rect);
@@ -356,7 +355,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
         // Text data view
         //
         Mui_Rectangle text_data_view;
-        rest = mui_cut_top(rest, 500, &text_data_view);
+        rest = mui_cut_top(rest, 440, &text_data_view);
         mui_text_selectable(stage_view->selectable_text, &stage_view->selector_start, &stage_view->selector_end, text_data_view);
 
     }
@@ -393,16 +392,19 @@ int main(int argc, char** argv) {
     if(parse_s2p_files(&infos, true) != 0) return 1;
 
     int w, h;
-    w = 1700/2;
-    h = 1100;
+    w = 1700;
+    h = 1150;
 
-    mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED | MUI_WINDOW_MAXIMIZED, NULL);
+    mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED, NULL);
     mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme);
 
     struct Stage_View stage_view = {0};
     stage_view_init(&stage_view, &infos);
     stage_view_update_active_setting(&stage_view, 0);
 
+    struct Stage_View stage_view_2 = {0};
+    stage_view_init(&stage_view_2, &infos);
+    stage_view_update_active_setting(&stage_view_2, 0);
 
     while (!mui_window_should_close())
     {
@@ -458,6 +460,10 @@ int main(int argc, char** argv) {
         Mui_Rectangle screen_inset = mui_shrink(screen, 5);
         Mui_Rectangle rest = mui_cut_left(screen_inset, 600, &stage_view_rect);
         stage_view_draw(&stage_view, stage_view_rect);
+
+        Mui_Rectangle stage_view_rect_2;
+        rest = mui_cut_left(rest, 600, &stage_view_rect_2);
+        stage_view_draw(&stage_view_2, stage_view_rect_2);
 
 
         mui_end_drawing();

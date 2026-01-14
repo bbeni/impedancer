@@ -165,17 +165,6 @@ Mui_Rectangle mui_cut_top(Mui_Rectangle r, float amount, Mui_Rectangle *out_top)
 Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot);
 Mui_Vector2 mui_center_of_rectangle(Mui_Rectangle rectangle);
 void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle *out_11, Mui_Rectangle *out_12, Mui_Rectangle *out_21, Mui_Rectangle *out_22);
-
-typedef enum {
-    MUI_ELEMENT_ALIGNMENT_LEFT,
-    MUI_ELEMENT_ALIGNMENT_CENTER,
-    MUI_ELEMENT_ALIGNMENT_RIGHT,
-    MUI_ELEMENT_ALIGNMENT_STRETCH,
-    MUI_ELEMENT_ALIGNMENT_COUNT,
-} MUI_ELEMENT_ALIGNMENT_TYPE;
-// take some existing list of rectangles and allign them starting from left_x, top_y downward in a stack
-// TODO: this function is not in the philosophy of the mui library -> delete me!
-Mui_Rectangle mui_column_stack(float left_x, float top_y, Mui_Rectangle* elements, size_t elements_count, MUI_ELEMENT_ALIGNMENT_TYPE alignment);
 bool mui_is_inside_rectangle(Mui_Vector2, Mui_Rectangle);
 
 //

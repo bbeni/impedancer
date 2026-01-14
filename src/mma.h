@@ -6,6 +6,7 @@
 
 #include "math.h"
 #include "stdbool.h"
+#include "stddef.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846  /* pi from math.h */
@@ -98,8 +99,9 @@ void mma_spline_cubic_natural_linear_complex(const double *x, const struct Compl
 // utility stuff
 #define MMA_TEMP_BUFFER_CAP_INTERNAL 4096*4096
 void mma_temp_reset(void);
-void *mma_temp_alloc(size_t requested_size);
+void* mma_temp_alloc(size_t requested_size);
 void mma_temp_set_restore_point();
 void mma_temp_restore();
+
 
 #endif // MMA_H_

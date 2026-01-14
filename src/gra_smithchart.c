@@ -7,7 +7,7 @@
 
 #include "gra.h"
 #include "string.h"
-
+#include "assert.h"
 
 Mui_Color _color_bg_smith() {return mui_protos_theme.background_color;}
 Mui_Color _color_border_smith() {return mui_protos_theme.border_color;}
@@ -73,7 +73,6 @@ void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_len
 {
     float r_outer = fmin(plot_area.height, plot_area.width) * 0.49f;
     Mui_Vector2 smith_center = mui_center_of_rectangle(plot_area);
-
     if (fmt_marker == 'o') {
         for (size_t i = 0; i < data_length; i++) {
             double f = f_data[i];

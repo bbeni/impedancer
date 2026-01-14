@@ -166,6 +166,7 @@ Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot)
 Mui_Vector2 mui_center_of_rectangle(Mui_Rectangle rectangle);
 void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle *out_11, Mui_Rectangle *out_12, Mui_Rectangle *out_21, Mui_Rectangle *out_22);
 bool mui_is_inside_rectangle(Mui_Vector2, Mui_Rectangle);
+void mui_center_rectangle_inside_rectangle(Mui_Rectangle* inner, Mui_Rectangle outer);
 
 //
 // mui elements API

@@ -2,23 +2,14 @@
 // This file is part of https://github.com/bbeni/impedancer
 // For conditions of distribution and use, see copyright notice in project root.
 #include "mui.h"
+#include "uti.h"
 #include "math.h"
 #include "stdbool.h"
 #include "string.h"
 #include "stdio.h"
 #include "assert.h"
+#include "stdlib.h"
 
-#ifndef max
-#define max(a,b) ((a) > (b) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
-
-#define NOB_NO_MINIRENT
-#define NOB_IMPLEMENTATION
-#include "nob.h"
 
 // globals need to be updated by calling mui_update_input()
 float mui_global_time = 0.0f;
@@ -31,19 +22,13 @@ void mui_update_core() {
     mui_global_time = mui_get_time_now();
 }
 
-bool mui_load_resource_from_file(const char *file_path, int *out_size, void **data) {
-	Nob_String_Builder sb = {0};
-	if (!nob_read_entire_file(file_path, &sb)) {
-		return false;
-	}
-	*data = sb.items;
-	*out_size = sb.count;
-	return true;
+bool mui_load_resource_from_file(const char *file_path, size_t *out_size, void **data) {
+    return uti_read_entire_file(file_path, (char**)data, out_size);
 }
 
 bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme) {
 
-    int size;
+    size_t size;
     void *data;
     bool success = mui_load_resource_from_file(font_file, &size, &data);
     if (!success) {
@@ -184,6 +169,12 @@ Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot)
 Mui_Vector2 mui_center_of_rectangle(Mui_Rectangle rectangle) {
     return (Mui_Vector2) {.x = rectangle.x + 0.5f * rectangle.width, .y = rectangle.y + 0.5f * rectangle.height};
 }
+
+void mui_center_rectangle_inside_rectangle(Mui_Rectangle* inner, Mui_Rectangle outer) {
+    inner->x = outer.x + (outer.width - inner->width) * 0.5f;
+    inner->y = outer.y + (outer.height - inner->height)* 0.5f;
+}
+
 
 void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle *out_11, Mui_Rectangle *out_12, Mui_Rectangle *out_21, Mui_Rectangle *out_22) {
     if (out_11) {
@@ -592,6 +583,7 @@ bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place) 
     return returnstate;
 }
 
+/*
 void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *hint, Mui_Rectangle place) {
 
 
@@ -609,7 +601,7 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
     }
 
     if (state->buffer.count < 1) {
-        nob_da_append(&(state->buffer), '\0');
+        utiiii_da_append(&(state->buffer), '\0');
     }
 
     if (state->active) {
@@ -619,7 +611,7 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
             unsigned char c = unicode_char & 0xff; // TODO make it better
 
             // add at the end and then swap
-            nob_da_append(&(state->buffer), '\0');
+            utiiii_da_append(&(state->buffer), '\0');
             assert(state->cursor < state->buffer.count-1);
 
             for( size_t i = state->buffer.count-2; i > state->cursor; i--) {
@@ -713,7 +705,7 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
     if (state->active) {
         mui_draw_rectangle(rect_cursor, theme->textinput_text_color);
     }
-}
+}*/
 
 char* next_occurence_or_null(char* text, size_t start, char c) {
     while(text[start] != 0) {
@@ -964,7 +956,9 @@ void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle p
 //
 // Some easing functions: See https://easings.net/
 //
-
+#ifndef M_PI
+#define M_PI 3.14159265358979323846  /* pi from math.h */
+#endif
 float mui_ease_in_quad(float t)      { return t * t; }
 float mui_ease_out_quad(float t)     { return 1 - (1 - t) * (1 - t); }
 float mui_ease_in_out_quad(float t)  { return t < 0.5f ? 2 * t * t: 1 - 2*(1 - t)*(1 - t); }

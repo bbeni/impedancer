@@ -36,4 +36,12 @@ bool uti_sv_eq(struct Uti_String_View a, struct Uti_String_View b);
 bool uti_sv_end_with(struct Uti_String_View sv, const char *cstr);
 bool uti_sv_starts_with(struct Uti_String_View sv, struct Uti_String_View expected_prefix);
 
+#ifndef max
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 #endif //UTI_H_

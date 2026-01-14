@@ -223,9 +223,31 @@ void stage_view_update_data(struct Stage_View* stage_view) {
     }
 }
 
+void stage_symbol_draw(Mui_Rectangle symbol_area) {
+    float w = min(symbol_area.width, symbol_area.height);
+    Mui_Rectangle r = {.width = w, .height = w};
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+    mui_draw_rectangle(symbol_area, MUI_RED);
+    mui_draw_rectangle(r, MUI_GREEN);
+
+    float line_thickness = 7;
+    float f = 20;
+    r = mui_shrink(r, f);
+    mui_draw_rectangle(r, MUI_ORANGE);
+    mui_draw_line(r.x, r.y, r.x, r.y + r.width, line_thickness, MUI_BLACK);
+    mui_draw_line(r.x, r.y, r.x+r.width, r.y+r.width * 0.5f, line_thickness, MUI_BLACK);
+    mui_draw_line(r.x, r.y + r.width, r.x+r.width, r.y+r.width * 0.5f, line_thickness, MUI_BLACK);
+    mui_draw_line(r.x-f, r.y + r.width * 0.5f, r.x, r.y + r.width * 0.5f, line_thickness, MUI_BLACK);
+    mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, r.x + r.width, r.y + r.width * 0.5f, line_thickness, MUI_BLACK);
+}
+
 void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
 
     stage_view_update_data(stage_view);
+
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, 200, &symbol_area);
+    stage_symbol_draw(symbol_area);
 
     float padding = 5;
     Mui_Rectangle top_lable_rect;

@@ -232,7 +232,6 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     (void) maximizable;
     (void) to_the_right;
 
-
     float w_to_h_ratio = 3.71f;
     float w_component = w_to_h_ratio * height / 3;
 
@@ -246,7 +245,6 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     // Update the time
     float dt = mui_get_time() - last_time;
     last_time = mui_get_time();
-
 
     Mui_Rectangle comp_rect = {
         .x = window_rect.x + window_rect.width - w_component,
@@ -326,38 +324,34 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     //
     // draw dragging area
     //
-    comp_rect.x -= w_component*3;
-    comp_rect.width = w_component*3;
+    comp_rect.x -= w_component * 3;
+    comp_rect.width = w_component * 3;
     comp_rect.x = ceilf(comp_rect.x);
+
     if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
         if (mui_is_mouse_button_pressed(0)) {
             window_grabbed = true;
-            window_grabbed_pos = mui_get_mouse_position();
             window_initial_os_position = mui_window_get_position();
+            window_grabbed_pos = mui_get_mouse_position();
         }
     }
 
     if (mui_is_mouse_button_up(0)) {
         window_grabbed = false;
-    } else {
-        if (window_grabbed) {
-            Mui_Vector2 delta = mui_get_mouse_position();
-            delta.x -= window_grabbed_pos.x;
-            delta.y -= window_grabbed_pos.y;
-            mui_window_set_position(window_initial_os_position.x + delta.x, window_initial_os_position.y + delta.y);
+    }
+
+    if (window_grabbed) {
+        Mui_Vector2 current_mouse = mui_get_mouse_position();
+        float dx = current_mouse.x - window_grabbed_pos.x;
+        float dy = current_mouse.y - window_grabbed_pos.y;
+        Mui_Vector2 current_win_pos = mui_window_get_position();
+
+        if (dx != 0 || dy != 0) {
+            mui_window_set_position(current_win_pos.x + dx, current_win_pos.y + dy);
         }
     }
 
-
     mui_draw_rectangle(comp_rect, bg);
-    //.x_s = height / 4;
-    //center = mui_center_of_rectangle(comp_rect);
-    // TODO draw arrows or hand maybe
-    //mui_draw_line((Mui_Vector2){.x = center.x + x_s, .y=center.y}, (Mui_Vector2){.x = center.x - x_s, .y=center.y}, 2.0f, color);
-    //mui_draw_line((Mui_Vector2){.x = center.x, .y=center.y - x_s}, (Mui_Vector2){.x = center.x, .y=center.y + x_s}, 2.0f, color);
-
-
-
 
     return (Mui_Rectangle) {.x = window_rect.x, .y = window_rect.y, .height = height, .width = comp_rect.x - window_rect.x};
 }

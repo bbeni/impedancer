@@ -63,7 +63,7 @@ struct Stage_View {
     char* labels_index[4];
 
     // s2p data
-    struct S2P_Info_Array *infos;
+    struct Stage *stage;
 
     // data to load
     size_t length;
@@ -102,8 +102,11 @@ const char* stage_view_selectable_text_fmt =
     "Z%s      = (%.0f + j * %.0f) Ohm\n"
     "Z%s   = (%.0f + j * %.0f) Ohm\n";
 
-void stage_view_init(struct Stage_View* stage_view, struct S2P_Info_Array* infos) {
+// compone the stage and stage_view and initialize state.
+void stage_view_init(struct Stage_View* stage_view, struct Stage* stage) {
     memset(stage_view, 0, sizeof(*stage_view));
+
+    stage_view->stage = stage;
 
     stage_view->active_setting = 0;
     stage_view->show_s11_checkbox_state.checked = true;
@@ -115,7 +118,6 @@ void stage_view_init(struct Stage_View* stage_view, struct S2P_Info_Array* infos
     stage_view->slider_state_2.value = 0.2f;
     stage_view->selector_start = 0;
     stage_view->selector_end = 0;
-    stage_view->infos = infos;
 
     stage_view->colors[0] = MUI_RED;
     stage_view->colors[1] = MUI_ORANGE;
@@ -136,7 +138,7 @@ void stage_view_init(struct Stage_View* stage_view, struct S2P_Info_Array* infos
 void stage_view_update_active_setting(struct Stage_View* stage_view, size_t new_setting) {
     stage_view->active_setting = new_setting;
     size_t active_setting = stage_view->active_setting;
-    struct S2P_Info* info = &stage_view->infos->items[active_setting];
+    struct S2P_Info* info = &stage_view->stage->s2p_infos[active_setting];
 
     stage_view->length = info->data_length;
     stage_view->fs = info->freq;
@@ -223,9 +225,10 @@ void stage_view_update_data(struct Stage_View* stage_view) {
     }
 }
 
-void stage_symbol_draw(Mui_Rectangle symbol_area) {
+void stage_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color col = mui_protos_theme_g.text;
     Mui_Color bg = mui_protos_theme_g.bg;
+    Mui_Color hl_color = mui_protos_theme_g.primary;
 
     float w = min(symbol_area.width, symbol_area.height);
     Mui_Rectangle r = {.width = w, .height = w};
@@ -236,31 +239,69 @@ void stage_symbol_draw(Mui_Rectangle symbol_area) {
     float line_thickness = 5;
     float f = 20;
     r = mui_shrink(r, f);
-    //mui_draw_rectangle(r, MUI_ORANGE);
+    if (should_highlight) {
+        Mui_Vector2 center = mui_center_of_rectangle(r);
+        float radius = r.width * 0.5f + f;
+        mui_draw_circle(center, radius, hl_color);
+    }
     mui_draw_line(r.x, r.y, r.x, r.y + r.width, line_thickness, col);
     mui_draw_line(r.x, r.y, r.x+r.width, r.y+r.width * 0.5f, line_thickness, col);
     mui_draw_line(r.x, r.y + r.width, r.x+r.width, r.y+r.width * 0.5f, line_thickness, col);
     mui_draw_line(r.x-f, r.y + r.width * 0.5f, r.x, r.y + r.width * 0.5f, line_thickness, col);
     mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, r.x + r.width, r.y + r.width * 0.5f, line_thickness, col);
-
     mui_draw_line(symbol_area.x, r.y + r.width * 0.5f, r.x-f, r.y + r.width * 0.5f, line_thickness, col);
     mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, symbol_area.x + symbol_area.width, r.y + r.width * 0.5f, line_thickness, col);
 }
 
-void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
+void stage_view_settings_draw(struct Stage_View* stage_view, Mui_Rectangle symbol_area) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg_dark;
+    struct Mui_Font *font = mui_protos_theme_g.font;
+    float font_size = mui_protos_theme_g.font_size;
+
+    Mui_Rectangle inset_area = mui_shrink(symbol_area, 10);
+
+    char* model_text = stage_view->stage->models[stage_view->active_setting];
+    Mui_Vector2 pos = (Mui_Vector2){.x = inset_area.x, .y = inset_area.y};
+    Mui_Vector2 text_size = mui_measure_text(font, model_text, font_size, 0.2f, 0, strlen(model_text));
+    Mui_Rectangle bg_rect = {.x = pos.x, .y=pos.y, .width=text_size.x, .height=text_size.y};
+    mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
+    mui_draw_text_line(font, pos, 0.2f, font_size, model_text, col, 0, strlen(model_text));
+
+    char v_ds_text[40];
+    sprintf(v_ds_text, "%.2fV", stage_view->stage->voltage_ds_array[stage_view->active_setting]);
+    text_size = mui_measure_text(font, v_ds_text, font_size, 0.2f, 0, strlen(v_ds_text));
+    pos = (Mui_Vector2){.x = inset_area.x + inset_area.width - text_size.x, .y = inset_area.y};
+    mui_draw_text_line(font, pos, 0.2f, font_size, v_ds_text, col, 0, strlen(v_ds_text));
+
+    char i_ds_text[40];
+    sprintf(i_ds_text, "%.4fmA", stage_view->stage->current_ds_array[stage_view->active_setting]*1000);
+    text_size = mui_measure_text(font, i_ds_text, font_size, 0.2f, 0, strlen(i_ds_text));
+    pos = (Mui_Vector2){.x = inset_area.x + inset_area.width - text_size.x, .y = inset_area.y + inset_area.height - text_size.y};
+    mui_draw_text_line(font, pos, 0.2f, font_size, i_ds_text, col, 0, strlen(i_ds_text));
+
+    char temp_text[40];
+    sprintf(temp_text, "%.0fK", stage_view->stage->temperatures[stage_view->active_setting]);
+    text_size = mui_measure_text(font, temp_text, font_size, 0.2f, 0, strlen(temp_text));
+    pos = (Mui_Vector2){.x = inset_area.x, .y = inset_area.y + inset_area.height - text_size.y};
+    mui_draw_text_line(font, pos, 0.2f, font_size, temp_text, col, 0, strlen(temp_text));
+
+
+}
+
+void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, bool is_selected) {
 
     stage_view_update_data(stage_view);
 
     Mui_Rectangle symbol_area;
     widget_area = mui_cut_top(widget_area, 100, &symbol_area);
-    stage_symbol_draw(symbol_area);
+
+    stage_symbol_draw(symbol_area, is_selected);
+    stage_view_settings_draw(stage_view, symbol_area);
 
     float padding = 5;
-    Mui_Rectangle top_lable_rect;
-    Mui_Rectangle rest = mui_cut_top(widget_area, 50, &top_lable_rect);
-    //top_lable_rect = mui_shrink(top_lable_rect, padding);
-    char* label = stage_view->infos->items[stage_view->active_setting].file_name;
-    mui_label(&mui_protos_theme_g, label, top_lable_rect);
+
+    Mui_Rectangle rest = widget_area;
 
     const float checkbox_s = 40;
 
@@ -334,7 +375,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
     //collabsable_area_3 = mui_cut_top(collabsable_area_3, 2, NULL);
     if (mui_collapsable_section(&stage_view->collapsable_section_state_3, "Smith chart", collabsable_area_3)) {
         Mui_Rectangle smith_plot_area;
-        rest = mui_cut_top(rest, 500, &smith_plot_area);
+        rest = mui_cut_top(rest, 400, &smith_plot_area);
 
         //
         // smith chart draw
@@ -362,7 +403,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
     //collabsable_area_4 = mui_cut_top(collabsable_area_4, 2, NULL);
     if (mui_collapsable_section(&stage_view->collapsable_section_state_4, "NFmin plot", collabsable_area_4)) {
         Mui_Rectangle noise_plot_area;
-        rest = mui_cut_top(rest, 500, &noise_plot_area);
+        rest = mui_cut_top(rest, 350, &noise_plot_area);
         //
         // noise plot draw
         //
@@ -384,16 +425,18 @@ int main(int argc, char** argv) {
 
     char* directory = next(&argc, &argv);
 
-    struct Stage stage_out;
-    if (!create_stage_archetype("000_device_settings.csv", directory, &stage_out))
+    struct Stage stage_archetype;
+    if (!create_stage_archetype("000_device_settings.csv", directory, &stage_archetype))
         return 2;
 
-    struct S2P_Info_Array infos = {0};
-    if(!read_s2p_files_from_dir(directory, &infos) != 0)
-        return 1;
+    //struct S2P_Info_Array infos = {0};
+    //if(!read_s2p_files_from_dir(directory, &infos) != 0)
+    //    return 1;
 
-    if(!parse_s2p_files(&infos, true) != 0)
-        return 1;
+    //if(!parse_s2p_files(&infos, true) != 0)
+    //    return 1;
+
+
 
     int w, h;
     w = 1700;
@@ -402,13 +445,22 @@ int main(int argc, char** argv) {
     mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED, NULL);
     mui_init_themes(0, 0, true, "resources/font/NimbusSans-Regular.ttf");
 
-    struct Stage_View stage_view = {0};
-    stage_view_init(&stage_view, &infos);
-    stage_view_update_active_setting(&stage_view, 0);
 
-    struct Stage_View stage_view_2 = {0};
-    stage_view_init(&stage_view_2, &infos);
-    stage_view_update_active_setting(&stage_view_2, 0);
+    #define MAX_STAGES 8
+    struct Stage *stages = malloc(sizeof(struct Stage) * MAX_STAGES);
+    struct Stage_View *stage_views = malloc(sizeof(struct Stage_View) * MAX_STAGES);
+
+    size_t n_stages = 4;
+    for (size_t i = 0; i < n_stages; i ++) {
+        stages[i] = stage_archetype;
+        stage_view_init(&stage_views[i], &stages[i]);
+        stage_view_update_active_setting(&stage_views[i], 0);
+    }
+    size_t selected_stage = 0;
+
+
+    Mui_Button_State disco_mode_btn = {0};
+    bool disco_mode = false;
 
     Mui_Button_State dark_mode_btn = {0};
     mui_protos_theme_g = mui_protos_theme_light_g;
@@ -426,20 +478,29 @@ int main(int argc, char** argv) {
         //
         // input handling
         //
-        size_t selected_before = stage_view.active_setting;
+        size_t selected_before = stage_views[selected_stage].active_setting;
         size_t active_setting = selected_before;
         if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN)) {
-            active_setting = (active_setting + 1) % infos.length;
+            active_setting = (active_setting + 1) % stages[selected_stage].n_settings;
         }
         if (mui_is_key_pressed(MUI_KEY_UP) || mui_is_key_pressed_repeat(MUI_KEY_UP)) {
-            if (active_setting == 0) active_setting = infos.length-1;
-            active_setting = (active_setting - 1) % infos.length;
+            if (active_setting == 0) active_setting = stages[selected_stage].n_settings-1;
+            active_setting = (active_setting - 1) % stages[selected_stage].n_settings;
         }
+
+        if (mui_is_key_pressed(MUI_KEY_RIGHT) || mui_is_key_pressed_repeat(MUI_KEY_RIGHT)) {
+            selected_stage = (selected_stage + 1) % n_stages;
+        }
+        if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
+            if (selected_stage == 0) selected_stage = n_stages - 1;
+            selected_stage = (selected_stage - 1) % n_stages;
+        }
+
 
         if (mui_is_key_down(MUI_KEY_LEFT_CONTROL) || mui_is_key_down(MUI_KEY_RIGHT_CONTROL)) {
             if (mui_is_key_pressed(MUI_KEY_C)) {
-                if (stage_view.selector_start < stage_view.selector_end) {
-                    char* temp_str = uti_temp_strndup(&stage_view.selectable_text[stage_view.selector_start], stage_view.selector_end - stage_view.selector_start);
+                if (stage_views[selected_stage].selector_start < stage_views[selected_stage].selector_end) {
+                    char* temp_str = uti_temp_strndup(&stage_views[selected_stage].selectable_text[stage_views[selected_stage].selector_start], stage_views[selected_stage].selector_end - stage_views[selected_stage].selector_start);
                     mui_set_clipboard_text(temp_str);
                 }
             }
@@ -449,7 +510,7 @@ int main(int argc, char** argv) {
         // data loading
         //
         if (active_setting != selected_before) {
-            stage_view_update_active_setting(&stage_view, active_setting);
+            stage_view_update_active_setting(&stage_views[selected_stage], active_setting);
         }
 
 
@@ -490,21 +551,31 @@ int main(int argc, char** argv) {
         float hue_slider_last_value = hue_slider.value;
         mui_simple_slider(&hue_slider, false, hue_slider_area);
 
+        Mui_Rectangle disco_mode_btn_area;
+        menu_bar_area = mui_cut_left(menu_bar_area, 140, &disco_mode_btn_area);
+        disco_mode_btn_area = mui_shrink(disco_mode_btn_area, 5.0f);
+        char* disco_mode_text = disco_mode ? "disco mode" : "disco mode";
+        if (mui_button(&disco_mode_btn, disco_mode_text, disco_mode_btn_area)) {
+            disco_mode = !disco_mode;
+        }
         // update themes
+        if (disco_mode) {
+            hue_slider.value = fmodf(disco_mode_btn.last_time * 0.1f, 1.0f);
+        }
         if (hue_slider_last_value != hue_slider.value || chroma_slider_last_value != chroma_slider.value) {
             mui_init_themes(chroma_slider.value * 0.1f, hue_slider.value*360, dark_mode, NULL);
         }
 
-        //screen.width = 1400;
-        Mui_Rectangle stage_view_rect;
+
         Mui_Rectangle screen_inset = mui_shrink(screen, 5);
-        Mui_Rectangle rest = mui_cut_left(screen_inset, 600, &stage_view_rect);
-        stage_view_draw(&stage_view, stage_view_rect);
 
-        Mui_Rectangle stage_view_rect_2;
-        rest = mui_cut_left(rest, 600, &stage_view_rect_2);
-        stage_view_draw(&stage_view_2, stage_view_rect_2);
+        Mui_Rectangle stage_view_rect;
+        Mui_Rectangle rest = screen_inset;
 
+        for (size_t i = 0; i < n_stages; i ++) {
+            rest = mui_cut_left(rest, 400, &stage_view_rect);
+            stage_view_draw(&stage_views[i], stage_view_rect, selected_stage == i);
+        }
 
         mui_end_drawing();
         uti_temp_reset();

@@ -44,6 +44,55 @@ bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme) {
 }
 
 
+/* OKLAB maps
+
+from RGB linear to lms
+M1 =
+{{0.4122214708, 0.5363325363, 0.0514459929},
+ {0.2119034982, 0.6806995451, 0.1073969566},
+ {0.0883024619, 0.2817188376, 0.6299787005}}
+M1' =
+{{4.07674, -3.30771, 0.23097}, {-1.26844, 2.60976, -0.341319}, {-0.00419609, -0.703419, 1.70761}}
+
+lms^(1/3)
+lms^(3) '
+
+M2 = ...
+M2' = ...
+*/
+float linear_to_srgb(float x) {
+    if (x <= 0.0031308f) return 12.92f * x;
+    return 1.055f * powf(x, 1.0f / 2.4f) - 0.055f;
+}
+
+Mui_Color mui_oklch_to_rgb(float l, float c, float h) {
+    float a = c * cosf(h * 2 * M_PI / 360);
+    float b = c * sinf(h * 2 *M_PI / 360);
+
+    // M2' [L a b]
+    float lp = l + a * +0.3963377774 + b * +0.2158037573;
+    float mp = l + a * -0.1055613458 + b * -0.0638541728;
+    float sp = l + a * -0.0894841775 + b * -1.2914855480;
+
+    // l'm's'^(3)
+    lp = lp*lp*lp;
+    mp = mp*mp*mp;
+    sp = sp*sp*sp;
+
+    // M1' [l' m' s']
+    float r_lin = lp * +4.0767416621 + mp * -3.3077115913 + sp * +0.2309699292;
+    float g_lin = lp * -1.2684380046 + mp * +2.6097574011 + sp * -0.3413193965;
+    float b_lin = lp * -0.0041960863 + mp * -0.7034186147 + sp * +1.7076147010;
+
+    return (Mui_Color) {
+        .r = (uint8_t)roundf(fmaxf(0, fminf(1, linear_to_srgb(r_lin))) * 255),
+        .g = (uint8_t)roundf(fmaxf(0, fminf(1, linear_to_srgb(g_lin))) * 255),
+        .b = (uint8_t)roundf(fmaxf(0, fminf(1, linear_to_srgb(b_lin))) * 255),
+        .a = 255
+    };
+}
+
+
 float mui_hue_to_rgb(float p, float q, float t) {
     if (t < 0.0f) t += 1;
     if (t > 1.0f) t -= 1;
@@ -73,16 +122,17 @@ static inline Mui_Color mui_hsl_to_rgb(float h, float s, float l) {
 
 Mui_Theme mui_protos_theme_dark_generate() {
     #define _HSL(h, s, l) mui_hsl_to_rgb((h), (s), (l))
+    #define _OKLCH(l, c, h) mui_oklch_to_rgb((l), (c), (h))
     return (Mui_Theme) {
 
-        .bg_dark      = _HSL(0, 0, 0.075),
-        .bg           = _HSL(0, 0, 0.15),
-        .bg_light     = _HSL(0, 0, 0.225),
-        .text         = _HSL(0, 0, 0.85),
-        .text_muted   = _HSL(0, 0, 0.7),
-        .border       = _HSL(0, 0, 0.5),
-        .primary      = _HSL(0.56, 0.4, 0.5),
-        .primary_dark = _HSL(0.56, 0.2, 0.25),
+        .bg_dark      = _OKLCH(0.2f, 0, 0),
+        .bg           = _OKLCH(0.3f, 0, 0),
+        .bg_light     = _OKLCH(0.4f, 0, 0),
+        .text         = _OKLCH(0.95f, 0, 0),
+        .text_muted   = _OKLCH(0.5f, 0, 0),
+        .border       = _OKLCH(0.45f, 0, 0),
+        .primary      = _OKLCH(0.7f, 0.1, 243),
+        .primary_dark = _OKLCH(0.6f, 0.1, 243),
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,
@@ -105,14 +155,14 @@ Mui_Theme mui_protos_theme_light_generate() {
     #define _HSL(h, s, l) mui_hsl_to_rgb((h), (s), (l))
     return (Mui_Theme) {
 
-        .bg_dark      = _HSL(0, 0, 0.775),
-        .bg           = _HSL(0, 0, 0.85),
-        .bg_light     = _HSL(0, 0, 0.925),
-        .text         = _HSL(0, 0, 0.15),
-        .text_muted   = _HSL(0, 0, 0.3),
-        .border       = _HSL(0, 0, 0.5),
-        .primary      = _HSL(0.44, 0.6, 0.65),
-        .primary_dark = _HSL(0.44, 0.2, 0.5),
+        .bg_dark      = _OKLCH(0.75f, 0, 0),
+        .bg           = _OKLCH(0.85f, 0, 0),
+        .bg_light     = _OKLCH(0.95f, 0, 0),
+        .text         = _OKLCH(0.05f, 0, 0),
+        .text_muted   = _OKLCH(0.5f, 0, 0),
+        .border       = _OKLCH(0.55f, 0, 0),
+        .primary      = _OKLCH(0.7f, 0.09, 167),
+        .primary_dark = _OKLCH(0.6f, 0.09, 167),
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,

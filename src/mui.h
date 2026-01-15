@@ -83,9 +83,13 @@ typedef struct {
 } Mui_Theme;
 
 // default theme
-extern Mui_Theme mui_protos_theme;
-extern Mui_Theme mui_protos_theme_dark;
-extern Mui_Theme mui_protos_theme_light;
+extern Mui_Theme mui_protos_theme_g;
+extern Mui_Theme mui_protos_theme_dark_g;
+extern Mui_Theme mui_protos_theme_light_g;
+
+#define MAX_FONTS_LOADED 128
+extern struct Mui_Font *mui_font_catalog_g[MAX_FONTS_LOADED];
+extern size_t mui_font_catalog_length_g;
 
 typedef struct {
     float hover_t; // from 0 to 1 representing the hover state (animation)
@@ -196,7 +200,9 @@ typedef enum {
     MUI_WINDOW_UNDECORATED = 0x80,
 } MUI_WINDOW_FLAGS;
 
-void mui_init();
+// init themes with chrma value for the backgorund (okhcl space). chroma_bg in [0, 0.4] lower is no color.
+// if ttf_file_name is NULL take latest fonts.
+void mui_init_themes(float chroma_bg, float bg_hue, bool dark, char* ttf_file_name);
 uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float opacity, MUI_WINDOW_FLAGS flags, Mui_Image* icon);
 uint8_t mui_get_active_window_id();
 int mui_screen_width();

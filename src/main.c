@@ -9,10 +9,10 @@
 #include "stdlib.h"
 #include "string.h"
 
-
 #include "mui.h"
 #include "gra.h"
 #include "uti.h"
+#include "circuit_simulator.h"
 
 
 char* next(int* count, char*** argv) {
@@ -224,8 +224,8 @@ void stage_view_update_data(struct Stage_View* stage_view) {
 }
 
 void stage_symbol_draw(Mui_Rectangle symbol_area) {
-    Mui_Color col = mui_protos_theme.text;
-    Mui_Color bg = mui_protos_theme.bg;
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
 
     float w = min(symbol_area.width, symbol_area.height);
     Mui_Rectangle r = {.width = w, .height = w};
@@ -260,7 +260,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
     Mui_Rectangle rest = mui_cut_top(widget_area, 50, &top_lable_rect);
     //top_lable_rect = mui_shrink(top_lable_rect, padding);
     char* label = stage_view->infos->items[stage_view->active_setting].file_name;
-    mui_label(&mui_protos_theme, label, top_lable_rect);
+    mui_label(&mui_protos_theme_g, label, top_lable_rect);
 
     const float checkbox_s = 40;
 
@@ -384,19 +384,23 @@ int main(int argc, char** argv) {
 
     char* directory = next(&argc, &argv);
 
+    struct Stage stage_out;
+    if (!create_stage_archetype("000_device_settings.csv", directory, &stage_out))
+        return 2;
+
     struct S2P_Info_Array infos = {0};
-    if(read_s2p_files(directory, &infos) != 0) return 1;
-    if(parse_s2p_files(&infos, true) != 0) return 1;
+    if(!read_s2p_files_from_dir(directory, &infos) != 0)
+        return 1;
+
+    if(!parse_s2p_files(&infos, true) != 0)
+        return 1;
 
     int w, h;
     w = 1700;
     h = 1150;
 
-    mui_init();
     mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED, NULL);
-    mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme_dark);
-    mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme_light);
-    mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme);
+    mui_init_themes(0, 0, true, "resources/font/NimbusSans-Regular.ttf");
 
     struct Stage_View stage_view = {0};
     stage_view_init(&stage_view, &infos);
@@ -407,8 +411,10 @@ int main(int argc, char** argv) {
     stage_view_update_active_setting(&stage_view_2, 0);
 
     Mui_Button_State dark_mode_btn = {0};
-    mui_protos_theme = mui_protos_theme_light;
+    mui_protos_theme_g = mui_protos_theme_light_g;
     bool dark_mode = false;
+    Mui_Slider_State chroma_slider = {0};
+    Mui_Slider_State hue_slider = {0};
 
     while (!mui_window_should_close())
     {
@@ -451,7 +457,7 @@ int main(int argc, char** argv) {
         // drawing
         //
         mui_begin_drawing();
-        mui_clear_background(mui_protos_theme.bg_dark, NULL);
+        mui_clear_background(mui_protos_theme_g.bg_dark, NULL);
 
         Mui_Rectangle whole_screen = {0, 0, w, h};
         const float decoration_height = 36.0f;
@@ -460,16 +466,33 @@ int main(int argc, char** argv) {
         Mui_Rectangle screen = mui_cut_top(whole_screen, decoration_height, &menu_bar_area);
 
         Mui_Rectangle dark_mode_btn_area;
-        mui_cut_left(menu_bar_area, 140, &dark_mode_btn_area);
+        menu_bar_area = mui_cut_left(menu_bar_area, 140, &dark_mode_btn_area);
         dark_mode_btn_area = mui_shrink(dark_mode_btn_area, 5.0f);
         char* dm_text = dark_mode ? "light mode" : "dark mode";
         if (mui_button(&dark_mode_btn, dm_text, dark_mode_btn_area)) {
             dark_mode = !dark_mode;
             if (dark_mode) {
-                mui_protos_theme = mui_protos_theme_dark;
+                mui_protos_theme_g = mui_protos_theme_dark_g;
             } else {
-                mui_protos_theme = mui_protos_theme_light;
+                mui_protos_theme_g = mui_protos_theme_light_g;
             }
+        }
+
+        Mui_Rectangle chroma_slider_area;
+        menu_bar_area = mui_cut_left(menu_bar_area, 140,  &chroma_slider_area);
+        chroma_slider_area = mui_shrink(chroma_slider_area, 5.0f);
+        float chroma_slider_last_value = chroma_slider.value;
+        mui_simple_slider(&chroma_slider, false, chroma_slider_area);
+
+        Mui_Rectangle hue_slider_area;
+        menu_bar_area = mui_cut_left(menu_bar_area, 140,  &hue_slider_area);
+        hue_slider_area = mui_shrink(hue_slider_area, 5.0f);
+        float hue_slider_last_value = hue_slider.value;
+        mui_simple_slider(&hue_slider, false, hue_slider_area);
+
+        // update themes
+        if (hue_slider_last_value != hue_slider.value || chroma_slider_last_value != chroma_slider.value) {
+            mui_init_themes(chroma_slider.value * 0.1f, hue_slider.value*360, dark_mode, NULL);
         }
 
         //screen.width = 1400;

@@ -26,22 +26,45 @@ bool mui_load_resource_from_file(const char *file_path, size_t *out_size, void *
     return uti_read_entire_file(file_path, (char**)data, out_size);
 }
 
+
+#define MAX_FONTS_LOADED 128
+struct Mui_Font* mui_font_catalog_g[MAX_FONTS_LOADED];
+size_t mui_font_catalog_length_g = 0;
 bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme) {
 
     size_t size;
     void *data;
     bool success = mui_load_resource_from_file(font_file, &size, &data);
     if (!success) {
-        printf("My Error: loading resource (%s) so we are not loading fonts..\n", font_file);
+        printf("ERROR: loading resource (%s) so we are not loading fonts..\n", font_file);
         return false;
     }
 
-    theme->font = mui_load_font_ttf(data, size, theme->font_size);
-    theme->label_font = mui_load_font_ttf(data, size, theme->label_text_size);
-    theme->textinput_font = mui_load_font_ttf(data, size, theme->textinput_text_size);
+    if (mui_font_catalog_length_g + 3 >= MAX_FONTS_LOADED) {
+        printf("ERROR: mui_font_catalog_length_g would exceed MAX_FONTS_LOADED (%zu/%zu).. font not loaded !!\n", mui_font_catalog_length_g, MAX_FONTS_LOADED);
+        return false;
+    }
+
+    mui_font_catalog_g[mui_font_catalog_length_g    ] = mui_load_font_ttf(data, size, theme->font_size);
+    mui_font_catalog_g[mui_font_catalog_length_g + 1] = mui_load_font_ttf(data, size, theme->label_text_size);
+    mui_font_catalog_g[mui_font_catalog_length_g + 2] = mui_load_font_ttf(data, size, theme->textinput_text_size);
+    theme->font = mui_font_catalog_g[mui_font_catalog_length_g];
+    theme->label_font = mui_font_catalog_g[mui_font_catalog_length_g + 1];
+    theme->textinput_font = mui_font_catalog_g[mui_font_catalog_length_g + 2];
+    mui_font_catalog_length_g += 3;
 
     return true;
 }
+
+void mui_load_latest_fonts_for_theme(Mui_Theme *theme) {
+    assert(mui_font_catalog_length_g >= 3);
+    theme->font = mui_font_catalog_g[mui_font_catalog_length_g - 3];
+    theme->label_font = mui_font_catalog_g[mui_font_catalog_length_g - 2];
+    theme->textinput_font = mui_font_catalog_g[mui_font_catalog_length_g - 1];
+}
+
+
+
 
 
 /* OKLAB maps
@@ -120,19 +143,19 @@ static inline Mui_Color mui_hsl_to_rgb(float h, float s, float l) {
     };
 }
 
-Mui_Theme mui_protos_theme_dark_generate() {
-    #define _HSL(h, s, l) mui_hsl_to_rgb((h), (s), (l))
-    #define _OKLCH(l, c, h) mui_oklch_to_rgb((l), (c), (h))
+#define _OKLCH(l, c, h) mui_oklch_to_rgb((l), (c), (h))
+
+Mui_Theme mui_protos_theme_dark_generate(float bg_hue, float bg_chroma) {
     return (Mui_Theme) {
 
-        .bg_dark      = _OKLCH(0.2f, 0, 0),
-        .bg           = _OKLCH(0.3f, 0, 0),
-        .bg_light     = _OKLCH(0.4f, 0, 0),
-        .text         = _OKLCH(0.95f, 0, 0),
-        .text_muted   = _OKLCH(0.5f, 0, 0),
-        .border       = _OKLCH(0.45f, 0, 0),
-        .primary      = _OKLCH(0.7f, 0.1, 243),
-        .primary_dark = _OKLCH(0.6f, 0.1, 243),
+        .bg_dark      = _OKLCH(0.25f, bg_chroma, bg_hue),
+        .bg           = _OKLCH(0.32f, bg_chroma, bg_hue),
+        .bg_light     = _OKLCH(0.4f, bg_chroma, bg_hue),
+        .text         = _OKLCH(0.95f, bg_chroma, bg_hue),
+        .text_muted   = _OKLCH(0.5f, bg_chroma, bg_hue),
+        .border       = _OKLCH(0.45f, bg_chroma, bg_hue),
+        .primary      = _OKLCH(0.7f, bg_chroma + 0.1, 243),
+        .primary_dark = _OKLCH(0.6f, bg_chroma + 0.1, 243),
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,
@@ -151,18 +174,17 @@ Mui_Theme mui_protos_theme_dark_generate() {
     };
 }
 
-Mui_Theme mui_protos_theme_light_generate() {
-    #define _HSL(h, s, l) mui_hsl_to_rgb((h), (s), (l))
+Mui_Theme mui_protos_theme_light_generate(float bg_hue, float bg_chroma) {
     return (Mui_Theme) {
 
-        .bg_dark      = _OKLCH(0.75f, 0, 0),
-        .bg           = _OKLCH(0.85f, 0, 0),
-        .bg_light     = _OKLCH(0.95f, 0, 0),
-        .text         = _OKLCH(0.05f, 0, 0),
-        .text_muted   = _OKLCH(0.5f, 0, 0),
-        .border       = _OKLCH(0.55f, 0, 0),
-        .primary      = _OKLCH(0.7f, 0.09, 167),
-        .primary_dark = _OKLCH(0.6f, 0.09, 167),
+        .bg_dark      = _OKLCH(0.75f, bg_chroma, bg_hue),
+        .bg           = _OKLCH(0.85f, bg_chroma, bg_hue),
+        .bg_light     = _OKLCH(0.95f, bg_chroma, bg_hue),
+        .text         = _OKLCH(0.05f, bg_chroma, bg_hue),
+        .text_muted   = _OKLCH(0.5f, bg_chroma, bg_hue),
+        .border       = _OKLCH(0.55f, bg_chroma, bg_hue),
+        .primary      = _OKLCH(0.7f, bg_chroma+0.09, 167),
+        .primary_dark = _OKLCH(0.6f, bg_chroma+0.09, 167),
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,
@@ -181,16 +203,29 @@ Mui_Theme mui_protos_theme_light_generate() {
     };
 }
 
+#undef _OKLCH
 
-Mui_Theme mui_protos_theme;
-Mui_Theme mui_protos_theme_dark;
-Mui_Theme mui_protos_theme_light;
+Mui_Theme mui_protos_theme_g;
+Mui_Theme mui_protos_theme_dark_g;
+Mui_Theme mui_protos_theme_light_g;
 
-void mui_init() {
-    mui_protos_theme_dark = mui_protos_theme_dark_generate();
-    mui_protos_theme_light = mui_protos_theme_light_generate();
-    mui_protos_theme = mui_protos_theme_light;
+// if ttf_file_name is NULL take latest fonts.
+void mui_init_themes(float chroma_bg, float bg_hue, bool dark, char* ttf_file_name) {
+    mui_protos_theme_dark_g = mui_protos_theme_dark_generate(bg_hue, chroma_bg);
+    mui_protos_theme_light_g = mui_protos_theme_light_generate(bg_hue, chroma_bg);
+
+    if (ttf_file_name) {
+        mui_load_ttf_font_for_theme(ttf_file_name, &mui_protos_theme_dark_g);
+        mui_load_ttf_font_for_theme(ttf_file_name, &mui_protos_theme_light_g);
+    } else {
+        mui_load_latest_fonts_for_theme(&mui_protos_theme_dark_g);
+        mui_load_latest_fonts_for_theme(&mui_protos_theme_light_g);
+    }
+    if (dark) mui_protos_theme_g = mui_protos_theme_dark_g;
+    else mui_protos_theme_g = mui_protos_theme_light_g;
 }
+
+
 
 Mui_Color mui_interpolate_color(Mui_Color a, Mui_Color b, float t) {
 
@@ -344,12 +379,12 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     float w_to_h_ratio = 3.71f;
     float w_component = w_to_h_ratio * height / 3;
 
-    Mui_Color color = mui_protos_theme.text_muted;
-    Mui_Color bg = mui_protos_theme.bg_light;
-    Mui_Color color_hover = mui_protos_theme.primary;
-    Mui_Color bg_hover = mui_protos_theme.primary_dark;
-    float to_hover_speed = mui_protos_theme.animation_speed_to_hover;
-    float to_normal_speed = mui_protos_theme.animation_speed_to_normal;
+    Mui_Color color = mui_protos_theme_g.text_muted;
+    Mui_Color bg = mui_protos_theme_g.bg_light;
+    Mui_Color color_hover = mui_protos_theme_g.primary;
+    Mui_Color bg_hover = mui_protos_theme_g.primary_dark;
+    float to_hover_speed = mui_protos_theme_g.animation_speed_to_hover;
+    float to_normal_speed = mui_protos_theme_g.animation_speed_to_normal;
 
     // Update the time
     float dt = mui_get_time() - last_time;
@@ -495,7 +530,7 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
 
 void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {
     if (theme == NULL) {
-        theme = &mui_protos_theme;
+        theme = &mui_protos_theme_g;
     }
 
     mui_draw_rectangle_rounded(place, theme->corner_radius, theme->bg);
@@ -506,7 +541,7 @@ void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {
 
 bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, Mui_Rectangle place) {
     Mui_Theme *theme = state->theme;
-    if (theme == NULL) theme = &mui_protos_theme;
+    if (theme == NULL) theme = &mui_protos_theme_g;
 
     // Update the time
     float dt = mui_get_time() - state->last_time;
@@ -554,7 +589,7 @@ bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, M
 void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place) {
 
     Mui_Theme *theme = state->theme;
-    if (theme == NULL) theme = &mui_protos_theme;
+    if (theme == NULL) theme = &mui_protos_theme_g;
 
     // Update the time
     float dt = mui_get_time() - state->last_time;
@@ -596,7 +631,7 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
 float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle place) {
 
     Mui_Theme *theme = state->theme;
-    if (theme == NULL) theme = &mui_protos_theme;
+    if (theme == NULL) theme = &mui_protos_theme_g;
 
     // Update the time
     float dt = mui_get_time() - state->last_time;
@@ -678,7 +713,7 @@ bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place) 
 
     Mui_Theme *theme = state->theme;
     if (theme == NULL) {
-        theme = &mui_protos_theme;
+        theme = &mui_protos_theme_g;
     }
 
     // Update the time
@@ -722,7 +757,7 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
 
     Mui_Theme *theme = state->theme;
     if (theme == NULL) {
-        theme = &mui_protos_theme;
+        theme = &mui_protos_theme_g;
     }
 
     if (mui_is_mouse_button_pressed(0)) {
@@ -877,7 +912,7 @@ size_t _internal_get_cursor_by_position(Mui_Vector2 pos, char* text, size_t* sta
 static bool mouse_down_selectable_text;
 size_t mouse_down_pivot_cursor;
 void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_Rectangle place) {
-    Mui_Theme *theme = &mui_protos_theme;
+    Mui_Theme *theme = &mui_protos_theme_g;
     float font_size = theme->textinput_text_size;
     Mui_Color text_color = theme->text;
     struct Mui_Font* font = theme->textinput_font;
@@ -1019,7 +1054,7 @@ void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle p
 
     Mui_Theme *theme = state->theme;
     if (theme == NULL) {
-        theme = &mui_protos_theme;
+        theme = &mui_protos_theme_g;
     }
 
     if (mui_is_mouse_button_pressed(0)) {

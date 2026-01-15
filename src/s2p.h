@@ -65,8 +65,11 @@ struct S2P_Info_Array {
 };
 
 
-int read_s2p_files(const char* dir, struct S2P_Info_Array *infos);
-int parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z);
+bool read_s2p_files_from_dir(const char* dir, struct S2P_Info_Array *infos);
+bool read_s2p_file(const char* file_name, const char* dir, struct S2P_Info *info);
+bool parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z);
+bool parse_s2p_file(struct S2P_Info *info, bool calc_z);
+
 void calc_z_from_s(struct Complex s[2][2], struct Complex *z_out[2][2]);
 void calc_z_from_gamma(struct Complex gamma, struct Complex *z_out);
 

@@ -8,9 +8,9 @@
 #include "gra.h"
 #include "string.h"
 
-Mui_Color _color_bg() {return mui_protos_theme.bg;}
-Mui_Color _color_border() {return mui_protos_theme.border;}
-Mui_Color _color_text() {return mui_protos_theme.text_muted;}
+Mui_Color _color_bg() {return mui_protos_theme_g.bg;}
+Mui_Color _color_border() {return mui_protos_theme_g.border;}
+Mui_Color _color_text() {return mui_protos_theme_g.text_muted;}
 
 void _draw_grid(Mui_Rectangle plot_area, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step, bool thick_y_zero) {
     // draw border
@@ -57,7 +57,7 @@ Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x
 
     (void) y_label;
 
-    float label_text_size = mui_protos_theme.label_text_size;
+    float label_text_size = mui_protos_theme_g.label_text_size;
 
     // make space for label
     Mui_Rectangle x_label_place;
@@ -66,9 +66,9 @@ Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x
     rest = mui_cut_left(rest, label_text_size, &y_label_place);
 
     size_t l = strlen(x_label);
-    Mui_Vector2 m = mui_measure_text(mui_protos_theme.label_font, x_label, label_text_size, 0.1f, 0, l);
+    Mui_Vector2 m = mui_measure_text(mui_protos_theme_g.label_font, x_label, label_text_size, 0.1f, 0, l);
     Mui_Vector2 x_label_pos = {x_label_place.x + x_label_place.width/2 - m.x/2, x_label_place.y};
-    mui_draw_text_line(mui_protos_theme.label_font, x_label_pos, 0.1f, label_text_size, x_label, _color_text(), 0, l);
+    mui_draw_text_line(mui_protos_theme_g.label_font, x_label_pos, 0.1f, label_text_size, x_label, _color_text(), 0, l);
 
     Mui_Rectangle plot_area = rest;
     mui_draw_rectangle(plot_area, _color_bg());
@@ -114,7 +114,7 @@ void gra_xy_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels
     }
     if (n_labels == 0) return;
     float legends_v_spacing = 0.1f;
-    float legends_size = mui_protos_theme.label_text_size;
+    float legends_size = mui_protos_theme_g.label_text_size;
     float legends_padding = 10.0f;
     float legend_spacing = 10.0f;
     Mui_Rectangle  legends_rect;
@@ -129,7 +129,7 @@ void gra_xy_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels
     for (size_t i = 0; i < n_labels_; i++) {
         if (!mask[i]) continue;
         Mui_Vector2 pos = {legends_rect.x, legends_rect.y + index * legends_size + index * legends_v_spacing };
-        mui_draw_text_line(mui_protos_theme.label_font, pos, 0.1f, legends_size, labels[i], colors[i], 0, strlen(labels[i]));
+        mui_draw_text_line(mui_protos_theme_g.label_font, pos, 0.1f, legends_size, labels[i], colors[i], 0, strlen(labels[i]));
         index++;
     }
 }

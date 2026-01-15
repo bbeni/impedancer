@@ -9,9 +9,9 @@
 #include "string.h"
 #include "assert.h"
 
-Mui_Color _color_bg_smith() {return mui_protos_theme.bg_light;}
-Mui_Color _color_border_smith() {return mui_protos_theme.border;}
-Mui_Color _color_text_smith() {return mui_protos_theme.text_muted;}
+Mui_Color _color_bg_smith() {return mui_protos_theme_g.bg_light;}
+Mui_Color _color_border_smith() {return mui_protos_theme_g.border;}
+Mui_Color _color_text_smith() {return mui_protos_theme_g.text_muted;}
 
 #define N_DEFAULT_REACTANCES 6
 static double const_reactances[N_DEFAULT_REACTANCES] = { 0.1, 0.2, 0.5, 1, 2, 5};

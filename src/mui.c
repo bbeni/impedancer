@@ -111,8 +111,8 @@ Mui_Theme mui_protos_theme_light_generate() {
         .text         = _HSL(0, 0, 0.15),
         .text_muted   = _HSL(0, 0, 0.3),
         .border       = _HSL(0, 0, 0.5),
-        .primary      = _HSL(0.56, 0.4, 0.5),
-        .primary_dark = _HSL(0.56, 0.2, 0.25),
+        .primary      = _HSL(0.44, 0.6, 0.65),
+        .primary_dark = _HSL(0.44, 0.2, 0.5),
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,

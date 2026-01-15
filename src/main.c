@@ -224,21 +224,27 @@ void stage_view_update_data(struct Stage_View* stage_view) {
 }
 
 void stage_symbol_draw(Mui_Rectangle symbol_area) {
+    Mui_Color col = mui_protos_theme.text;
+    Mui_Color bg = mui_protos_theme.bg;
+
     float w = min(symbol_area.width, symbol_area.height);
     Mui_Rectangle r = {.width = w, .height = w};
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
-    mui_draw_rectangle(symbol_area, MUI_RED);
-    mui_draw_rectangle(r, MUI_GREEN);
+    mui_draw_rectangle(symbol_area, bg);
+    //mui_draw_rectangle(r, MUI_GREEN);
 
-    float line_thickness = 7;
+    float line_thickness = 5;
     float f = 20;
     r = mui_shrink(r, f);
-    mui_draw_rectangle(r, MUI_ORANGE);
-    mui_draw_line(r.x, r.y, r.x, r.y + r.width, line_thickness, MUI_BLACK);
-    mui_draw_line(r.x, r.y, r.x+r.width, r.y+r.width * 0.5f, line_thickness, MUI_BLACK);
-    mui_draw_line(r.x, r.y + r.width, r.x+r.width, r.y+r.width * 0.5f, line_thickness, MUI_BLACK);
-    mui_draw_line(r.x-f, r.y + r.width * 0.5f, r.x, r.y + r.width * 0.5f, line_thickness, MUI_BLACK);
-    mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, r.x + r.width, r.y + r.width * 0.5f, line_thickness, MUI_BLACK);
+    //mui_draw_rectangle(r, MUI_ORANGE);
+    mui_draw_line(r.x, r.y, r.x, r.y + r.width, line_thickness, col);
+    mui_draw_line(r.x, r.y, r.x+r.width, r.y+r.width * 0.5f, line_thickness, col);
+    mui_draw_line(r.x, r.y + r.width, r.x+r.width, r.y+r.width * 0.5f, line_thickness, col);
+    mui_draw_line(r.x-f, r.y + r.width * 0.5f, r.x, r.y + r.width * 0.5f, line_thickness, col);
+    mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, r.x + r.width, r.y + r.width * 0.5f, line_thickness, col);
+
+    mui_draw_line(symbol_area.x, r.y + r.width * 0.5f, r.x-f, r.y + r.width * 0.5f, line_thickness, col);
+    mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, symbol_area.x + symbol_area.width, r.y + r.width * 0.5f, line_thickness, col);
 }
 
 void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
@@ -246,7 +252,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
     stage_view_update_data(stage_view);
 
     Mui_Rectangle symbol_area;
-    widget_area = mui_cut_top(widget_area, 200, &symbol_area);
+    widget_area = mui_cut_top(widget_area, 100, &symbol_area);
     stage_symbol_draw(symbol_area);
 
     float padding = 5;
@@ -260,7 +266,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
 
     Mui_Rectangle collabsable_area_1;
     rest = mui_cut_top(rest, 36, &collabsable_area_1);
-    collabsable_area_1 = mui_cut_top(collabsable_area_1, 1, NULL);
+    //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
     if (mui_collapsable_section(&stage_view->collapsable_section_state_1, "Settings", collabsable_area_1)) {
         Mui_Rectangle sg_r;
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
@@ -292,7 +298,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
 
     Mui_Rectangle collabsable_area_2;
     rest = mui_cut_top(rest, 36, &collabsable_area_2);
-    collabsable_area_2 = mui_cut_top(collabsable_area_2, 1, NULL);
+    //collabsable_area_2 = mui_cut_top(collabsable_area_2, 2, NULL);
     if (mui_collapsable_section(&stage_view->collapsable_section_state_2, "S-parameter plot", collabsable_area_2)) {
         Mui_Rectangle s_param_plot_area;
         rest = mui_cut_top(rest, 300, &s_param_plot_area);
@@ -325,7 +331,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
 
     Mui_Rectangle collabsable_area_3;
     rest = mui_cut_top(rest, 36, &collabsable_area_3);
-    collabsable_area_3 = mui_cut_top(collabsable_area_3, 1, NULL);
+    //collabsable_area_3 = mui_cut_top(collabsable_area_3, 2, NULL);
     if (mui_collapsable_section(&stage_view->collapsable_section_state_3, "Smith chart", collabsable_area_3)) {
         Mui_Rectangle smith_plot_area;
         rest = mui_cut_top(rest, 500, &smith_plot_area);
@@ -353,7 +359,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area) {
 
     Mui_Rectangle collabsable_area_4;
     rest = mui_cut_top(rest, 36, &collabsable_area_4);
-    collabsable_area_4 = mui_cut_top(collabsable_area_4, 1, NULL);
+    //collabsable_area_4 = mui_cut_top(collabsable_area_4, 2, NULL);
     if (mui_collapsable_section(&stage_view->collapsable_section_state_4, "NFmin plot", collabsable_area_4)) {
         Mui_Rectangle noise_plot_area;
         rest = mui_cut_top(rest, 500, &noise_plot_area);
@@ -386,7 +392,10 @@ int main(int argc, char** argv) {
     w = 1700;
     h = 1150;
 
+    mui_init();
     mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED, NULL);
+    mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme_dark);
+    mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme_light);
     mui_load_ttf_font_for_theme("resources/font/NimbusSans-Regular.ttf", &mui_protos_theme);
 
     struct Stage_View stage_view = {0};
@@ -396,6 +405,10 @@ int main(int argc, char** argv) {
     struct Stage_View stage_view_2 = {0};
     stage_view_init(&stage_view_2, &infos);
     stage_view_update_active_setting(&stage_view_2, 0);
+
+    Mui_Button_State dark_mode_btn = {0};
+    mui_protos_theme = mui_protos_theme_light;
+    bool dark_mode = false;
 
     while (!mui_window_should_close())
     {
@@ -438,15 +451,28 @@ int main(int argc, char** argv) {
         // drawing
         //
         mui_begin_drawing();
-        mui_clear_background(mui_protos_theme.global_background_color, NULL);
+        mui_clear_background(mui_protos_theme.bg_dark, NULL);
 
         Mui_Rectangle whole_screen = {0, 0, w, h};
         const float decoration_height = 36.0f;
         mui_window_decoration(decoration_height, true, true, true, true, true, whole_screen);
-        //Mui_Rectangle screen = mui_cut_top(whole_screen, 1, NULL);
-        Mui_Rectangle screen = whole_screen;
-        screen.width = 1400;
+        Mui_Rectangle menu_bar_area;
+        Mui_Rectangle screen = mui_cut_top(whole_screen, decoration_height, &menu_bar_area);
 
+        Mui_Rectangle dark_mode_btn_area;
+        mui_cut_left(menu_bar_area, 140, &dark_mode_btn_area);
+        dark_mode_btn_area = mui_shrink(dark_mode_btn_area, 5.0f);
+        char* dm_text = dark_mode ? "light mode" : "dark mode";
+        if (mui_button(&dark_mode_btn, dm_text, dark_mode_btn_area)) {
+            dark_mode = !dark_mode;
+            if (dark_mode) {
+                mui_protos_theme = mui_protos_theme_dark;
+            } else {
+                mui_protos_theme = mui_protos_theme_light;
+            }
+        }
+
+        //screen.width = 1400;
         Mui_Rectangle stage_view_rect;
         Mui_Rectangle screen_inset = mui_shrink(screen, 5);
         Mui_Rectangle rest = mui_cut_left(screen_inset, 600, &stage_view_rect);

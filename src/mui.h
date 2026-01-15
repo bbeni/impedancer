@@ -49,37 +49,33 @@ typedef struct Mui_Image {
 struct Mui_Font;
 
 typedef struct {
-    Mui_Color global_background_color;
-    Mui_Color background_color;
-    Mui_Color background_hover_color;
-    float corner_radius;
+    Mui_Color bg_dark;
+    Mui_Color bg;
+    Mui_Color bg_light;
 
-    Mui_Color text_color;
-    Mui_Color text_hover_color;
-    float text_size;
+    Mui_Color text;
+    Mui_Color text_muted;
 
-    Mui_Color border_color;
-    Mui_Color border_hover_color;
-    float border_thickness;
+    Mui_Color border;
+    Mui_Color primary;
+    Mui_Color primary_dark;
 
-    Mui_Color label_background_color;
-    Mui_Color label_text_color;
+    float font_size;
     float label_text_size;
-
-    Mui_Color textinput_background_color;
-    Mui_Color textinput_text_color;
-    Mui_Color textinput_hint_text_color;
     float textinput_text_size;
+
+    struct Mui_Font *font;
+    struct Mui_Font *label_font;
+    struct Mui_Font *textinput_font;
+
+    float corner_radius;
+    float border_thickness;
 
     float slider_thickness;
     float slider_wagon_width;
     float slider_wagon_height;
     float slider_wagon_corner_radius;
     float slider_wagon_border_thickness;
-
-    struct Mui_Font *font;
-    struct Mui_Font *label_font;
-    struct Mui_Font *textinput_font;
 
     float animation_speed_to_hover;
     float animation_speed_to_normal;
@@ -88,7 +84,8 @@ typedef struct {
 
 // default theme
 extern Mui_Theme mui_protos_theme;
-
+extern Mui_Theme mui_protos_theme_dark;
+extern Mui_Theme mui_protos_theme_light;
 
 typedef struct {
     float hover_t; // from 0 to 1 representing the hover state (animation)
@@ -199,6 +196,7 @@ typedef enum {
     MUI_WINDOW_UNDECORATED = 0x80,
 } MUI_WINDOW_FLAGS;
 
+void mui_init();
 uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float opacity, MUI_WINDOW_FLAGS flags, Mui_Image* icon);
 uint8_t mui_get_active_window_id();
 int mui_screen_width();
@@ -248,7 +246,7 @@ void mui_draw_rectangle_lines(Mui_Rectangle rect, Mui_Color color, float thickne
 void mui_draw_rectangle_rounded_lines(Mui_Rectangle rect, float corner_radius, Mui_Color color, float thickness);
 
 Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t start, size_t end);
-struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float text_size);
+struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float font_size);
 void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, size_t start, size_t end);
 
 #define MUI_LIGHTGRAY  (Mui_Color){ 200, 200, 200, 255 }   // Light Gray

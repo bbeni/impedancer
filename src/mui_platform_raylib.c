@@ -165,10 +165,10 @@ Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font
 }
 
 // TODO: malloc leaks
-struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float text_size) {
+struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float font_size) {
     struct Mui_Font* font = malloc(sizeof(struct Mui_Font));
     memset(font, 0xCD, sizeof(struct Mui_Font));
-    Font f = LoadFontFromMemory(".ttf", ttf_data, ttf_data_size, text_size, 0, 250);
+    Font f = LoadFontFromMemory(".ttf", ttf_data, ttf_data_size, font_size, 0, 250);
     memcpy(font, &f, sizeof(*font));
     return font;
 }

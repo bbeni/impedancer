@@ -8,9 +8,9 @@
 #include "gra.h"
 #include "string.h"
 
-Mui_Color _color_bg() {return mui_protos_theme.background_color;}
-Mui_Color _color_border() {return mui_protos_theme.border_color;}
-Mui_Color _color_text() {return mui_protos_theme.text_color;}
+Mui_Color _color_bg() {return mui_protos_theme.bg;}
+Mui_Color _color_border() {return mui_protos_theme.border;}
+Mui_Color _color_text() {return mui_protos_theme.text_muted;}
 
 void _draw_grid(Mui_Rectangle plot_area, double x_min, double x_max, double y_min, double y_max, double x_step, double y_step, bool thick_y_zero) {
     // draw border

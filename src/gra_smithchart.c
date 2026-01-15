@@ -9,10 +9,9 @@
 #include "string.h"
 #include "assert.h"
 
-Mui_Color _color_bg_smith() {return mui_protos_theme.background_color;}
-Mui_Color _color_border_smith() {return mui_protos_theme.border_color;}
-Mui_Color _color_text_smith() {return mui_protos_theme.text_color;}
-
+Mui_Color _color_bg_smith() {return mui_protos_theme.bg_light;}
+Mui_Color _color_border_smith() {return mui_protos_theme.border;}
+Mui_Color _color_text_smith() {return mui_protos_theme.text_muted;}
 
 #define N_DEFAULT_REACTANCES 6
 static double const_reactances[N_DEFAULT_REACTANCES] = { 0.1, 0.2, 0.5, 1, 2, 5};
@@ -22,9 +21,11 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
     Mui_Vector2 center = mui_center_of_rectangle(plot_area);
     float r_outer = fmin(plot_area.height, plot_area.width) * 0.49f;
 
-    mui_draw_rectangle_lines(plot_area, _color_border_smith(), 2.0f);
-    mui_draw_circle_lines(center, r_outer, _color_bg_smith(), 2.0f);
-    mui_draw_line(center.x - r_outer, center.y, center.x + r_outer, center.y, 2.0f, _color_bg_smith());
+    mui_draw_rectangle_lines(mui_shrink(plot_area, 1.0f), _color_border_smith(), 2.0f);
+
+    mui_draw_circle(center, r_outer, _color_bg_smith());
+    mui_draw_circle_lines(center, r_outer, _color_text_smith(), 2.0f);
+    mui_draw_line(center.x - r_outer, center.y, center.x + r_outer, center.y, 2.0f, _color_text_smith());
 
     if (!custom_cicles) {
         n_custom_circles = N_DEFAULT_REACTANCES;
@@ -38,7 +39,7 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
             float c1_x = (1 - left_crossing) * 0.5f;
             float r1_plot = (1-c1_x) * r_outer;
             Mui_Vector2 c1_plot = {center.x + c1_x*r_outer, center.y + 0};
-            mui_draw_arc_lines(c1_plot, r1_plot, 0, 360,  _color_bg_smith(), 1.0f);
+            mui_draw_arc_lines(c1_plot, r1_plot, 0, 360,  _color_text_smith(), 1.0f);
         }
     }
 
@@ -49,7 +50,7 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
             float c1_x = (1 - left_crossing) * 0.5f;
             float r1_plot = (1-c1_x) * r_outer;
             Mui_Vector2 c1_plot = {center.x - c1_x*r_outer, center.y + 0};
-            mui_draw_arc_lines(c1_plot, r1_plot, 0, 360,  _color_bg_smith(), 1.0f);
+            mui_draw_arc_lines(c1_plot, r1_plot, 0, 360,  _color_text_smith(), 1.0f);
         }
     }
 
@@ -59,9 +60,9 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
         Mui_Vector2 c1_plot = {center.x + r_outer, center.y + r1 * r_outer};
         // r 0 -> inf, angle 0 -> 180
         float angle = 180 - atan(1/r1) * 2 * 180 / M_PI;
-        mui_draw_arc_lines(c1_plot, r1*r_outer, 90+angle, 270,  _color_bg_smith(), 1.0f);
+        mui_draw_arc_lines(c1_plot, r1*r_outer, 90+angle, 270,  _color_text_smith(), 1.0f);
         c1_plot.y = center.y - r1 * r_outer;
-        mui_draw_arc_lines(c1_plot, r1*r_outer, 90, 270-angle,  _color_bg_smith(), 1.0f);
+        mui_draw_arc_lines(c1_plot, r1*r_outer, 90, 270-angle,  _color_text_smith(), 1.0f);
     }
 
 }

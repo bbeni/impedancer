@@ -36,46 +36,111 @@ bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme) {
         return false;
     }
 
-    theme->font = mui_load_font_ttf(data, size, theme->text_size);
+    theme->font = mui_load_font_ttf(data, size, theme->font_size);
     theme->label_font = mui_load_font_ttf(data, size, theme->label_text_size);
     theme->textinput_font = mui_load_font_ttf(data, size, theme->textinput_text_size);
 
     return true;
 }
 
-Mui_Theme mui_protos_theme = {
-    .global_background_color = {50, 57, 60, 255},
-    .background_color = {142, 142, 142, 255},
-    .background_hover_color = {1, 2, 3, 255},
 
-    .text_color = {211, 211, 211, 255},
-    .text_hover_color = {252, 252, 252, 255},
+float mui_hue_to_rgb(float p, float q, float t) {
+    if (t < 0.0f) t += 1;
+    if (t > 1.0f) t -= 1;
+    if (t < 1.0f/6) return p + (q - p) * 6 * t;
+    if (t < 1.0f/2) return q;
+    if (t < 2.0f/3) return p + (q - p) * (2.0f/3 - t) * 6;
+    return p;
+}
 
-    .border_color = {224, 224, 224, 255},
-    .border_hover_color = {244, 142, 255, 255},
+static inline Mui_Color mui_hsl_to_rgb(float h, float s, float l) {
+    float r, g, b;
+    if (s == 0) r = g = b = l;
+    else {
+        float q = l < 0.5f ? l * (1 + s) : l + s - l * s;
+        float p = 2 * l - q;
+        r = mui_hue_to_rgb(p, q, h + 1.0f/3);
+        g = mui_hue_to_rgb(p, q, h);
+        b = mui_hue_to_rgb(p, q, h - 1.0f/3);
+    }
+    return (Mui_Color) {
+        .r = round(r * 255),
+        .g = round(g * 255),
+        .b = round(b * 255),
+        .a = 255
+    };
+}
 
-    .label_background_color = {40, 47, 50, 255},
-    .label_text_color = {230, 240, 225, 255},
+Mui_Theme mui_protos_theme_dark_generate() {
+    #define _HSL(h, s, l) mui_hsl_to_rgb((h), (s), (l))
+    return (Mui_Theme) {
 
-    .textinput_background_color = {100, 75, 105, 255},
-    .textinput_text_color = {224, 224, 224, 255},
-    .textinput_hint_text_color = {224, 124, 224, 255},
+        .bg_dark      = _HSL(0, 0, 0.075),
+        .bg           = _HSL(0, 0, 0.15),
+        .bg_light     = _HSL(0, 0, 0.225),
+        .text         = _HSL(0, 0, 0.85),
+        .text_muted   = _HSL(0, 0, 0.7),
+        .border       = _HSL(0, 0, 0.5),
+        .primary      = _HSL(0.56, 0.4, 0.5),
+        .primary_dark = _HSL(0.56, 0.2, 0.25),
 
-    .border_thickness = 2.0f,
-    .text_size = 32.0f,
-    .label_text_size = 32.0f,
-    .textinput_text_size = 32.0f,
+        .border_thickness = 2.0f,
+        .font_size = 32.0f,
+        .label_text_size = 32.0f,
+        .textinput_text_size = 32.0f,
 
-    .slider_thickness = 8.0f,
-    .slider_wagon_width = 32.0f,
-    .slider_wagon_height = 32.0f,
-    .slider_wagon_corner_radius = 6.0f,
-    .slider_wagon_border_thickness = 2.0f,
+        .slider_thickness = 8.0f,
+        .slider_wagon_width = 32.0f,
+        .slider_wagon_height = 32.0f,
+        .slider_wagon_corner_radius = 6.0f,
+        .slider_wagon_border_thickness = 2.0f,
 
-    .animation_speed_to_hover = 18.0f,
-    .animation_speed_to_normal = 11.0f,
-    .corner_radius = 4.0f,
-};
+        .animation_speed_to_hover = 18.0f,
+        .animation_speed_to_normal = 11.0f,
+        .corner_radius = 4.0f,
+    };
+}
+
+Mui_Theme mui_protos_theme_light_generate() {
+    #define _HSL(h, s, l) mui_hsl_to_rgb((h), (s), (l))
+    return (Mui_Theme) {
+
+        .bg_dark      = _HSL(0, 0, 0.775),
+        .bg           = _HSL(0, 0, 0.85),
+        .bg_light     = _HSL(0, 0, 0.925),
+        .text         = _HSL(0, 0, 0.15),
+        .text_muted   = _HSL(0, 0, 0.3),
+        .border       = _HSL(0, 0, 0.5),
+        .primary      = _HSL(0.56, 0.4, 0.5),
+        .primary_dark = _HSL(0.56, 0.2, 0.25),
+
+        .border_thickness = 2.0f,
+        .font_size = 32.0f,
+        .label_text_size = 32.0f,
+        .textinput_text_size = 32.0f,
+
+        .slider_thickness = 8.0f,
+        .slider_wagon_width = 32.0f,
+        .slider_wagon_height = 32.0f,
+        .slider_wagon_corner_radius = 6.0f,
+        .slider_wagon_border_thickness = 2.0f,
+
+        .animation_speed_to_hover = 18.0f,
+        .animation_speed_to_normal = 11.0f,
+        .corner_radius = 4.0f,
+    };
+}
+
+
+Mui_Theme mui_protos_theme;
+Mui_Theme mui_protos_theme_dark;
+Mui_Theme mui_protos_theme_light;
+
+void mui_init() {
+    mui_protos_theme_dark = mui_protos_theme_dark_generate();
+    mui_protos_theme_light = mui_protos_theme_light_generate();
+    mui_protos_theme = mui_protos_theme_light;
+}
 
 Mui_Color mui_interpolate_color(Mui_Color a, Mui_Color b, float t) {
 
@@ -226,19 +291,13 @@ static float window_minimizer_hover_t = 0;
 static float last_time = 0;
 Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, bool minimizable, bool maximizable, bool to_the_right, Mui_Rectangle window_rect) {
 
-    (void) movable;
-    (void) closeable;
-    (void) minimizable;
-    (void) maximizable;
-    (void) to_the_right;
-
     float w_to_h_ratio = 3.71f;
     float w_component = w_to_h_ratio * height / 3;
 
-    Mui_Color color = mui_protos_theme.text_color;
-    Mui_Color bg = mui_protos_theme.background_color;
-    Mui_Color color_hover = mui_protos_theme.text_hover_color;
-    Mui_Color bg_hover = mui_protos_theme.background_hover_color;
+    Mui_Color color = mui_protos_theme.text_muted;
+    Mui_Color bg = mui_protos_theme.bg_light;
+    Mui_Color color_hover = mui_protos_theme.primary;
+    Mui_Color bg_hover = mui_protos_theme.primary_dark;
     float to_hover_speed = mui_protos_theme.animation_speed_to_hover;
     float to_normal_speed = mui_protos_theme.animation_speed_to_normal;
 
@@ -246,8 +305,11 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     float dt = mui_get_time() - last_time;
     last_time = mui_get_time();
 
+    float comp_x = 0;
+    if (to_the_right)
+        comp_x = window_rect.width - w_component;
     Mui_Rectangle comp_rect = {
-        .x = window_rect.x + window_rect.width - w_component,
+        .x = window_rect.x + comp_x,
         .y = window_rect.y,
         .width = w_component,
         .height = height,
@@ -256,14 +318,16 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     //
     // draw x
     //
-    if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
-        if (mui_is_mouse_button_pressed(0)) {
-            // TODO: kill app gracefully
-            exit(0);
+    if (closeable) {
+        if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
+            if (mui_is_mouse_button_pressed(0) && closeable) {
+                // TODO: kill app gracefully
+                exit(0);
+            }
+            mui_move_towards(&(window_x_hover_t), 1, to_hover_speed, dt);
+        } else {
+            mui_move_towards(&(window_x_hover_t), 0, to_normal_speed, dt);
         }
-        mui_move_towards(&(window_x_hover_t), 1, to_hover_speed, dt);
-    } else {
-        mui_move_towards(&(window_x_hover_t), 0, to_normal_speed, dt);
     }
 
     Mui_Color b = mui_interpolate_color(bg, bg_hover, window_x_hover_t);
@@ -278,20 +342,27 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     //
     // draw maximizer
     //
-    comp_rect.x -= w_component;
-    comp_rect.x = ceilf(comp_rect.x);
-    if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
-        if (mui_is_mouse_button_pressed(0)) {
-            if (mui_is_window_maximized()){
-                mui_window_restore();
-            } else {
-                mui_window_maximize();
-                previous_window_rect = window_rect;
-            }
-        }
-        mui_move_towards(&(window_maximizer_hover_t), 1, to_hover_speed, dt);
+    if (to_the_right) {
+        comp_rect.x -= w_component;
+        comp_rect.x = ceilf(comp_rect.x);
     } else {
-        mui_move_towards(&(window_maximizer_hover_t), 0, to_normal_speed, dt);
+        comp_rect.x += w_component;
+        comp_rect.x = floorf(comp_rect.x);
+    }
+    if (maximizable) {
+        if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
+            if (mui_is_mouse_button_pressed(0)) {
+                if (mui_is_window_maximized()){
+                    mui_window_restore();
+                } else {
+                    mui_window_maximize();
+                    previous_window_rect = window_rect;
+                }
+            }
+            mui_move_towards(&(window_maximizer_hover_t), 1, to_hover_speed, dt);
+        } else {
+            mui_move_towards(&(window_maximizer_hover_t), 0, to_normal_speed, dt);
+        }
     }
 
     b = mui_interpolate_color(bg, bg_hover, window_maximizer_hover_t);
@@ -304,13 +375,24 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     //
     // draw minimizer
     //
-    comp_rect.x -= w_component;
-    comp_rect.x = ceilf(comp_rect.x);
-    if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
-        if (mui_is_mouse_button_pressed(0)) { mui_window_minimize(); }
-        mui_move_towards(&(window_minimizer_hover_t), 1, to_hover_speed, dt);
+    if (to_the_right) {
+        comp_rect.x -= w_component;
+        comp_rect.x = ceilf(comp_rect.x);
     } else {
-        mui_move_towards(&(window_minimizer_hover_t), 0, to_normal_speed, dt);
+        comp_rect.x += w_component;
+        comp_rect.x = floorf(comp_rect.x);
+    }
+
+
+    if (minimizable) {
+        if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
+            if (mui_is_mouse_button_pressed(0)) {
+                    mui_window_minimize();
+            }
+            mui_move_towards(&(window_minimizer_hover_t), 1, to_hover_speed, dt);
+        } else {
+            mui_move_towards(&(window_minimizer_hover_t), 0, to_normal_speed, dt);
+        }
     }
 
     b = mui_interpolate_color(bg, bg_hover, window_minimizer_hover_t);
@@ -324,12 +406,17 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     //
     // draw dragging area
     //
-    comp_rect.x -= w_component * 3;
+    if (to_the_right) {
+        comp_rect.x -= w_component * 3;
+        comp_rect.x = ceilf(comp_rect.x);
+    } else {
+        comp_rect.x += w_component;
+        comp_rect.x = floorf(comp_rect.x);
+    }
     comp_rect.width = w_component * 3;
-    comp_rect.x = ceilf(comp_rect.x);
 
     if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
-        if (mui_is_mouse_button_pressed(0)) {
+        if (mui_is_mouse_button_pressed(0) && movable) {
             window_grabbed = true;
             window_initial_os_position = mui_window_get_position();
             window_grabbed_pos = mui_get_mouse_position();
@@ -361,10 +448,10 @@ void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {
         theme = &mui_protos_theme;
     }
 
-    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->label_background_color);
+    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->bg);
     Mui_Vector2 position = {place.x+20, place.y + place.height/2 - theme->label_text_size/2};
     int l = mui_text_len(text, strlen(text));
-    mui_draw_text_line(theme->label_font, position, 0.1, theme->label_text_size, text, theme->label_text_color, 0, l);
+    mui_draw_text_line(theme->label_font, position, 0.1, theme->label_text_size, text, theme->text, 0, l);
 }
 
 bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, Mui_Rectangle place) {
@@ -384,13 +471,15 @@ bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, M
         mui_move_towards(&(state->hover_t), 0, theme->animation_speed_to_normal, dt);
     }
 
-    Mui_Color bg = mui_interpolate_color(theme->background_color, theme->background_hover_color, state->hover_t);
-    Mui_Color fg = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
+    Mui_Color bg = mui_interpolate_color(theme->bg_light, theme->primary_dark, state->hover_t);
+    Mui_Color fg = theme->primary;
+    Mui_Color bc = mui_interpolate_color(theme->primary_dark, theme->primary_dark, state->hover_t);
 
     Mui_Rectangle triangle_space;
     Mui_Rectangle text_space = mui_cut_left(place, place.height, &triangle_space); // place for triangle
 
     mui_draw_rectangle_rounded(place, theme->corner_radius, bg);
+    mui_draw_rectangle_rounded_lines(mui_shrink(place, 0.5f), theme->corner_radius, bc, 1.0f);
     float x_s = triangle_space.height / 4;
     Mui_Vector2 center = mui_center_of_rectangle(triangle_space);
 
@@ -404,9 +493,9 @@ bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, M
     }
 
     if (text) {
-        float font_size = theme->text_size;
+        float font_size = theme->font_size;
         Mui_Vector2 pos = {.x = text_space.x, .y = text_space.y + (text_space.height - font_size) * 0.5f};
-        mui_draw_text_line(theme->font, pos,0.1f, theme->text_size, text, fg, 0, strlen(text));
+        mui_draw_text_line(theme->font, pos,0.1f, theme->font_size, text, fg, 0, strlen(text));
     }
 
     return state->open;
@@ -434,24 +523,24 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
     Mui_Rectangle area;     // a square for the mui_checkbox
     place = mui_cut_left(place, place.height, &area); // place of text
 
-    Mui_Color bg = mui_interpolate_color(theme->background_color, theme->background_hover_color, state->hover_t);
-    Mui_Color border_color = mui_interpolate_color(theme->border_color, theme->border_hover_color, state->hover_t);
-    Mui_Color text_color = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
+    Mui_Color bg = mui_interpolate_color(theme->bg_light, theme->primary_dark, state->hover_t);
+    Mui_Color border_color = mui_interpolate_color(theme->primary, theme->primary_dark, state->hover_t);
+    Mui_Color text_color = theme->primary;
 
     area = mui_shrink(area, 2.0f);
     mui_draw_rectangle_rounded(area, theme->corner_radius, bg);
-    mui_draw_rectangle_rounded_lines(area, theme->corner_radius, border_color, theme->border_thickness);
+    mui_draw_rectangle_rounded_lines(mui_shrink(area, theme->border_thickness * 0.5f), theme->corner_radius, border_color, theme->border_thickness);
 
     float inset = area.height/4;
 
     if (state->checked) {
         area = mui_shrink(area, area.height/4);
-        mui_draw_rectangle_rounded(area, theme->corner_radius - inset/2, border_color);
+        mui_draw_rectangle_rounded(area, theme->corner_radius - inset/2, text_color);
     }
 
-    Mui_Vector2 position = {place.x+inset, place.y + place.height/2 - theme->text_size/2};
+    Mui_Vector2 position = {place.x+inset, place.y + place.height/2 - theme->font_size/2};
     size_t l = mui_text_len(text, strlen(text));
-    mui_draw_text_line(theme->font, position, 0, theme->text_size, text, text_color, 0, l);
+    mui_draw_text_line(theme->font, position, 0, theme->font_size, text, text_color, 0, l);
 }
 
 float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle place) {
@@ -484,9 +573,9 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
         mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
     }
 
-    Mui_Color bg = mui_interpolate_color(theme->background_color, theme->background_hover_color, state->hover_t);
-    Mui_Color border_color = mui_interpolate_color(theme->border_color, theme->border_hover_color, state->hover_t);
-    Mui_Color text_color = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
+    Mui_Color bg = mui_interpolate_color(theme->bg, theme->bg_light, state->hover_t);
+    Mui_Color border_color = mui_interpolate_color(theme->border, theme->primary, state->hover_t);
+    Mui_Color text_color = mui_interpolate_color(theme->text_muted, theme->text, state->hover_t);
 
     if (!vertical) { // horizontal
         // [..]...........
@@ -560,20 +649,20 @@ bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place) 
     Mui_Color bg;
 
     if (theme->border_thickness > 0) {
-        bg = mui_interpolate_color(theme->border_color, theme->border_hover_color, state->hover_t);
+        bg = mui_interpolate_color(theme->bg, theme->bg_light, state->hover_t);
         mui_draw_rectangle_rounded(place, theme->corner_radius, bg);
         place = mui_shrink(place, theme->border_thickness);
     }
 
-    bg = mui_interpolate_color(theme->background_color, theme->background_hover_color, state->hover_t);
+    bg = mui_interpolate_color(theme->bg, theme->primary_dark, state->hover_t);
     mui_draw_rectangle_rounded(place, theme->corner_radius-0.25f*theme->corner_radius, bg);
 
-    Mui_Color text_color = mui_interpolate_color(theme->text_color, theme->text_hover_color, state->hover_t);
+    Mui_Color text_color = mui_interpolate_color(theme->text, theme->primary, state->hover_t);
 
-    float offset = place.height/2 - theme->text_size/2;
-    Mui_Vector2 position = {place.x+offset, place.y + place.height/2 - theme->text_size/2};
+    float offset = theme->font_size/4;
+    Mui_Vector2 position = {place.x+offset, place.y + place.height/2 - theme->font_size/2};
     size_t l = mui_text_len(text, strlen(text));
-    mui_draw_text_line(theme->label_font, position, 0, theme->text_size, text, text_color, 0, l);
+    mui_draw_text_line(theme->label_font, position, 0, theme->font_size, text, text_color, 0, l);
     return returnstate;
 }
 
@@ -740,11 +829,11 @@ size_t mouse_down_pivot_cursor;
 void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_Rectangle place) {
     Mui_Theme *theme = &mui_protos_theme;
     float font_size = theme->textinput_text_size;
-    Mui_Color text_color = theme->textinput_text_color;
+    Mui_Color text_color = theme->text;
     struct Mui_Font* font = theme->textinput_font;
 
     size_t total_length = strlen(text);
-    mui_draw_rectangle(place, theme->background_color);
+    mui_draw_rectangle(place, theme->bg_light);
     place = mui_shrink(place, 2.0f * 2);
 
     //
@@ -912,11 +1001,11 @@ void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle p
     }
 
 
-    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->border_color);
+    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->border);
     place = mui_shrink(place, theme->border_thickness);
-    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->textinput_background_color);
+    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->bg_light);
 
-    float text_offset_left = place.height/2 - theme->text_size/2;
+    float text_offset_left = place.height/2 - theme->font_size/2;
 
 
     if (state->active) {
@@ -930,19 +1019,19 @@ void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle p
             .height=theme->textinput_text_size
         };
 
-        mui_draw_rectangle(rc, theme->textinput_text_color);
+        mui_draw_rectangle(rc, theme->text);
     }
 
 
     if (state->count != 0 || state->active) {
         size_t l = mui_text_len(state->buf, strlen(state->buf));
         Mui_Vector2 position = {place.x + text_offset_left, place.y + place.height/2 - theme->textinput_text_size/2};
-        mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, state->buf, theme->textinput_text_color, 0, l);
+        mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, state->buf, theme->text, 0, l);
     } else {
         //hint text
         size_t l = mui_text_len(hint, strlen(hint));
         Mui_Vector2 position = {place.x+ text_offset_left, place.y + place.height/2 - theme->textinput_text_size/2};
-        mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, hint, theme->textinput_text_color, 0, l);
+        mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, hint, theme->text_muted, 0, l);
     }
 }
 

@@ -25,8 +25,8 @@ BUILD_DIR := build
 
 # Files
 TARGET := $(BUILD_DIR)/impedancer
-SRCS := $(SRC_DIR)/main.c $(SRC_DIR)/s2p.c $(SRC_DIR)/mui.c $(SRC_DIR)/gra.c $(SRC_DIR)/uti.c $(SRC_DIR)/mma.c $(SRC_DIR)/mui_platform_raylib.c $(SRC_DIR)/gra_smithchart.c
-OBJS := $(BUILD_DIR)/main.o $(BUILD_DIR)/s2p.o $(BUILD_DIR)/mui.o $(BUILD_DIR)/gra.o $(BUILD_DIR)/uti.o $(BUILD_DIR)/mma.o $(BUILD_DIR)/mui_platform_raylib.o $(BUILD_DIR)/gra_smithchart.o
+SRCS := $(SRC_DIR)/main.c $(SRC_DIR)/s2p.c $(SRC_DIR)/mui.c $(SRC_DIR)/gra.c $(SRC_DIR)/uti.c $(SRC_DIR)/mma.c $(SRC_DIR)/mui_platform_raylib.c $(SRC_DIR)/gra_smithchart.c $(SRC_DIR)/circuit_simulator_stage.c
+OBJS := $(BUILD_DIR)/main.o $(BUILD_DIR)/s2p.o $(BUILD_DIR)/mui.o $(BUILD_DIR)/gra.o $(BUILD_DIR)/uti.o $(BUILD_DIR)/mma.o $(BUILD_DIR)/mui_platform_raylib.o $(BUILD_DIR)/gra_smithchart.o $(BUILD_DIR)/circuit_simulator_stage.o
 HEADER_DEPS :=
 
 all: $(TARGET)

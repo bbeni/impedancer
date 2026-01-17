@@ -183,8 +183,8 @@ Mui_Theme mui_protos_theme_light_generate(float bg_hue, float bg_chroma) {
         .text         = _OKLCH(0.05f, bg_chroma, bg_hue),
         .text_muted   = _OKLCH(0.5f, bg_chroma, bg_hue),
         .border       = _OKLCH(0.55f, bg_chroma, bg_hue),
-        .primary      = _OKLCH(0.7f, bg_chroma+0.09, 167),
-        .primary_dark = _OKLCH(0.6f, bg_chroma+0.09, 167),
+        .primary      = _OKLCH(0.7f, bg_chroma+0.09, 33 + bg_hue),
+        .primary_dark = _OKLCH(0.6f, bg_chroma+0.09, 33 + bg_hue),
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,
@@ -253,6 +253,16 @@ void mui_move_towards(float *x, float target, float speed, float dt) {
         }
     }
 }
+
+Mui_Rectangle mui_rectangle(float x, float y, float width, float height) {
+    Mui_Rectangle r;
+    r.x = x;
+    r.y = y;
+    r.width = width;
+    r.height = height;
+    return r;
+}
+
 
 // Shrink Rectangle by amount in all directions
 Mui_Rectangle mui_shrink(Mui_Rectangle r, float amount) {
@@ -378,6 +388,8 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
 
     float w_to_h_ratio = 3.71f;
     float w_component = w_to_h_ratio * height / 3;
+    float running_sum_width = 0.0f;
+
 
     Mui_Color color = mui_protos_theme_g.text_muted;
     Mui_Color bg = mui_protos_theme_g.bg_light;
@@ -403,6 +415,7 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     //
     // draw x
     //
+    running_sum_width += comp_rect.width;
     if (closeable) {
         if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
             if (mui_is_mouse_button_pressed(0) && closeable) {
@@ -427,6 +440,7 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     //
     // draw maximizer
     //
+    running_sum_width += comp_rect.width;
     if (to_the_right) {
         comp_rect.x -= w_component;
         comp_rect.x = ceilf(comp_rect.x);
@@ -467,6 +481,7 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
         comp_rect.x += w_component;
         comp_rect.x = floorf(comp_rect.x);
     }
+    running_sum_width += comp_rect.width;
 
 
     if (minimizable) {
@@ -499,6 +514,7 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
         comp_rect.x = floorf(comp_rect.x);
     }
     comp_rect.width = w_component * 3;
+    running_sum_width += comp_rect.width;
 
     if (mui_is_inside_rectangle(mui_get_mouse_position(), comp_rect)) {
         if (mui_is_mouse_button_pressed(0) && movable) {
@@ -525,7 +541,14 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
 
     mui_draw_rectangle(comp_rect, bg);
 
-    return (Mui_Rectangle) {.x = window_rect.x, .y = window_rect.y, .height = height, .width = comp_rect.x - window_rect.x};
+
+    Mui_Rectangle ret_val;
+    ret_val.x = to_the_right ? window_rect.x : window_rect.x + running_sum_width;
+    ret_val.y = window_rect.y;
+    ret_val.height = height;
+    ret_val.width = window_rect.width - running_sum_width;
+
+    return ret_val;
 }
 
 void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {
@@ -556,15 +579,16 @@ bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, M
         mui_move_towards(&(state->hover_t), 0, theme->animation_speed_to_normal, dt);
     }
 
-    Mui_Color bg = mui_interpolate_color(theme->bg_light, theme->primary_dark, state->hover_t);
-    Mui_Color fg = theme->primary;
-    Mui_Color bc = mui_interpolate_color(theme->primary_dark, theme->primary_dark, state->hover_t);
+    Mui_Color bg = mui_interpolate_color(theme->bg, theme->bg_light, state->hover_t);
+    Mui_Color bc = mui_interpolate_color(theme->bg, theme->primary, state->hover_t);
+    Mui_Color fg = mui_interpolate_color(theme->text_muted, theme->text, state->hover_t);
 
     Mui_Rectangle triangle_space;
     Mui_Rectangle text_space = mui_cut_left(place, place.height, &triangle_space); // place for triangle
 
-    mui_draw_rectangle_rounded(place, theme->corner_radius, bg);
-    mui_draw_rectangle_rounded_lines(mui_shrink(place, 0.5f), theme->corner_radius, bc, 1.0f);
+    float border_thickness = 2.0f;
+    mui_draw_rectangle_rounded(mui_shrink(place, border_thickness), theme->corner_radius, bg);
+    mui_draw_rectangle_rounded_lines(mui_shrink(place, border_thickness), theme->corner_radius, bc, border_thickness);
     float x_s = triangle_space.height / 4;
     Mui_Vector2 center = mui_center_of_rectangle(triangle_space);
 
@@ -579,8 +603,10 @@ bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, M
 
     if (text) {
         float font_size = theme->font_size;
-        Mui_Vector2 pos = {.x = text_space.x, .y = text_space.y + (text_space.height - font_size) * 0.5f};
-        mui_draw_text_line(theme->font, pos,0.1f, theme->font_size, text, fg, 0, strlen(text));
+        Mui_Vector2 pos;
+        pos.x = text_space.x;
+        pos.y = text_space.y + (text_space.height - font_size) * 0.5f;
+        mui_draw_text_line(theme->font, pos, 0.1f, theme->font_size, text, fg, 0, strlen(text));
     }
 
     return state->open;
@@ -608,9 +634,9 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
     Mui_Rectangle area;     // a square for the mui_checkbox
     place = mui_cut_left(place, place.height, &area); // place of text
 
-    Mui_Color bg = mui_interpolate_color(theme->bg_light, theme->primary_dark, state->hover_t);
-    Mui_Color border_color = mui_interpolate_color(theme->primary, theme->primary_dark, state->hover_t);
-    Mui_Color text_color = theme->primary;
+    Mui_Color bg = mui_interpolate_color(theme->bg, theme->bg_light, state->hover_t);
+    Mui_Color border_color = mui_interpolate_color(theme->border, theme->primary, state->hover_t);
+    Mui_Color text_color = mui_interpolate_color(theme->text_muted, theme->text, state->hover_t);
 
     area = mui_shrink(area, 2.0f);
     mui_draw_rectangle_rounded(area, theme->corner_radius, bg);

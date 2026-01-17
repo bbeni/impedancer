@@ -37,8 +37,10 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
             float x = const_reactances[i];
             float left_crossing = (x - 1) / (x + 1);
             float c1_x = (1 - left_crossing) * 0.5f;
-            float r1_plot = (1-c1_x) * r_outer;
-            Mui_Vector2 c1_plot = {center.x + c1_x*r_outer, center.y + 0};
+            float r1_plot = (1 - c1_x) * r_outer;
+            Mui_Vector2 c1_plot;
+            c1_plot.x = center.x + c1_x * r_outer;
+            c1_plot.y = center.y + 0;
             mui_draw_arc_lines(c1_plot, r1_plot, 0, 360,  _color_text_smith(), 1.0f);
         }
     }
@@ -49,20 +51,24 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
             float left_crossing = (x - 1) / (x + 1);
             float c1_x = (1 - left_crossing) * 0.5f;
             float r1_plot = (1-c1_x) * r_outer;
-            Mui_Vector2 c1_plot = {center.x - c1_x*r_outer, center.y + 0};
+            Mui_Vector2 c1_plot;
+            c1_plot.x = center.x - c1_x * r_outer,
+            c1_plot.y = center.y + 0;
             mui_draw_arc_lines(c1_plot, r1_plot, 0, 360,  _color_text_smith(), 1.0f);
         }
     }
 
     for (size_t i = 0; i < n_custom_circles; i++) {
         float x = const_reactances[i];
-        float r1 = 1/x;
-        Mui_Vector2 c1_plot = {center.x + r_outer, center.y + r1 * r_outer};
+        float r1 = 1 / x;
+        Mui_Vector2 c1_plot;
+        c1_plot.x = center.x + r_outer,
+        c1_plot.y =  center.y + r1 * r_outer;
         // r 0 -> inf, angle 0 -> 180
-        float angle = 180 - atan(1/r1) * 2 * 180 / M_PI;
-        mui_draw_arc_lines(c1_plot, r1*r_outer, 90+angle, 270,  _color_text_smith(), 1.0f);
+        float angle = 180 - atan(1 / r1) * 2 * 180 / M_PI;
+        mui_draw_arc_lines(c1_plot, r1 * r_outer, 90 + angle, 270,  _color_text_smith(), 1.0f);
         c1_plot.y = center.y - r1 * r_outer;
-        mui_draw_arc_lines(c1_plot, r1*r_outer, 90, 270-angle,  _color_text_smith(), 1.0f);
+        mui_draw_arc_lines(c1_plot, r1 * r_outer, 90, 270 - angle,  _color_text_smith(), 1.0f);
     }
 
 }
@@ -83,10 +89,9 @@ void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_len
                 double x = ((z_data[i].r+1)*(z_data[i].r-1) + z_data[i].i*z_data[i].i) / q;
                 double y = 2*z_data[i].i/q;
 
-                Mui_Vector2 screen_coords = {
-                    smith_center.x + x * r_outer,
-                    smith_center.y - y * r_outer
-                };
+                Mui_Vector2 screen_coords;
+                screen_coords.x = smith_center.x + x * r_outer;
+                screen_coords.y = smith_center.y - y * r_outer;
                 mui_draw_circle(screen_coords, marker_size, color);
             }
         }
@@ -94,9 +99,9 @@ void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_len
         double x_last, y_last;
         for (size_t i = 0; i < data_length; i++) {
             double f = f_data[i];
-            double q = (z_data[i].r+1)*(z_data[i].r+1) + z_data[i].i*z_data[i].i;
-            double x = ((z_data[i].r+1)*(z_data[i].r-1) + z_data[i].i*z_data[i].i) / q;
-            double y = 2*z_data[i].i/q;
+            double q = (z_data[i].r + 1) * (z_data[i].r + 1) + z_data[i].i * z_data[i].i;
+            double x = ((z_data[i].r + 1) * (z_data[i].r - 1) + z_data[i].i * z_data[i].i) / q;
+            double y = 2 * z_data[i].i / q;
             // skip the first round to get x_last, y_last
             if (i > 0 && f >= f_min && f <= f_max){
                 Mui_Vector2 screen_coords_1 = {

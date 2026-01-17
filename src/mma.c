@@ -378,27 +378,26 @@ void mma_normalize_or_z_axisv3f(struct Vec3f* v) {
 }
 
 struct Vec3f mma_crossv3f(struct Vec3f a, struct Vec3f b) {
-	struct Vec3f c = {a.y * b.z - a.z * b.y,
-			  		  a.z * b.x - a.x * b.z,
-			 		  a.x * b.y - a.y * b.x };
-	return c;
+	struct Vec3f v;
+	v.x = a.y * b.z - a.z * b.y;
+	v.y = a.z * b.x - a.x * b.z;
+	v.z = a.x * b.y - a.y * b.x;
+	return v;
 }
 
 struct Vec3f mma_addv3f(struct Vec3f a, struct Vec3f b) {
-	struct Vec3f v = {
-		a.x + b.x,
-		a.y + b.y,
-		a.z + b.z,
-	};
+	struct Vec3f v;
+	v.x = a.x + b.x;
+	v.y = a.y + b.y;
+	v.z = a.z + b.z;
 	return v;
 }
 
 struct Vec3f mma_subtractv3f(struct Vec3f a, struct Vec3f b) {
-	struct Vec3f v = {
-		a.x - b.x,
-		a.y - b.y,
-		a.z - b.z,
-	};
+	struct Vec3f v;
+	v.x = a.x - b.x;
+	v.y = a.y - b.y;
+	v.z = a.z - b.z;
 	return v;
 }
 

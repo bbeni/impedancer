@@ -12,8 +12,11 @@ bool create_stage_archetype(char* device_settings_csv_file_name, char* dir, stru
 
     char *content;
     size_t content_size;
-    char full_path[2048]; // TODO: check this
-    sprintf(full_path, "%s/%s", dir, device_settings_csv_file_name); // TODO: leaks
+    char full_path[2048];
+    if (snprintf(full_path, 2048, "%s/%s", dir, device_settings_csv_file_name) > 2046) {
+        printf("ERROR: snprintf overflow\n");
+        return false;
+    }
     if (!uti_read_entire_file(full_path, &content, &content_size)) {
         return false;
     }
@@ -45,10 +48,10 @@ bool create_stage_archetype(char* device_settings_csv_file_name, char* dir, stru
     //char* data_block_filenames = malloc(sizeof(char) * string_data_block_filenames_length);
     char* data_block_models = malloc(sizeof(char) * string_data_block_models_length);
     char* cursor = data_block_models; // Use this to move through the memory
-    stage_out->models = malloc(sizeof(char *) * length);
-    stage_out->current_ds_array = malloc(sizeof(char *) * length);
-    stage_out->voltage_ds_array = malloc(sizeof(char *) * length);
-    stage_out->temperatures = malloc(sizeof(char *) * length);
+    stage_out->models = malloc(sizeof(*stage_out->models) * length);
+    stage_out->current_ds_array = malloc(sizeof(*stage_out->current_ds_array) * length);
+    stage_out->voltage_ds_array = malloc(sizeof(*stage_out->voltage_ds_array) * length);
+    stage_out->temperatures = malloc(sizeof(*stage_out->temperatures) * length);
     stage_out->n_settings = length;
     stage_out->selected_setting = 0;
 
@@ -70,8 +73,6 @@ bool create_stage_archetype(char* device_settings_csv_file_name, char* dir, stru
         char *i_ds_cstr = uti_temp_strndup(i_ds_sv.text, i_ds_sv.length);
         struct Uti_String_View temp_sv = uti_sv_trim(uti_sv_chop_by_delim(&line, ','));
         char *temp_cstr = uti_temp_strndup(temp_sv.text, temp_sv.length);
-
-        char* line_cstr = uti_temp_strndup(line.text, line.length);
 
         stage_out->temperatures[i] = strtod(temp_cstr, NULL);
         stage_out->current_ds_array[i] = strtod(i_ds_cstr, NULL);

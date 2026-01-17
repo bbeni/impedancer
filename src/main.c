@@ -52,11 +52,13 @@ struct Stage_View {
     char selectable_text[SELECTABLE_TEXT_LENGTH];
     size_t selector_start;
     size_t selector_end;
+
     double min_f_before;
     double max_f_before;
     double min_f;
     double max_f;
     bool mask[4];
+
     // static data
     Mui_Color colors[4];
     char* labels[4];
@@ -264,28 +266,27 @@ void stage_view_settings_draw(struct Stage_View* stage_view, Mui_Rectangle symbo
     char* model_text = stage_view->stage->models[stage_view->active_setting];
     Mui_Vector2 pos = (Mui_Vector2){.x = inset_area.x, .y = inset_area.y};
     Mui_Vector2 text_size = mui_measure_text(font, model_text, font_size, 0.2f, 0, strlen(model_text));
-    Mui_Rectangle bg_rect = {.x = pos.x, .y=pos.y, .width=text_size.x, .height=text_size.y};
+    Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
     mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
     mui_draw_text_line(font, pos, 0.2f, font_size, model_text, col, 0, strlen(model_text));
 
     char v_ds_text[40];
-    sprintf(v_ds_text, "%.2fV", stage_view->stage->voltage_ds_array[stage_view->active_setting]);
+    snprintf(v_ds_text, 40, "%.2fV", stage_view->stage->voltage_ds_array[stage_view->active_setting]);
     text_size = mui_measure_text(font, v_ds_text, font_size, 0.2f, 0, strlen(v_ds_text));
     pos = (Mui_Vector2){.x = inset_area.x + inset_area.width - text_size.x, .y = inset_area.y};
     mui_draw_text_line(font, pos, 0.2f, font_size, v_ds_text, col, 0, strlen(v_ds_text));
 
     char i_ds_text[40];
-    sprintf(i_ds_text, "%.4fmA", stage_view->stage->current_ds_array[stage_view->active_setting]*1000);
+    snprintf(i_ds_text, 40, "%.4fmA", stage_view->stage->current_ds_array[stage_view->active_setting]*1000);
     text_size = mui_measure_text(font, i_ds_text, font_size, 0.2f, 0, strlen(i_ds_text));
     pos = (Mui_Vector2){.x = inset_area.x + inset_area.width - text_size.x, .y = inset_area.y + inset_area.height - text_size.y};
     mui_draw_text_line(font, pos, 0.2f, font_size, i_ds_text, col, 0, strlen(i_ds_text));
 
     char temp_text[40];
-    sprintf(temp_text, "%.0fK", stage_view->stage->temperatures[stage_view->active_setting]);
+    snprintf(temp_text, 40, "%.0fK", stage_view->stage->temperatures[stage_view->active_setting]);
     text_size = mui_measure_text(font, temp_text, font_size, 0.2f, 0, strlen(temp_text));
     pos = (Mui_Vector2){.x = inset_area.x, .y = inset_area.y + inset_area.height - text_size.y};
     mui_draw_text_line(font, pos, 0.2f, font_size, temp_text, col, 0, strlen(temp_text));
-
 
 }
 
@@ -522,9 +523,8 @@ int main(int argc, char** argv) {
 
         Mui_Rectangle whole_screen = {0, 0, w, h};
         const float decoration_height = 36.0f;
-        mui_window_decoration(decoration_height, true, true, true, true, true, whole_screen);
-        Mui_Rectangle menu_bar_area;
-        Mui_Rectangle screen = mui_cut_top(whole_screen, decoration_height, &menu_bar_area);
+        Mui_Rectangle menu_bar_area = mui_window_decoration(decoration_height, true, true, true, true, true, whole_screen);
+        Mui_Rectangle screen = mui_cut_top(whole_screen, decoration_height, NULL);
 
         Mui_Rectangle dark_mode_btn_area;
         menu_bar_area = mui_cut_left(menu_bar_area, 140, &dark_mode_btn_area);

@@ -159,6 +159,7 @@ typedef struct Mui_Textinput_Multiline_State {
 
 Mui_Color mui_interpolate_color(Mui_Color a, Mui_Color b, float t);
 void mui_move_towards(float *x, float target, float speed, float dt);
+Mui_Rectangle mui_rectangle(float x, float y, float width, float height);
 Mui_Rectangle mui_shrink(Mui_Rectangle r, float amount);
 Mui_Rectangle mui_cut_left(Mui_Rectangle r, float amount, Mui_Rectangle *out_left);
 Mui_Rectangle mui_cut_right(Mui_Rectangle r, float amount, Mui_Rectangle *out_right);

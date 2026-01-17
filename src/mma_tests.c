@@ -94,7 +94,6 @@ int main() {
         if (tests[i]()) passed++;
     }
 
-
     printf("%zu/%zu tests passed.\n", passed, n_tests);
     return 0;
 }

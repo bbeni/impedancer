@@ -3,12 +3,15 @@
 // For conditions of distribution and use, see copyright notice in project root.
 #define _GNU_SOURCE
 #include <string.h>
-#include "uti.h"
-#include "stdio.h"
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <errno.h>
 #include <assert.h>
+#include <ctype.h>
+
+#include "uti.h"
 
 
 #ifdef _WIN32
@@ -130,7 +133,7 @@ error:
 
 // Adopted from nob.h
 // TEMP buffer because we need copy strings to null terminated. Raylib MeaserTexteEx, etc.. uses only null terminated
-static char temp_buffer_internal[TEMP_BUFFER_CAP_INTERNAL] = {0};
+static char temp_buffer_internal[TEMP_BUFFER_CAP_INTERNAL];
 static size_t temp_size_internal = 0;
 void uti_temp_reset(void){ temp_size_internal = 0; }
 void *uti_temp_alloc(size_t requested_size) {

@@ -61,7 +61,13 @@ void mui_window_restore()               {RestoreWindow();}
 void mui_window_maximize()              {MaximizeWindow();}
 void mui_window_minimize()              {MinimizeWindow();}
 bool mui_is_window_maximized()          {return IsWindowMaximized();}
-Mui_Vector2 mui_window_get_position()   {Vector2 p = GetWindowPosition(); return (Mui_Vector2) {.x=p.x, .y=p.y };}
+Mui_Vector2 mui_window_get_position()   {
+    Vector2 p = GetWindowPosition();
+    Mui_Vector2 v;
+    v.x = p.x;
+    v.y = p.y;
+    return v;
+}
 void mui_window_set_position(int x, int y)          {SetWindowPosition(x, y);}
 void mui_window_set_size(int width, int height)     {SetWindowSize(width, height);}
 void mui_set_clipboard_text(char* text) {SetClipboardText(text);}
@@ -69,7 +75,12 @@ const char* mui_clipboard_text()        {return GetClipboardText();}
 void mui_set_mouse_cursor(MUI_MOUSE_CURSOR_TYPES type) { SetMouseCursor(type);};
 
 void mui_clear_background(Mui_Color color, Mui_Image* image) {
-    ClearBackground((Color){.a=color.a, .r=color.r, .g=color.g, .b=color.b});
+    Color c;
+    c.a = color.a;
+    c.r = color.r;
+    c.g = color.g;
+    c.b = color.b;
+    ClearBackground(c);
     assert(image == NULL && "TODO: implement image for background clearing");
 }
 void mui_begin_drawing()                {BeginDrawing();}
@@ -80,7 +91,10 @@ double mui_get_time_now()                   {return GetTime();}
 float mui_get_frame_time_now()              {return GetFrameTime();}
 Mui_Vector2 mui_get_mouse_position_now() {
     Vector2 p = GetMousePosition();
-    return (Mui_Vector2) {.x=p.x, .y=p.y};
+    Mui_Vector2 v;
+    v.x = p.x;
+    v.y = p.y;
+    return v;
 }
 
 
@@ -137,17 +151,32 @@ float _raylib_roundedness(Mui_Rectangle rect, float radius) {
 void mui_draw_rectangle_rounded(Mui_Rectangle rect, float corner_radius, Mui_Color color) {
     float roundedness = _raylib_roundedness(rect, corner_radius);
     const int segments = 16;
-    DrawRectangleRounded((Rectangle) {.x=rect.x, .y=rect.y, .width=rect.width, .height=rect.height}, roundedness, segments, RCOLOR(color));
+    Rectangle r;
+    r.x = rect.x;
+    r.y = rect.y;
+    r.width = rect.width;
+    r.height = rect.height;
+    DrawRectangleRounded(r, roundedness, segments, RCOLOR(color));
 }
 
 void mui_draw_rectangle_lines(Mui_Rectangle rect, Mui_Color color, float thickness) {
-    DrawRectangleLinesEx((Rectangle) {.x=rect.x, .y=rect.y, .width=rect.width, .height=rect.height}, thickness, RCOLOR(color));
+    Rectangle r;
+    r.x = rect.x;
+    r.y = rect.y;
+    r.width = rect.width;
+    r.height = rect.height;
+    DrawRectangleLinesEx(r, thickness, RCOLOR(color));
 }
 
 void mui_draw_rectangle_rounded_lines(Mui_Rectangle rect, float corner_radius, Mui_Color color, float thickness) {
     float roundedness = _raylib_roundedness(rect, corner_radius);
     const int segments = 16;
-    DrawRectangleRoundedLinesEx((Rectangle) {.x=rect.x, .y=rect.y, .width=rect.width, .height=rect.height}, roundedness, segments, thickness, RCOLOR(color));
+    Rectangle r;
+    r.x = rect.x;
+    r.y = rect.y;
+    r.width = rect.width;
+    r.height = rect.height;
+    DrawRectangleRoundedLinesEx(r, roundedness, segments, thickness, RCOLOR(color));
 }
 
 struct Mui_Font {

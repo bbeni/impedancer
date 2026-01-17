@@ -152,6 +152,15 @@ typedef struct Mui_Textinput_Multiline_State {
     Mui_Theme *theme;
 } Mui_Textinput_Multiline_State;
 
+//
+// state initialization
+//
+
+Mui_Button_State mui_button_state();
+Mui_Checkbox_State mui_checkbox_state();
+Mui_Slider_State mui_slider_state();
+Mui_Collapsable_Section_State mui_collapsable_state();
+Mui_Textinput_State mui_textinput_state();
 
 //
 // mui.h utility API
@@ -456,69 +465,3 @@ float mui_ease_in_out_sin(float t);
 
 
 #endif // MUI_H_
-
-
-/* Usage example: mui_showcase.c: (outdated)
-
-#define MUI_IMPLEMENTATION
-#include "mui.h"
-#include "raylib.h"
-#include "rlgl.h"
-
-float mui_time_now;
-Mui_Vector2 mui_mouse_pos;
-
-int main(void)
-{
-    InitWindow(1270, 920, "Bada Bada Boom!");
-    SetTargetFPS(200);
-    mui_load_ttf_font("resources/fonts/UbuntuMono-Regular.ttf");
-    Mui_Checkbox_State checkbox_state = {0};
-    Mui_Button_State button_states[10] = {0};
-
-    bool active[5] = {false};
-
-    while (!WindowShouldClose())
-    {
-        mui_time_now = GetTime();
-        mui_mouse_pos = GetMousePosition();
-
-        BeginDrawing();
-            ClearBackground(RAYWHITE);
-
-            Rectangle r = {130, 40, 710, 80};
-
-            mui_label(&protos_theme, "Finally we have a working immediate UI! <3", r);
-
-            Rectangle r2 = {130, 220, 410, 50};
-
-            mui_checkbox(&checkbox_state, "Check me out pls!", r2);
-
-            if (checkbox_state.checked) {
-                for (int i = 0; i < 5; i++) {
-                    Rectangle r = {130,400+60*i,410,50};
-                    if (mui_button(&button_states[i], "Finally we bada bada boom", r)) {
-                        active[i] = !active[i];
-                    }
-                }
-
-                for (int i = 0; i < 5; i++) {
-                    Rectangle r = {630,200+60*i,410,50};
-                    if (active[i]) {
-                        if (mui_button(&button_states[i+5], "Hello From This Side :)", r)) {
-                            active[i] = false;
-                        }
-                    }
-                }
-            }
-
-        DrawFPS(20,20);
-        EndDrawing();
-    }
-
-    CloseWindow();
-
-    return 0;
-}
-
-*/

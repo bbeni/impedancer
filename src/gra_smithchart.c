@@ -85,9 +85,9 @@ void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_len
             double f = f_data[i];
 
             if (f >= f_min && f <= f_max){
-                double q = (z_data[i].r+1)*(z_data[i].r+1) + z_data[i].i*z_data[i].i;
-                double x = ((z_data[i].r+1)*(z_data[i].r-1) + z_data[i].i*z_data[i].i) / q;
-                double y = 2*z_data[i].i/q;
+                double q = (z_data[i].r + 1) * (z_data[i].r + 1) + z_data[i].i * z_data[i].i;
+                double x = ((z_data[i].r + 1) * (z_data[i].r - 1) + z_data[i].i * z_data[i].i) / q;
+                double y = 2 * z_data[i].i / q;
 
                 Mui_Vector2 screen_coords;
                 screen_coords.x = smith_center.x + x * r_outer;
@@ -104,15 +104,12 @@ void gra_smith_plot_data(double *f_data, struct Complex *z_data, size_t data_len
             double y = 2 * z_data[i].i / q;
             // skip the first round to get x_last, y_last
             if (i > 0 && f >= f_min && f <= f_max){
-                Mui_Vector2 screen_coords_1 = {
-                    smith_center.x + x_last * r_outer,
-                    smith_center.y - y_last * r_outer
-                };
-                Mui_Vector2 screen_coords_2 = {
-                    smith_center.x + x * r_outer,
-                    smith_center.y - y * r_outer
-                };
-
+                Mui_Vector2 screen_coords_1;
+                screen_coords_1.x = smith_center.x + x_last * r_outer;
+                screen_coords_1.y = smith_center.y - y_last * r_outer;
+                Mui_Vector2 screen_coords_2;
+                screen_coords_2.x = smith_center.x + x * r_outer;
+                screen_coords_2.y = smith_center.y - y * r_outer;
                 mui_draw_line(screen_coords_1.x, screen_coords_1.y, screen_coords_2.x, screen_coords_2.y, marker_size, color);
             }
             x_last = x;

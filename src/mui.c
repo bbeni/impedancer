@@ -12,14 +12,14 @@
 
 
 // globals need to be updated by calling mui_update_input()
-float mui_global_time = 0.0f;
-Mui_Vector2 mui_global_mouse_position = {0};
+float mui_global_time_internal = 0.0f;
+Mui_Vector2 mui_global_mouse_position_internal = {0};
 
-double mui_get_time() {return mui_global_time;}
-Mui_Vector2 mui_get_mouse_position() {return mui_global_mouse_position;}
+double mui_get_time() {return mui_global_time_internal;}
+Mui_Vector2 mui_get_mouse_position() {return mui_global_mouse_position_internal;}
 void mui_update_core() {
-    mui_global_mouse_position = mui_get_mouse_position_now();
-    mui_global_time = mui_get_time_now();
+    mui_global_mouse_position_internal = mui_get_mouse_position_now();
+    mui_global_time_internal = mui_get_time_now();
 }
 
 bool mui_load_resource_from_file(const char *file_path, size_t *out_size, void **data) {
@@ -41,7 +41,7 @@ bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme) {
     }
 
     if (mui_font_catalog_length_g + 3 >= MAX_FONTS_LOADED) {
-        printf("ERROR: mui_font_catalog_length_g would exceed MAX_FONTS_LOADED (%zu/%zu).. font not loaded !!\n", mui_font_catalog_length_g, MAX_FONTS_LOADED);
+        printf("ERROR: mui_font_catalog_length_g would exceed MAX_FONTS_LOADED (%zu/%u).. font not loaded !!\n", mui_font_catalog_length_g, MAX_FONTS_LOADED);
         return false;
     }
 
@@ -63,8 +63,57 @@ void mui_load_latest_fonts_for_theme(Mui_Theme *theme) {
     theme->textinput_font = mui_font_catalog_g[mui_font_catalog_length_g - 1];
 }
 
+//
+// state intialization
+//
 
+Mui_Button_State mui_button_state() {
+    Mui_Button_State state;
+    state.hover_t = 0.0f;
+    state.last_time = 0.0f;
+    state.theme = &mui_protos_theme_g;
+    return state;
+}
 
+Mui_Checkbox_State mui_checkbox_state() {
+    Mui_Checkbox_State state;
+    state.hover_t = 0.0f;
+    state.last_time = 0.0f;
+    state.checked = false;
+    state.theme = &mui_protos_theme_g;
+    return state;
+}
+
+Mui_Slider_State mui_slider_state() {
+    Mui_Slider_State state;
+    state.hover_t = 0.0f;
+    state.last_time = 0.0f;
+    state.value = 0.0f;
+    state.grabbed = false;
+    state.theme = &mui_protos_theme_g;
+    return state;
+}
+
+Mui_Collapsable_Section_State mui_collapsable_state() {
+    Mui_Collapsable_Section_State state;
+    state.hover_t = 0.0f;
+    state.last_time = 0.0f;
+    state.open = false;
+    state.theme = &mui_protos_theme_g;
+    return state;
+}
+
+Mui_Textinput_State mui_textinput_state() {
+    Mui_Textinput_State state;
+    for (size_t i = 0; i < MUI_TEXTINPUT_CAP; i++) {
+        state.buf[MUI_TEXTINPUT_CAP + 1] = '\0';
+    }
+    state.count = 0;
+    state.cursor = 0;
+    state.active = false;
+    state.theme = &mui_protos_theme_g;
+    return state;
+}
 
 
 /* OKLAB maps
@@ -327,7 +376,10 @@ Mui_Rectangle mui_cut_bot(Mui_Rectangle r, float amount, Mui_Rectangle *out_bot)
 }
 
 Mui_Vector2 mui_center_of_rectangle(Mui_Rectangle rectangle) {
-    return (Mui_Vector2) {.x = rectangle.x + 0.5f * rectangle.width, .y = rectangle.y + 0.5f * rectangle.height};
+    Mui_Vector2 v;
+    v.x = rectangle.x + 0.5f * rectangle.width;
+    v.y = rectangle.y + 0.5f * rectangle.height;
+    return v;
 }
 
 void mui_center_rectangle_inside_rectangle(Mui_Rectangle* inner, Mui_Rectangle outer) {
@@ -405,12 +457,7 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     float comp_x = 0;
     if (to_the_right)
         comp_x = window_rect.width - w_component;
-    Mui_Rectangle comp_rect = {
-        .x = window_rect.x + comp_x,
-        .y = window_rect.y,
-        .width = w_component,
-        .height = height,
-    };
+    Mui_Rectangle comp_rect = mui_rectangle(window_rect.x + comp_x, window_rect.y, w_component, height);
 
     //
     // draw x
@@ -557,7 +604,11 @@ void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {
     }
 
     mui_draw_rectangle_rounded(place, theme->corner_radius, theme->bg);
-    Mui_Vector2 position = {place.x+20, place.y + place.height/2 - theme->label_text_size/2};
+
+    Mui_Vector2 position;
+    position.x = place.x + 20;
+    position.y = place.y + place.height / 2 - theme->label_text_size / 2;
+
     int l = mui_text_len(text, strlen(text));
     mui_draw_text_line(theme->label_font, position, 0.1, theme->label_text_size, text, theme->text, 0, l);
 }
@@ -649,7 +700,9 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
         mui_draw_rectangle_rounded(area, theme->corner_radius - inset/2, text_color);
     }
 
-    Mui_Vector2 position = {place.x+inset, place.y + place.height/2 - theme->font_size/2};
+    Mui_Vector2 position;
+    position.x = place.x + inset;
+    position.y = place.y + place.height / 2 - theme->font_size / 2;
     size_t l = mui_text_len(text, strlen(text));
     mui_draw_text_line(theme->font, position, 0, theme->font_size, text, text_color, 0, l);
 }
@@ -702,12 +755,11 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
         rail = mui_cut_right(rail, theme->slider_wagon_width*0.5f, NULL);
         mui_draw_rectangle_rounded(rail, theme->slider_thickness*0.5f, text_color);
 
-        Mui_Rectangle wagon = {
-            .x = state->value * w + place.x,
-            .y = place.y + 0.5f*place.height - 0.5f*theme->slider_wagon_height,
-            .width = theme->slider_wagon_width,
-            .height = theme->slider_wagon_height,
-        };
+        Mui_Rectangle wagon;
+        wagon.x = state->value * w + place.x;
+        wagon.y = place.y + 0.5f*place.height - 0.5f*theme->slider_wagon_height;
+        wagon.width = theme->slider_wagon_width;
+        wagon.height = theme->slider_wagon_height;
 
         mui_draw_rectangle_rounded(wagon, theme->slider_wagon_corner_radius, bg);
         mui_draw_rectangle_rounded_lines(wagon, theme->slider_wagon_corner_radius, border_color, theme->slider_wagon_border_thickness);
@@ -715,18 +767,17 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
         float w = place.height - theme->slider_wagon_width;
 
         //rail
-        Mui_Rectangle rail = mui_cut_left(place, place.width*0.5f - 0.5f*theme->slider_thickness, NULL);
-        rail = mui_cut_right(rail, place.width*0.5f - 0.5f*theme->slider_thickness, NULL);
-        rail = mui_cut_top(rail, theme->slider_wagon_width*0.5f, NULL);
-        rail = mui_cut_bot(rail, theme->slider_wagon_width*0.5f, NULL);
-        mui_draw_rectangle_rounded(rail, theme->slider_thickness*0.5f, text_color);
+        Mui_Rectangle rail = mui_cut_left(place, place.width * 0.5f - 0.5f * theme->slider_thickness, NULL);
+        rail = mui_cut_right(rail, place.width * 0.5f - 0.5f * theme->slider_thickness, NULL);
+        rail = mui_cut_top(rail, theme->slider_wagon_width * 0.5f, NULL);
+        rail = mui_cut_bot(rail, theme->slider_wagon_width * 0.5f, NULL);
+        mui_draw_rectangle_rounded(rail, theme->slider_thickness * 0.5f, text_color);
 
-        Mui_Rectangle wagon = {
-            .x = place.x + 0.5f*place.width - 0.5f*theme->slider_wagon_height,
-            .y = state->value * w + place.y,
-            .width = theme->slider_wagon_height,
-            .height = theme->slider_wagon_width,
-        };
+        Mui_Rectangle wagon;
+        wagon.x = place.x + 0.5f * place.width - 0.5f * theme->slider_wagon_height;
+        wagon.y = state->value * w + place.y;
+        wagon.width = theme->slider_wagon_height;
+        wagon.height = theme->slider_wagon_width;
 
         mui_draw_rectangle_rounded(wagon, theme->slider_wagon_corner_radius, bg);
         mui_draw_rectangle_rounded_lines(wagon, theme->slider_wagon_corner_radius, border_color, theme->slider_wagon_border_thickness);
@@ -766,12 +817,14 @@ bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place) 
     }
 
     bg = mui_interpolate_color(theme->bg, theme->primary_dark, state->hover_t);
-    mui_draw_rectangle_rounded(place, theme->corner_radius-0.25f*theme->corner_radius, bg);
+    mui_draw_rectangle_rounded(place, theme->corner_radius - 0.25f * theme->corner_radius, bg);
 
     Mui_Color text_color = mui_interpolate_color(theme->text, theme->primary, state->hover_t);
 
-    float offset = theme->font_size/4;
-    Mui_Vector2 position = {place.x+offset, place.y + place.height/2 - theme->font_size/2};
+    float offset = theme->font_size / 4;
+    Mui_Vector2 position;
+    position.x = place.x + offset;
+    position.y = place.y + place.height / 2 - theme->font_size / 2;
     size_t l = mui_text_len(text, strlen(text));
     mui_draw_text_line(theme->label_font, position, 0, theme->font_size, text, text_color, 0, l);
     return returnstate;
@@ -845,12 +898,11 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
     float text_offset_top = theme->textinput_text_size*0.1f;
 
     // cursor
-    Mui_Rectangle rect_cursor = {
-        .x=place.x + text_offset_left,
-        .y=place.y + text_offset_top,
-        .width=3,
-        .height=theme->textinput_text_size
-    };
+    Mui_Rectangle rect_cursor;
+    rect_cursor.x = place.x + text_offset_left;
+    rect_cursor.y = place.y + text_offset_top;
+    rect_cursor.width = 3;
+    rect_cursor.height = theme->textinput_text_size;
 
     if (state->buffer.count > 1 || state->active) {
         const float line_spacing = 1.1f;
@@ -858,7 +910,10 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
         int line_nr = 0;
         char* line_start = state->buffer.items;
 
-        Mui_Vector2 line_size = {0};
+        Mui_Vector2 line_size;
+        line_size.x = 0.0f;
+        line_size.y = 0.0f;
+
 
         for (size_t i = 0; i < state->buffer.count; i++) {
             char* buf = &state->buffer.items[i];
@@ -871,7 +926,9 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
                     buf--; // we overshot, so we do backtracking
                 }
 
-                Mui_Vector2 position = {place.x + text_offset_left, place.y + text_offset_top + line_nr*theme->textinput_text_size*line_spacing};
+                Mui_Vector2 position;
+                position.x = place.x + text_offset_left;
+                position.y = place.y + text_offset_top + line_nr*theme->textinput_text_size*line_spacing;
                 size_t l = buf-line_start;
                 mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, line_start, theme->textinput_text_color, 0, l);
 
@@ -891,7 +948,9 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
     } else {
         //hint text
         size_t l = mui_text_len(hint, strlen(hint));
-        Mui_Vector2 position = {place.x+ text_offset_left, place.y + text_offset_top};
+        Mui_Vector2 position;
+        position.x = place.x + text_offset_left;
+        position.y = place.y + text_offset_top;
         mui_draw_text_line(theme->textinput_font, position, 0.1f, theme->textinput_text_size, hint, theme->textinput_text_color, 0, l);
     }
 
@@ -1060,7 +1119,11 @@ void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_R
                 start_x = 0;
             }
 
-            Mui_Rectangle selected = {place.x + start_x, place.y + font_size * i, end_x - start_x, font_size};
+            Mui_Rectangle selected;
+            selected.x = place.x + start_x;
+            selected.y = place.y + font_size * i;
+            selected.width = end_x - start_x;
+            selected.height = font_size;
             mui_draw_rectangle(selected, MUI_BLUE);
         }
     }
@@ -1123,25 +1186,27 @@ void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle p
         // cursor
         Mui_Vector2 offset = mui_measure_text(theme->textinput_font, state->buf, theme->textinput_text_size, 0.1f, 0, state->count-1);
         int pos = place.x + text_offset_left + offset.x;
-        Mui_Rectangle rc = {
-            .x=pos,
-            .y=place.y + place.height/2 - theme->textinput_text_size/2,
-            .width=3,
-            .height=theme->textinput_text_size
-        };
-
+        Mui_Rectangle rc;
+        rc.x = pos;
+        rc.y = place.y + place.height / 2 - theme->textinput_text_size / 2;
+        rc.width = 3;
+        rc.height = theme->textinput_text_size;
         mui_draw_rectangle(rc, theme->text);
     }
 
 
     if (state->count != 0 || state->active) {
         size_t l = mui_text_len(state->buf, strlen(state->buf));
-        Mui_Vector2 position = {place.x + text_offset_left, place.y + place.height/2 - theme->textinput_text_size/2};
+        Mui_Vector2 position;
+        position.x = place.x + text_offset_left;
+        position.y = place.y + place.height / 2 - theme->textinput_text_size / 2;
         mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, state->buf, theme->text, 0, l);
     } else {
         //hint text
         size_t l = mui_text_len(hint, strlen(hint));
-        Mui_Vector2 position = {place.x+ text_offset_left, place.y + place.height/2 - theme->textinput_text_size/2};
+        Mui_Vector2 position;
+        position.x = place.x + text_offset_left;
+        position.y = place.y + place.height / 2 - theme->textinput_text_size / 2;
         mui_draw_text_line(theme->textinput_font, position, 0.1, theme->textinput_text_size, hint, theme->text_muted, 0, l);
     }
 }

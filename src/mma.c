@@ -329,7 +329,8 @@ float mma_angle_betweenv2f(struct Vec2f a, struct Vec2f b) {
 void mma_normalize_or_y_axisv2f(struct Vec2f* v) {
 	float denom = sqrtf(v->x * v->x + v->y * v->y);
 	if (denom == 0.0f) {
-		*v = (struct Vec2f){ 0.0f, 1.0f };
+		v->x = 0.0f;
+		v->y = 1.0f;
 		return;
 	}
 	float factor = 1 / denom;
@@ -340,7 +341,8 @@ void mma_normalize_or_y_axisv2f(struct Vec2f* v) {
 void mma_normalize_or_zerov2f(struct Vec2f* v) {
 	float denom = sqrtf(v->x * v->x + v->y * v->y);
 	if (denom == 0.0f) {
-		*v = (struct Vec2f){ 0.0f, 0.0f };
+		v->x = 0.0f;
+		v->y = 1.0f;
 		return;
 	}
 	float factor = 1 / denom;
@@ -368,7 +370,9 @@ float mma_normv2f(struct Vec2f vec) {
 void mma_normalize_or_z_axisv3f(struct Vec3f* v) {
 	float denom = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
 	if (denom == 0.0f) {
-		*v = (struct Vec3f){ 0.0f, 0.0f, 1.0f };
+		v->x = 0.0f;
+		v->y = 0.0f;
+		v->z = 1.0f;
 		return;
 	}
 	float factor = 1 / denom;
@@ -429,18 +433,16 @@ void mma_subtract_inplacev3f(struct Vec3f a, struct Vec3f b)
 }
 
 struct Vec2f mma_addv2f(struct Vec2f a, struct Vec2f b) {
-	struct Vec2f v = {
-		a.x + b.x,
-		a.y + b.y,
-	};
+	struct Vec2f v;
+	v.x = a.x + b.x;
+	v.y = a.y + b.y;
 	return v;
 }
 
 struct Vec2f mma_subtractv2f(struct Vec2f a, struct Vec2f b) {
-	struct Vec2f v = {
-		a.x - b.x,
-		a.y - b.y,
-	};
+	struct Vec2f v;
+	v.x = a.x - b.x;
+	v.y = a.y - b.y;
 	return v;
 }
 
@@ -464,6 +466,13 @@ bool mma_not_equalsv2f(struct Vec2f a, struct Vec2f b) {
 
 bool mma_equalsv2f(struct Vec2f a, struct Vec2f b) {
 	return a.x == b.x && a.y == b.y;
+}
+
+struct Complex mma_complex(double r, double i) {
+	struct Complex c;
+	c.r = r;
+	c.i = i;
+	return c;
 }
 
 
@@ -513,7 +522,7 @@ const struct Mat4f mma_unit_mat4f =
 };
 
 struct Mat4f mma_matrix_multiplyv4f(struct Mat4f *a, struct Mat4f *b) {
-	struct Mat4f m = { 0 };
+	struct Mat4f m;
 
 	m.u11 = a->u11 * b->u11 + a->u12 * b->u21 + a->u13 * b->u31 + a->u14 * b->u41;
 	m.u12 = a->u11 * b->u12 + a->u12 * b->u22 + a->u13 * b->u32 + a->u14 * b->u42;
@@ -575,7 +584,7 @@ float mma_matrix_detmat4f(struct Mat4f *m) {
 /* TODO: port to C
 
 Mat4 matrix_transposed(const Mat4& mat) {
-	Mat4 m = { 0 };
+	Mat4 m;
 	m.u11 = mat.u11;
 	m.u12 = mat.u21;
 	m.u13 = mat.u31;
@@ -599,7 +608,7 @@ Mat4 matrix_transposed(const Mat4& mat) {
 }
 
 Mat4 matrix_from_basis_vectors(Vec3 x, Vec3 y, Vec3 z) {
-	Mat4 result = { 0 };
+	Mat4 result;
 	result.u44 = 1.0f;
 
 	result.u11 = x.x;
@@ -620,7 +629,7 @@ Mat4 matrix_from_basis_vectors(Vec3 x, Vec3 y, Vec3 z) {
 
 // roatation around x-axis, y-axis then z-axis (alpha, beta, gamma).
 Mat4 matrix_rotation_euler(float alpha, float beta, float gamma) {
-	Mat4 m = { 0 };
+	Mat4 m;
 
 	float sa = sinf(alpha);
 	float ca = cosf(alpha);
@@ -649,7 +658,7 @@ Mat4 matrix_rotation_euler(float alpha, float beta, float gamma) {
 }
 
 Mat4 matrix_translation(const Vec3& translation) {
-	Mat4 m = { 0 };
+	Mat4 m;
 	m.u11 = 1.0f;
 	m.u22 = 1.0f;
 	m.u33 = 1.0f;
@@ -661,7 +670,7 @@ Mat4 matrix_translation(const Vec3& translation) {
 }
 
 Mat4 matrix_scale(const Vec3& scales) {
-	Mat4 m = { 0 };
+	Mat4 m;
 	m.u11 = scales.x;
 	m.u22 = scales.y;
 	m.u33 = scales.z;
@@ -670,13 +679,16 @@ Mat4 matrix_scale(const Vec3& scales) {
 }
 
 Mat4 matrix_scale(float scale) {
-	Vec3 s = { scale, scale, scale };
+	Vec3 s;
+	s.x = scale;
+	s.y = scale;
+	s.z = scale;
 	return matrix_scale(s);
 }
 
 
 Mat4 matrix_unit() {
-	Mat4 m = { 0 };
+	Mat4 m;
 	m.u11 = 1.0f;
 	m.u22 = 1.0f;
 	m.u33 = 1.0f;
@@ -698,7 +710,7 @@ Mat4 matrix_look_at(Vec3 eye, Vec3 target, Vec3 up) {
 	up = cross(side, forward);
 	normalize_or_z_axis(&up);
 
-	Mat4 result = { 0 };
+	Mat4 result;
 
 	result.u11 = side.x;
 	result.u12 = side.y;
@@ -725,7 +737,7 @@ Mat4 matrix_look_at(Vec3 eye, Vec3 target, Vec3 up) {
 // vertical_fov in degrees
 Mat4 matrix_perspective_projection(float vertical_fov, float aspect, float near, float far) {
 
-	Mat4 mat = { 0 };
+	Mat4 mat;
 
 	float tan_half_fov = tanf(vertical_fov * 0.5f * DEG_TO_RAD);
 	float top = near * tan_half_fov;
@@ -744,7 +756,7 @@ Mat4 matrix_perspective_projection(float vertical_fov, float aspect, float near,
 
 // -1 to 1
 Mat4 matrix_orthographic_projection(float left, float right, float top, float bottom, float near, float far) {
-	Mat4 m = {0};
+	Mat4 m;
 
 	m.u11 = 2.0f / (right - left);
 	m.u22 = 2.0f / (top - bottom);
@@ -780,7 +792,7 @@ Mat4 model_rotation_270() {
 */
 
 // TEMP buffer
-static char mma_temp_buffer_internal[MMA_TEMP_BUFFER_CAP_INTERNAL] = {0};
+static char mma_temp_buffer_internal[MMA_TEMP_BUFFER_CAP_INTERNAL];
 static size_t mma_temp_size_internal = 0;
 void mma_temp_reset(void){ mma_temp_size_internal = 0; }
 void* mma_temp_alloc(size_t requested_size) {

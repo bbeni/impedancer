@@ -233,7 +233,9 @@ void stage_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color hl_color = mui_protos_theme_g.primary;
 
     float w = min(symbol_area.width, symbol_area.height);
-    Mui_Rectangle r = {.width = w, .height = w};
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
     mui_draw_rectangle(symbol_area, bg);
     //mui_draw_rectangle(r, MUI_GREEN);
@@ -264,7 +266,9 @@ void stage_view_settings_draw(struct Stage_View* stage_view, Mui_Rectangle symbo
     Mui_Rectangle inset_area = mui_shrink(symbol_area, 10);
 
     char* model_text = stage_view->stage->models[stage_view->active_setting];
-    Mui_Vector2 pos = (Mui_Vector2){.x = inset_area.x, .y = inset_area.y};
+    Mui_Vector2 pos;
+    pos.x = inset_area.x;
+    pos.y = inset_area.y;
     Mui_Vector2 text_size = mui_measure_text(font, model_text, font_size, 0.2f, 0, strlen(model_text));
     Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
     mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
@@ -273,19 +277,22 @@ void stage_view_settings_draw(struct Stage_View* stage_view, Mui_Rectangle symbo
     char v_ds_text[40];
     snprintf(v_ds_text, 40, "%.2fV", stage_view->stage->voltage_ds_array[stage_view->active_setting]);
     text_size = mui_measure_text(font, v_ds_text, font_size, 0.2f, 0, strlen(v_ds_text));
-    pos = (Mui_Vector2){.x = inset_area.x + inset_area.width - text_size.x, .y = inset_area.y};
+    pos.x = inset_area.x + inset_area.width - text_size.x;
+    pos.y = inset_area.y;
     mui_draw_text_line(font, pos, 0.2f, font_size, v_ds_text, col, 0, strlen(v_ds_text));
 
     char i_ds_text[40];
     snprintf(i_ds_text, 40, "%.4fmA", stage_view->stage->current_ds_array[stage_view->active_setting]*1000);
     text_size = mui_measure_text(font, i_ds_text, font_size, 0.2f, 0, strlen(i_ds_text));
-    pos = (Mui_Vector2){.x = inset_area.x + inset_area.width - text_size.x, .y = inset_area.y + inset_area.height - text_size.y};
+    pos.x = inset_area.x + inset_area.width - text_size.x;
+    pos.y = inset_area.y + inset_area.height - text_size.y;
     mui_draw_text_line(font, pos, 0.2f, font_size, i_ds_text, col, 0, strlen(i_ds_text));
 
     char temp_text[40];
     snprintf(temp_text, 40, "%.0fK", stage_view->stage->temperatures[stage_view->active_setting]);
     text_size = mui_measure_text(font, temp_text, font_size, 0.2f, 0, strlen(temp_text));
-    pos = (Mui_Vector2){.x = inset_area.x, .y = inset_area.y + inset_area.height - text_size.y};
+    pos.x = inset_area.x;
+    pos.y = inset_area.y + inset_area.height - text_size.y;
     mui_draw_text_line(font, pos, 0.2f, font_size, temp_text, col, 0, strlen(temp_text));
 
 }
@@ -460,14 +467,15 @@ int main(int argc, char** argv) {
     size_t selected_stage = 0;
 
 
-    Mui_Button_State disco_mode_btn = {0};
+    Mui_Button_State disco_mode_btn = mui_button_state();
     bool disco_mode = false;
 
-    Mui_Button_State dark_mode_btn = {0};
-    mui_protos_theme_g = mui_protos_theme_light_g;
-    bool dark_mode = false;
-    Mui_Slider_State chroma_slider = {0};
-    Mui_Slider_State hue_slider = {0};
+    Mui_Button_State dark_mode_btn = mui_button_state();
+    mui_protos_theme_g = mui_protos_theme_dark_g;
+    bool dark_mode = true;
+
+    Mui_Slider_State chroma_slider = mui_slider_state();
+    Mui_Slider_State hue_slider = mui_slider_state();
 
     while (!mui_window_should_close())
     {
@@ -521,7 +529,7 @@ int main(int argc, char** argv) {
         mui_begin_drawing();
         mui_clear_background(mui_protos_theme_g.bg_dark, NULL);
 
-        Mui_Rectangle whole_screen = {0, 0, w, h};
+        Mui_Rectangle whole_screen = mui_rectangle(0, 0, w, h);
         const float decoration_height = 36.0f;
         Mui_Rectangle menu_bar_area = mui_window_decoration(decoration_height, true, true, true, true, true, whole_screen);
         Mui_Rectangle screen = mui_cut_top(whole_screen, decoration_height, NULL);

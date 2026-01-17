@@ -67,7 +67,9 @@ Mui_Rectangle gra_xy_plot_labels_and_grid(char* x_label, char* y_label, double x
 
     size_t l = strlen(x_label);
     Mui_Vector2 m = mui_measure_text(mui_protos_theme_g.label_font, x_label, label_text_size, 0.1f, 0, l);
-    Mui_Vector2 x_label_pos = {x_label_place.x + x_label_place.width/2 - m.x/2, x_label_place.y};
+    Mui_Vector2 x_label_pos;
+    x_label_pos.x = x_label_place.x + x_label_place.width/2 - m.x/2;
+    x_label_pos.y = x_label_place.y;
     mui_draw_text_line(mui_protos_theme_g.label_font, x_label_pos, 0.1f, label_text_size, x_label, _color_text(), 0, l);
 
     Mui_Rectangle plot_area = rest;
@@ -98,10 +100,9 @@ void gra_xy_plot(double *x_data,
         if (x >= x_min && x <= x_max && y <= y_max && y >= y_min){
             float norm_x = (x - x_min)/ (x_max - x_min);
             float norm_y = (y - y_min)/ (y_max - y_min);
-            Mui_Vector2 screen_coords = {
-                norm_x * plot_area.width + plot_area.x,
-                (1 - norm_y) * plot_area.height + plot_area.y
-            };
+            Mui_Vector2 screen_coords;
+            screen_coords.x = norm_x * plot_area.width + plot_area.x;
+            screen_coords.y = (1 - norm_y) * plot_area.height + plot_area.y;
             mui_draw_circle(screen_coords, 2.0f, color);
         }
     }
@@ -128,7 +129,10 @@ void gra_xy_legend(char **labels, Mui_Color *colors, bool *mask, size_t n_labels
     size_t index = 0;
     for (size_t i = 0; i < n_labels_; i++) {
         if (!mask[i]) continue;
-        Mui_Vector2 pos = {legends_rect.x, legends_rect.y + index * legends_size + index * legends_v_spacing };
+        Mui_Vector2 pos;
+        pos.x = legends_rect.x;
+        pos.y = legends_rect.y + index * legends_size + index * legends_v_spacing;
+
         mui_draw_text_line(mui_protos_theme_g.label_font, pos, 0.1f, legends_size, labels[i], colors[i], 0, strlen(labels[i]));
         index++;
     }
@@ -148,12 +152,11 @@ void gra_xy_plot_data_points(double *x_data, void *y_data, double (* y_map)(size
             y = ((double*)y_data)[i];
         }
         if (x >= x_min && x <= x_max && y <= y_max && y >= y_min){
-            float norm_x = (x - x_min)/ (x_max - x_min);
-            float norm_y = (y - y_min)/ (y_max - y_min);
-            Mui_Vector2 screen_coords = {
-                norm_x * plot_area.width + plot_area.x,
-                (1 - norm_y) * plot_area.height + plot_area.y
-            };
+            float norm_x = (x - x_min) / (x_max - x_min);
+            float norm_y = (y - y_min) / (y_max - y_min);
+            Mui_Vector2 screen_coords;
+            screen_coords.x = norm_x * plot_area.width + plot_area.x;
+            screen_coords.y = (1 - norm_y) * plot_area.height + plot_area.y;
             mui_draw_circle(screen_coords, pt_radius, color);
         }
     }

@@ -109,7 +109,9 @@ bool parse_s2p_file(struct S2P_Info *info, bool calc_z) {
     info->noise.length = 0;
     info->noise.capacity = INITIAL_CAP;
 
-    struct Uti_String_View content = {.text = info->file_content, .length = info->file_content_size};
+    struct Uti_String_View content;
+    content.text = info->file_content;
+    content.length = info->file_content_size;
 
     double freq_multiplier = 1.0;
     info->R_ref = 50.0;
@@ -248,10 +250,10 @@ bool parse_s2p_files(struct S2P_Info_Array *infos, bool calc_z) {
 
 void calc_z_from_s(struct Complex s[2][2], struct Complex *z_out[2][2]) {
     // no z0 calculated
-    struct Complex one_m_s11 = {1 - s[0][0].r, -s[0][0].i};
-    struct Complex one_m_s22 = {1 - s[1][1].r, -s[1][1].i};
-    struct Complex one_p_s11 = {1 + s[0][0].r,  s[0][0].i};
-    struct Complex one_p_s22 = {1 + s[1][1].r,  s[1][1].i};
+    struct Complex one_m_s11 = mma_complex(1 - s[0][0].r, -s[0][0].i);
+    struct Complex one_m_s22 = mma_complex(1 - s[1][1].r, -s[1][1].i);
+    struct Complex one_p_s11 = mma_complex(1 + s[0][0].r,  s[0][0].i);
+    struct Complex one_p_s22 = mma_complex(1 + s[1][1].r,  s[1][1].i);
     struct Complex s12s21 = mma_complex_mult(s[0][1], s[1][0]);
     struct Complex delta_s = mma_complex_subtract(mma_complex_mult(one_m_s11, one_m_s22), s12s21);
     *z_out[0][0] = mma_complex_divide_or_zero(mma_complex_add(mma_complex_mult(one_p_s11, one_m_s22), s12s21), delta_s);
@@ -263,7 +265,7 @@ void calc_z_from_s(struct Complex s[2][2], struct Complex *z_out[2][2]) {
 }
 
 void calc_z_from_gamma(struct Complex gamma, struct Complex *z_out) {
-    struct Complex one_m_G = {1 - gamma.r, -gamma.i};
-    struct Complex one_p_G = {1 + gamma.r,  gamma.i};
+    struct Complex one_m_G = mma_complex(1 - gamma.r, -gamma.i);
+    struct Complex one_p_G = mma_complex(1 + gamma.r,  gamma.i);
     *z_out = mma_complex_divide_or_zero(one_p_G, one_m_G);
 }

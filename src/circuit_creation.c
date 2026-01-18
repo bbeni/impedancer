@@ -1,4 +1,5 @@
-#include "circuit_simulator.h"
+#include "circuit.h"
+
 #include "uti.h"
 #include "s2p.h"
 #include "stdbool.h"
@@ -7,7 +8,7 @@
 #include "string.h"
 #include "assert.h"
 
-bool create_stage_archetype(char* device_settings_csv_file_name, char* dir, struct Stage *stage_out) {
+bool circuit_create_stage_archetype(char* device_settings_csv_file_name, char* dir, struct Circuit_Component_Stage *component_out) {
     // #model, file_name, drain_voltage(V), drain_current(A), temperature(K)
 
     char *content;
@@ -44,16 +45,16 @@ bool create_stage_archetype(char* device_settings_csv_file_name, char* dir, stru
     //
     // now malloc and set the data in second pass
     //
-    stage_out->s2p_infos = malloc(sizeof(*stage_out->s2p_infos) * length);
+    component_out->s2p_infos = malloc(sizeof(*component_out->s2p_infos) * length);
     //char* data_block_filenames = malloc(sizeof(char) * string_data_block_filenames_length);
     char* data_block_models = malloc(sizeof(char) * string_data_block_models_length);
     char* cursor = data_block_models; // Use this to move through the memory
-    stage_out->models = malloc(sizeof(*stage_out->models) * length);
-    stage_out->current_ds_array = malloc(sizeof(*stage_out->current_ds_array) * length);
-    stage_out->voltage_ds_array = malloc(sizeof(*stage_out->voltage_ds_array) * length);
-    stage_out->temperatures = malloc(sizeof(*stage_out->temperatures) * length);
-    stage_out->n_settings = length;
-    stage_out->selected_setting = 0;
+    component_out->models = malloc(sizeof(*component_out->models) * length);
+    component_out->current_ds_array = malloc(sizeof(*component_out->current_ds_array) * length);
+    component_out->voltage_ds_array = malloc(sizeof(*component_out->voltage_ds_array) * length);
+    component_out->temperatures = malloc(sizeof(*component_out->temperatures) * length);
+    component_out->n_settings = length;
+    component_out->selected_setting = 0;
 
     struct Uti_String_View content_sv = uti_sv_from_parts(content, content_size);
     size_t i = 0;
@@ -74,18 +75,18 @@ bool create_stage_archetype(char* device_settings_csv_file_name, char* dir, stru
         struct Uti_String_View temp_sv = uti_sv_trim(uti_sv_chop_by_delim(&line, ','));
         char *temp_cstr = uti_temp_strndup(temp_sv.text, temp_sv.length);
 
-        stage_out->temperatures[i] = strtod(temp_cstr, NULL);
-        stage_out->current_ds_array[i] = strtod(i_ds_cstr, NULL);
-        stage_out->voltage_ds_array[i] = strtod(v_ds_cstr, NULL);
+        component_out->temperatures[i] = strtod(temp_cstr, NULL);
+        component_out->current_ds_array[i] = strtod(i_ds_cstr, NULL);
+        component_out->voltage_ds_array[i] = strtod(v_ds_cstr, NULL);
 
-        stage_out->models[i] = cursor;
-        memcpy(stage_out->models[i], model_sv.text, model_sv.length);
+        component_out->models[i] = cursor;
+        memcpy(component_out->models[i], model_sv.text, model_sv.length);
         cursor[model_sv.length] = '\0';
         cursor += model_sv.length + 1;
 
         // load the s2p_info
         char* file_dir = dir;
-        struct S2P_Info *info = &stage_out->s2p_infos[i];
+        struct S2P_Info *info = &component_out->s2p_infos[i];
         if (!read_s2p_file(file_name_cstr, file_dir, info))
             return false;
         if (!parse_s2p_file(info, true))
@@ -96,12 +97,31 @@ bool create_stage_archetype(char* device_settings_csv_file_name, char* dir, stru
     assert(i == length);
 
     for (size_t i = 0; i < length; i ++) {
-        printf("%s\n", stage_out->models[i]);
-        printf("%f\n", stage_out->voltage_ds_array[i]);
-        printf("%f\n", stage_out->current_ds_array[i]);
-        printf("%f\n", stage_out->temperatures[i]);
+        printf("%s\n", component_out->models[i]);
+        printf("%f\n", component_out->voltage_ds_array[i]);
+        printf("%f\n", component_out->current_ds_array[i]);
+        printf("%f\n", component_out->temperatures[i]);
     }
 
     return true;
 }
 
+
+bool circuit_create_stage( struct Circuit_Component_Stage *stage_archetype, struct Circuit_Component *component_out) {
+    component_out->kind = CIRCUIT_COMPONENT_STAGE;
+    // shallow copy archetype
+    component_out->as.stage = *stage_archetype;
+}
+
+bool circuit_create_resistor_ideal(double resistance, struct Circuit_Component *component_out) {
+    component_out->kind = CIRCUIT_COMPONENT_RESISTOR_IDEAL;
+    component_out->as.resistor_ideal.R = resistance;
+}
+
+bool circuit_create_capacitor_ideal(double capacitance, struct Circuit_Component *component_out) {
+
+}
+
+bool circuit_create_inductor_ideal(double inductance, struct Circuit_Component *component_out) {
+
+}

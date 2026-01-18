@@ -125,3 +125,18 @@ bool circuit_create_capacitor_ideal(double capacitance, struct Circuit_Component
 bool circuit_create_inductor_ideal(double inductance, struct Circuit_Component *component_out) {
 
 }
+
+bool circuit_create_resistor_ideal_parallel(double resistance, struct Circuit_Component *component_out) {
+    component_out->kind = CIRCUIT_COMPONENT_RESISTOR_IDEAL_PARALLEL;
+    component_out->as.resistor_ideal_parallel.R = resistance;
+}
+
+bool circuit_create_capacitor_ideal_parallel(double capacitance, struct Circuit_Component *component_out) {
+
+}
+
+bool circuit_create_inductor_ideal_parallel(double inductance, struct Circuit_Component *component_out) {
+
+}
+
+

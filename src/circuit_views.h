@@ -4,13 +4,18 @@
 #include "circuit.h"
 #include "mui.h"
 
+#define CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT 150
+
 //
 // circuit Views
 //
 
 struct Stage_View;
 struct Stage_View {
+
+    struct Circuit_Component_Stage *stage;
     size_t active_setting;
+
     Mui_Checkbox_State show_s11_checkbox_state;
     Mui_Checkbox_State show_s21_checkbox_state;
     Mui_Checkbox_State show_s12_checkbox_state;
@@ -42,8 +47,6 @@ struct Stage_View {
     char* labels[4];
     char* labels_index[4];
 
-    // s2p data
-    struct Circuit_Component_Stage *stage;
 
     // data to load
     size_t length;
@@ -67,13 +70,20 @@ struct Stage_View {
 };
 
 struct Resistor_Ideal_View {
-    void* v;
+    struct Circuit_Component_Resistor_Ideal *resistor;
+    Mui_Collapsable_Section_State collapsable_section_1;
+};
+
+struct Resistor_Ideal_Parallel_View {
+    struct Circuit_Component_Resistor_Ideal_Parallel *resistor;
+    Mui_Collapsable_Section_State collapsable_section_1;
 };
 
 struct Circuit_Component_View {
     union {
         struct Stage_View stage_view;
         struct Resistor_Ideal_View resistor_ideal_view;
+        struct Resistor_Ideal_Parallel_View resistor_ideal_parallel_view;
     } as;
     CIRCUIT_COMPONENT_KIND kind;
 };
@@ -93,5 +103,10 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
 // resistor
 void resistor_view_init(struct Resistor_Ideal_View* resistor_view, struct Circuit_Component_Resistor_Ideal* resistor);
 void resistor_view_draw(struct Resistor_Ideal_View* resistor_view, Mui_Rectangle widget_area, bool is_selected);
+
+// resistor parallel
+void resistor_parallel_view_init(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, struct Circuit_Component_Resistor_Ideal_Parallel* resistor);
+void resistor_parallel_view_draw(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, Mui_Rectangle widget_area, bool is_selected);
+
 
 #endif //CIRCUIT_VIEWS_H_

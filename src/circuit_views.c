@@ -23,6 +23,9 @@ double dB(size_t i, void* x) {
     return dB_from_squared(si.i * si.i + si.r* si.r);
 }
 
+
+// stage
+
 const char* stage_view_selectable_text_fmt =
     "impedances z = Z/Z_0 at %f Hz\n"
     "\n"
@@ -179,24 +182,55 @@ void stage_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
     mui_draw_rectangle(symbol_area, bg);
-    //mui_draw_rectangle(r, MUI_GREEN);
 
-    float line_thickness = 5;
-    float f = 20;
-    r = mui_shrink(r, f);
+    float f = w * 0.05f;
+    Mui_Rectangle r_inset = mui_shrink(r, f);
+    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
     if (should_highlight) {
-        Mui_Vector2 center = mui_center_of_rectangle(r);
-        float radius = r.width * 0.5f + f;
+        float radius = r_inset.width * 0.5f;
         mui_draw_circle(center, radius, hl_color);
+        mui_draw_rectangle_rounded(r_inset, 10.0f, hl_color);
     }
-    mui_draw_line(r.x, r.y, r.x, r.y + r.width, line_thickness, col);
-    mui_draw_line(r.x, r.y, r.x+r.width, r.y+r.width * 0.5f, line_thickness, col);
-    mui_draw_line(r.x, r.y + r.width, r.x+r.width, r.y+r.width * 0.5f, line_thickness, col);
-    mui_draw_line(r.x-f, r.y + r.width * 0.5f, r.x, r.y + r.width * 0.5f, line_thickness, col);
-    mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, r.x + r.width, r.y + r.width * 0.5f, line_thickness, col);
-    mui_draw_line(symbol_area.x, r.y + r.width * 0.5f, r.x-f, r.y + r.width * 0.5f, line_thickness, col);
-    mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, symbol_area.x + symbol_area.width, r.y + r.width * 0.5f, line_thickness, col);
+
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+    float dy = lower_y - upper_y;
+    Mui_Rectangle body_rect;
+    body_rect.height = 8.0f / 16.0f * r_inset.width;
+    body_rect.width = 5.0f / 16.0f * r_inset.width;
+    body_rect.y = upper_y + (dy - body_rect.height) * 0.5f;
+    body_rect.x = center.x - body_rect.width * 0.5f;
+
+
+    float line_thickness = 3;
+    float hemt_thickness = line_thickness * 2;
+
+
+    float f1 = 0.35f;
+    float f2 = 2 * f1;
+    float l_x = body_rect.x;
+    float r_x = body_rect.x + body_rect.width;
+    float m_x = body_rect.x + body_rect.width * 0.5f;
+
+    // hemt
+    mui_draw_line(l_x, upper_y + dy * f1, m_x, upper_y + dy * f1, hemt_thickness, col);
+    mui_draw_line(r_x, upper_y, m_x, upper_y, hemt_thickness, col);
+    mui_draw_line(r_x, upper_y + dy * f2, m_x, upper_y + dy * f2, hemt_thickness, col);
+    mui_draw_line(m_x, upper_y - body_rect.height * 0.1f, m_x,  upper_y + dy * f2 + body_rect.height * 0.1f, hemt_thickness, col);
+
+
+    // special connections
+    mui_draw_line(r.x, upper_y, l_x, upper_y + dy * f1, line_thickness, col);
+    mui_draw_line(r_x, upper_y + dy * f2, r_x, lower_y, line_thickness, col);
+
+    // normal connections
+    mui_draw_line(symbol_area.x, lower_y, symbol_area.x + symbol_area.width, lower_y, line_thickness, col);
+    mui_draw_line(symbol_area.x, upper_y, r.x, upper_y, line_thickness, col);
+    mui_draw_line(symbol_area.x + symbol_area.width, upper_y, r_x, upper_y, line_thickness, col);
+
 }
+
+
 
 void stage_view_settings_draw(struct Stage_View* stage_view, Mui_Rectangle symbol_area) {
     Mui_Color col = mui_protos_theme_g.text;
@@ -207,10 +241,10 @@ void stage_view_settings_draw(struct Stage_View* stage_view, Mui_Rectangle symbo
     Mui_Rectangle inset_area = mui_shrink(symbol_area, 10);
 
     char* model_text = stage_view->stage->models[stage_view->active_setting];
+    Mui_Vector2 text_size = mui_measure_text(font, model_text, font_size, 0.2f, 0, strlen(model_text));
     Mui_Vector2 pos;
     pos.x = inset_area.x;
-    pos.y = inset_area.y;
-    Mui_Vector2 text_size = mui_measure_text(font, model_text, font_size, 0.2f, 0, strlen(model_text));
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
     Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
     mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
     mui_draw_text_line(font, pos, 0.2f, font_size, model_text, col, 0, strlen(model_text));
@@ -219,21 +253,21 @@ void stage_view_settings_draw(struct Stage_View* stage_view, Mui_Rectangle symbo
     snprintf(v_ds_text, 40, "%.2fV", stage_view->stage->voltage_ds_array[stage_view->active_setting]);
     text_size = mui_measure_text(font, v_ds_text, font_size, 0.2f, 0, strlen(v_ds_text));
     pos.x = inset_area.x + inset_area.width - text_size.x;
-    pos.y = inset_area.y;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
     mui_draw_text_line(font, pos, 0.2f, font_size, v_ds_text, col, 0, strlen(v_ds_text));
 
     char i_ds_text[40];
     snprintf(i_ds_text, 40, "%.4fmA", stage_view->stage->current_ds_array[stage_view->active_setting]*1000);
     text_size = mui_measure_text(font, i_ds_text, font_size, 0.2f, 0, strlen(i_ds_text));
     pos.x = inset_area.x + inset_area.width - text_size.x;
-    pos.y = inset_area.y + inset_area.height - text_size.y;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f + text_size.y;
     mui_draw_text_line(font, pos, 0.2f, font_size, i_ds_text, col, 0, strlen(i_ds_text));
 
     char temp_text[40];
     snprintf(temp_text, 40, "%.0fK", stage_view->stage->temperatures[stage_view->active_setting]);
     text_size = mui_measure_text(font, temp_text, font_size, 0.2f, 0, strlen(temp_text));
     pos.x = inset_area.x;
-    pos.y = inset_area.y + inset_area.height - text_size.y;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f + text_size.y;
     mui_draw_text_line(font, pos, 0.2f, font_size, temp_text, col, 0, strlen(temp_text));
 
 }
@@ -243,7 +277,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
     stage_view_update_data(stage_view);
 
     Mui_Rectangle symbol_area;
-    widget_area = mui_cut_top(widget_area, 100, &symbol_area);
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
 
     stage_symbol_draw(symbol_area, is_selected);
     stage_view_settings_draw(stage_view, symbol_area);
@@ -375,11 +409,13 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
 
 }
 
+//
 // resistor
+//
 
 void resistor_view_init(struct Resistor_Ideal_View* resistor_view, struct Circuit_Component_Resistor_Ideal* resistor) {
-    (void) resistor_view;
-    (void) resistor;
+    resistor_view->resistor = resistor;
+    resistor_view->collapsable_section_1.open = false;
 }
 
 void resistor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
@@ -393,44 +429,214 @@ void resistor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
     mui_draw_rectangle(symbol_area, bg);
-    //mui_draw_rectangle(r, MUI_GREEN);
 
-    float line_thickness = 5;
-    float f = 20;
-    r = mui_shrink(r, f);
+    float line_thickness = 3;
+    float f = w * 0.05f;
+    Mui_Rectangle r_inset = mui_shrink(r, f);
+    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
     if (should_highlight) {
-        Mui_Vector2 center = mui_center_of_rectangle(r);
-        float radius = r.width * 0.5f + f;
+        float radius = r_inset.width * 0.5f;
         mui_draw_circle(center, radius, hl_color);
+        mui_draw_rectangle_rounded(r_inset, 10.0f, hl_color);
     }
-    mui_draw_line(r.x, r.y, r.x, r.y + r.width, line_thickness, col);
-    mui_draw_line(r.x, r.y, r.x + r.width, r.y, line_thickness, col);
-    mui_draw_line(r.x + r.width, r.y, r.x + r.width, r.y + r.width, line_thickness, col);
-    mui_draw_line(r.x, r.y + r.width, r.x+r.width, r.y+r.width, line_thickness, col);
 
-    mui_draw_line(r.x-f, r.y + r.width * 0.5f, r.x, r.y + r.width * 0.5f, line_thickness, col);
-    mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, r.x + r.width, r.y + r.width * 0.5f, line_thickness, col);
-    mui_draw_line(symbol_area.x, r.y + r.width * 0.5f, r.x-f, r.y + r.width * 0.5f, line_thickness, col);
-    mui_draw_line(r.x+f+r.width, r.y + r.width * 0.5f, symbol_area.x + symbol_area.width, r.y + r.width * 0.5f, line_thickness, col);
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+    Mui_Rectangle resistor_body_rect;
+    resistor_body_rect.width = 4.0f / 8.0f * r_inset.width;
+    resistor_body_rect.height = 3.0f / 16.0f* r_inset.width;
+    resistor_body_rect.y = upper_y - resistor_body_rect.height * 0.5f;
+    resistor_body_rect.x = center.x - resistor_body_rect.width * 0.5f;
+    mui_draw_rectangle_lines(resistor_body_rect, col, line_thickness);
+
+    mui_draw_line(symbol_area.x, upper_y, resistor_body_rect.x, upper_y, line_thickness, col);
+    mui_draw_line(resistor_body_rect.x + resistor_body_rect.width, upper_y, symbol_area.x + symbol_area.width, upper_y, line_thickness, col);
+    mui_draw_line(symbol_area.x, lower_y, symbol_area.x + symbol_area.width, lower_y, line_thickness, col);
 }
 
+void resistor_view_settings_draw(struct Resistor_Ideal_View* resistor_view, Mui_Rectangle symbol_area) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg_dark;
+    struct Mui_Font *font = mui_protos_theme_g.font;
+    float font_size = mui_protos_theme_g.font_size;
+
+    Mui_Rectangle inset_area = mui_shrink(symbol_area, 5);
+
+
+    double r = resistor_view->resistor->R;
+    char rendered_resistance[40];
+    if (r < 1000) {
+        snprintf(rendered_resistance, 40, "%.2f", r);
+    } else if (r < 1e6) {
+        snprintf(rendered_resistance, 40, "%.2fk", r/1000);
+    } else if (r < 1e9) {
+        snprintf(rendered_resistance, 40, "%.2fM", r/1e6);
+    } else {
+        snprintf(rendered_resistance, 40, "%.2fG", r/1e9);
+    }
+
+    // top left
+    const char text[] = "R";
+    Mui_Vector2 text_size = mui_measure_text(font, text, font_size, 0.2f, 0, strlen(text));
+    Mui_Vector2 pos;
+    pos.x = inset_area.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
+    mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
+    mui_draw_text_line(font, pos, 0.2f, font_size, text, col, 0, strlen(text));
+
+
+    // bot right
+    text_size = mui_measure_text(font, rendered_resistance, font_size, 0.2f, 0, strlen(rendered_resistance));
+    pos.x = inset_area.x + inset_area.width - text_size.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_resistance, col, 0, strlen(rendered_resistance));
+}
 
 void resistor_view_draw(struct Resistor_Ideal_View* resistor_view, Mui_Rectangle widget_area, bool is_selected) {
 
     Mui_Rectangle symbol_area;
-    widget_area = mui_cut_top(widget_area, 100, &symbol_area);
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
 
     resistor_symbol_draw(symbol_area, is_selected);
+    resistor_view_settings_draw(resistor_view, symbol_area);
 
     float padding = 5;
 
     Mui_Rectangle rest = widget_area;
 
-    const float checkbox_s = 40;
+    const float checkbox_s = 36;
 
     Mui_Rectangle collabsable_area_1;
     rest = mui_cut_top(rest, 36, &collabsable_area_1);
+    //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
+    if (mui_collapsable_section(&resistor_view->collapsable_section_1, "R Series", collabsable_area_1)) {
+        Mui_Rectangle sg_r;
+        rest = mui_cut_top(rest, checkbox_s, &sg_r);
+        sg_r = mui_shrink(sg_r, padding);
+        mui_draw_rectangle(sg_r, MUI_RED);
+    }
+
 }
+
+//
+// resistor parallel
+//
+
+void resistor_parallel_view_init(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, struct Circuit_Component_Resistor_Ideal_Parallel* resistor) {
+    resistor_parallel_view->resistor = resistor;
+    resistor_parallel_view->collapsable_section_1.open = false;
+}
+
+void resistor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
+    Mui_Color hl_color = mui_protos_theme_g.primary;
+
+    float w = min(symbol_area.width, symbol_area.height);
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+    mui_draw_rectangle(symbol_area, bg);
+
+    float line_thickness = 3;
+    float f = w * 0.05f;
+    Mui_Rectangle r_inset = mui_shrink(r, f);
+    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
+    if (should_highlight) {
+        float radius = r_inset.width * 0.5f;
+        mui_draw_circle(center, radius, hl_color);
+        mui_draw_rectangle_rounded(r_inset, 10.0f, hl_color);
+    }
+
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+    float dy = lower_y - upper_y;
+    Mui_Rectangle resistor_body_rect;
+    resistor_body_rect.height = 8.0f / 16.0f * r_inset.width;
+    resistor_body_rect.width = 3.0f / 16.0f * r_inset.width;
+    resistor_body_rect.y = upper_y + (dy - resistor_body_rect.height) * 0.5f;
+    resistor_body_rect.x = center.x - resistor_body_rect.width * 0.5f;
+
+    mui_draw_rectangle_lines(resistor_body_rect, col, line_thickness);
+    mui_draw_line(resistor_body_rect.x + resistor_body_rect.width * 0.5f, upper_y, resistor_body_rect.x + resistor_body_rect.width * 0.5f, resistor_body_rect.y, line_thickness, col);
+    mui_draw_line(resistor_body_rect.x + resistor_body_rect.width * 0.5f, lower_y, resistor_body_rect.x + resistor_body_rect.width * 0.5f, resistor_body_rect.y + resistor_body_rect.height, line_thickness, col);
+
+    mui_draw_line(symbol_area.x, upper_y, symbol_area.x + symbol_area.width, upper_y, line_thickness, col);
+    mui_draw_line(symbol_area.x, lower_y, symbol_area.x + symbol_area.width, lower_y, line_thickness, col);
+}
+
+void resistor_parallel_view_settings_draw(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, Mui_Rectangle symbol_area) {
+
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg_dark;
+    struct Mui_Font *font = mui_protos_theme_g.font;
+    float font_size = mui_protos_theme_g.font_size;
+
+    Mui_Rectangle inset_area = mui_shrink(symbol_area, 5);
+
+
+    double r = resistor_parallel_view->resistor->R;
+    char rendered_resistance[40];
+    if (r < 1000) {
+        snprintf(rendered_resistance, 40, "%.2f", r);
+    } else if (r < 1e6) {
+        snprintf(rendered_resistance, 40, "%.2fk", r/1000);
+    } else if (r < 1e9) {
+        snprintf(rendered_resistance, 40, "%.2fM", r/1e6);
+    } else {
+        snprintf(rendered_resistance, 40, "%.2fG", r/1e9);
+    }
+
+    // top left
+    const char text[] = "R";
+    Mui_Vector2 text_size = mui_measure_text(font, text, font_size, 0.2f, 0, strlen(text));
+    Mui_Vector2 pos;
+    pos.x = inset_area.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
+    mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
+    mui_draw_text_line(font, pos, 0.2f, font_size, text, col, 0, strlen(text));
+
+
+    // bot right
+    text_size = mui_measure_text(font, rendered_resistance, font_size, 0.2f, 0, strlen(rendered_resistance));
+    pos.x = inset_area.x + inset_area.width - text_size.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_resistance, col, 0, strlen(rendered_resistance));
+
+}
+
+void resistor_parallel_view_draw(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, Mui_Rectangle widget_area, bool is_selected) {
+
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
+
+    resistor_parallel_symbol_draw(symbol_area, is_selected);
+    resistor_parallel_view_settings_draw(resistor_parallel_view, symbol_area);
+
+    float padding = 5;
+
+    Mui_Rectangle rest = widget_area;
+
+    const float checkbox_s = 36;
+
+    Mui_Rectangle collabsable_area_1;
+    rest = mui_cut_top(rest, 36, &collabsable_area_1);
+    //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
+    if (mui_collapsable_section(&resistor_parallel_view->collapsable_section_1, "R Parallel", collabsable_area_1)) {
+        Mui_Rectangle sg_r;
+        rest = mui_cut_top(rest, checkbox_s, &sg_r);
+        sg_r = mui_shrink(sg_r, padding);
+        mui_draw_rectangle(sg_r, MUI_RED);
+    }
+
+}
+
+
+//
+// polymorphism stuff
 //
 
 void circuit_component_view_init(struct Circuit_Component_View* component_view, struct Circuit_Component* component) {
@@ -446,6 +652,15 @@ void circuit_component_view_init(struct Circuit_Component_View* component_view, 
     break;
     case CIRCUIT_COMPONENT_STAGE:
         stage_view_init(&component_view->as.stage_view, &component->as.stage);
+    break;
+    case CIRCUIT_COMPONENT_RESISTOR_IDEAL_PARALLEL:
+        resistor_parallel_view_init(&component_view->as.resistor_ideal_parallel_view, &component->as.resistor_ideal_parallel);
+    break;
+    case CIRCUIT_COMPONENT_CAPACITOR_IDEAL_PARALLEL:
+        assert(false && "TODO: implement the next kind here!");
+    break;
+    case CIRCUIT_COMPONENT_INDUCTOR_IDEAL_PARALLEL:
+        assert(false && "TODO: implement the next kind here!");
     break;
     case CIRCUIT_COMPONENT_KIND_COUNT:
         assert(false && "TODO: implement the next kind here!");
@@ -472,6 +687,15 @@ void circuit_component_view_draw(struct Circuit_Component_View* component_view, 
     break;
     case CIRCUIT_COMPONENT_STAGE:
         stage_view_draw(&component_view->as.stage_view, widget_area, is_selected);
+    break;
+    case CIRCUIT_COMPONENT_RESISTOR_IDEAL_PARALLEL:
+        resistor_parallel_view_draw(&component_view->as.resistor_ideal_parallel_view, widget_area, is_selected);
+    break;
+    case CIRCUIT_COMPONENT_CAPACITOR_IDEAL_PARALLEL:
+        assert(false && "TODO: implement the next kind here!");
+    break;
+    case CIRCUIT_COMPONENT_INDUCTOR_IDEAL_PARALLEL:
+        assert(false && "TODO: implement the next kind here!");
     break;
     case CIRCUIT_COMPONENT_KIND_COUNT:
         assert(false && "TODO: implement the next kind here!");

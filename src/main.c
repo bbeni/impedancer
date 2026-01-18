@@ -8,6 +8,7 @@
 #include "stdbool.h"
 #include "stdlib.h"
 #include "string.h"
+#include "assert.h"
 
 #include "mui.h"
 #include "gra.h"
@@ -49,10 +50,10 @@ int main(int argc, char** argv) {
 
 
     int w, h;
-    w = 1700;
-    h = 1150;
+    w = 1900;
+    h = 1100;
 
-    mui_open_window(w, h, 10, 40, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED, NULL);
+    mui_open_window(w, h, 10, 10, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED, NULL);
     mui_init_themes(0, 0, true, "resources/font/NimbusSans-Regular.ttf");
 
     #define MAX_CIRCUIT_COMPONENTS 20
@@ -63,15 +64,34 @@ int main(int argc, char** argv) {
 
 
     // stage resistor resistor resistor
-    size_t n_comps = 4;
-    circuit_create_stage(&stage_archetype, &component_array[0]);
-    circuit_component_view_init(&component_view_array[0], &component_array[0]);
-    for (size_t i = 1; i < n_comps - 1; i ++) {
-        circuit_create_resistor_ideal(20*i, &component_array[i]);
-        circuit_component_view_init(&component_view_array[i], &component_array[i]);
-    }
-    circuit_create_stage(&stage_archetype, &component_array[3]);
-    circuit_component_view_init(&component_view_array[3], &component_array[3]);
+    size_t n_comps = 6;
+    size_t i = 0;
+    // R 11M
+    circuit_create_resistor_ideal(11e6, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // stage 1
+    circuit_create_stage(&stage_archetype, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // R 15k
+    circuit_create_resistor_ideal(15e3, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // R 35k parallel
+    circuit_create_resistor_ideal_parallel(35e3, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // stage 2
+    circuit_create_stage(&stage_archetype, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // R 50
+    circuit_create_resistor_ideal(50, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    assert(i == n_comps && "update n_comps please");
+
     size_t selected_comp = 0;
 
     Mui_Button_State disco_mode_btn = mui_button_state();
@@ -116,10 +136,9 @@ int main(int argc, char** argv) {
             selected_comp = (selected_comp + 1) % n_comps;
         }
         if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
-            if (selected_comp == 0) selected_comp = n_comps - 1;
+            if (selected_comp == 0) selected_comp = n_comps;
             selected_comp = (selected_comp - 1) % n_comps;
         }
-
 
         /*
         if (mui_is_key_down(MUI_KEY_LEFT_CONTROL) || mui_is_key_down(MUI_KEY_RIGHT_CONTROL)) {
@@ -194,7 +213,10 @@ int main(int argc, char** argv) {
         Mui_Rectangle rest = screen_inset;
 
         for (size_t i = 0; i < n_comps; i ++) {
-            rest = mui_cut_left(rest, 400, &stage_view_rect);
+            float width = 200.0f;
+            if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
+                width = 420.0f;
+            rest = mui_cut_left(rest, width, &stage_view_rect);
             //stage_view_draw(&stage_views[i], stage_view_rect, selected_stage == i);
             circuit_component_view_draw(&component_view_array[i], stage_view_rect, selected_comp == i);
         }

@@ -20,6 +20,18 @@ struct Circuit_Component_Capacitor_Ideal {
     double C;
 };
 
+struct Circuit_Component_Resistor_Ideal_Parallel {
+    double R;
+};
+
+struct Circuit_Component_Inductor_Ideal_Parallel {
+    double L;
+};
+
+struct Circuit_Component_Capacitor_Ideal_Parallel {
+    double C;
+};
+
 struct Circuit_Component_Stage {
     struct S2P_Info* s2p_infos;
     char **models;
@@ -35,6 +47,9 @@ typedef enum {
     CIRCUIT_COMPONENT_CAPACITOR_IDEAL,
     CIRCUIT_COMPONENT_INDUCTOR_IDEAL,
     CIRCUIT_COMPONENT_STAGE,
+    CIRCUIT_COMPONENT_RESISTOR_IDEAL_PARALLEL,
+    CIRCUIT_COMPONENT_CAPACITOR_IDEAL_PARALLEL,
+    CIRCUIT_COMPONENT_INDUCTOR_IDEAL_PARALLEL,
     CIRCUIT_COMPONENT_KIND_COUNT
 } CIRCUIT_COMPONENT_KIND;
 
@@ -44,6 +59,9 @@ struct Circuit_Component {
         struct Circuit_Component_Resistor_Ideal resistor_ideal;
         struct Circuit_Component_Capacitor_Ideal capacitor_ideal;
         struct Circuit_Component_Inductor_Ideal inductor_ideal;
+        struct Circuit_Component_Resistor_Ideal_Parallel resistor_ideal_parallel;
+        struct Circuit_Component_Capacitor_Ideal_Parallel capacitor_ideal_parallel;
+        struct Circuit_Component_Inductor_Ideal_Parallel inductor_ideal_parallel;
     } as;
     CIRCUIT_COMPONENT_KIND kind;
 };
@@ -53,6 +71,10 @@ bool circuit_create_stage( struct Circuit_Component_Stage *stage_archetype, stru
 bool circuit_create_resistor_ideal(double resistance, struct Circuit_Component *component_out);
 bool circuit_create_capacitor_ideal(double capacitance, struct Circuit_Component *component_out);
 bool circuit_create_inductor_ideal(double inductance, struct Circuit_Component *component_out);
+
+bool circuit_create_resistor_ideal_parallel(double resistance, struct Circuit_Component *component_out);
+bool circuit_create_capacitor_ideal_parallel(double capacitance, struct Circuit_Component *component_out);
+bool circuit_create_inductor_ideal_parallel(double inductance, struct Circuit_Component *component_out);
 
 
 #endif //CIRCUIT_H_

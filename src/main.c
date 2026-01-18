@@ -64,30 +64,38 @@ int main(int argc, char** argv) {
 
 
     // stage resistor resistor resistor
-    size_t n_comps = 6;
+    size_t n_comps = 8;
     size_t i = 0;
-    // R 11M
-    circuit_create_resistor_ideal(11e6, &component_array[i]);
+    // C 12 pF
+    circuit_create_capacitor_ideal(12e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // R 35k Ohm parallel
+    circuit_create_resistor_ideal_parallel(35e3, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
     // stage 1
     circuit_create_stage(&stage_archetype, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    // R 15k
-    circuit_create_resistor_ideal(15e3, &component_array[i]);
+    // R 2M Ohm
+    circuit_create_resistor_ideal(2e6, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    // R 35k parallel
-    circuit_create_resistor_ideal_parallel(35e3, &component_array[i]);
+    // L 6.8 uH parallel
+    circuit_create_inductor_ideal_parallel(6.8e-6, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
     // stage 2
     circuit_create_stage(&stage_archetype, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    // R 50
-    circuit_create_resistor_ideal(50, &component_array[i]);
+    // L 360 nH
+    circuit_create_inductor_ideal(360e-9, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // C 1.5 nF
+    circuit_create_capacitor_ideal_parallel(1.5e-9, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
     assert(i == n_comps && "update n_comps please");
@@ -130,6 +138,17 @@ int main(int argc, char** argv) {
             if (selected_before != active_setting) {
                 stage_view_update_active_setting(stage_view, active_setting);
             }
+
+
+            if (mui_is_key_down(MUI_KEY_LEFT_CONTROL) || mui_is_key_down(MUI_KEY_RIGHT_CONTROL)) {
+                if (mui_is_key_pressed(MUI_KEY_C)) {
+                    if (stage_view->selector_start < stage_view->selector_end) {
+                        char* temp_str = uti_temp_strndup(&stage_view->selectable_text[stage_view->selector_start], stage_view->selector_end - stage_view->selector_start);
+                        mui_set_clipboard_text(temp_str);
+                    }
+                }
+            }
+
         }
 
         if (mui_is_key_pressed(MUI_KEY_RIGHT) || mui_is_key_pressed_repeat(MUI_KEY_RIGHT)) {
@@ -139,16 +158,6 @@ int main(int argc, char** argv) {
             if (selected_comp == 0) selected_comp = n_comps;
             selected_comp = (selected_comp - 1) % n_comps;
         }
-
-        /*
-        if (mui_is_key_down(MUI_KEY_LEFT_CONTROL) || mui_is_key_down(MUI_KEY_RIGHT_CONTROL)) {
-            if (mui_is_key_pressed(MUI_KEY_C)) {
-                if (stage_views[selected_stage].selector_start < stage_views[selected_stage].selector_end) {
-                    char* temp_str = uti_temp_strndup(&stage_views[selected_stage].selectable_text[stage_views[selected_stage].selector_start], stage_views[selected_stage].selector_end - stage_views[selected_stage].selector_start);
-                    mui_set_clipboard_text(temp_str);
-                }
-            }
-        }*/
 
         //
         // data loading
@@ -206,18 +215,16 @@ int main(int argc, char** argv) {
             mui_init_themes(chroma_slider.value * 0.1f, hue_slider.value*360, dark_mode, NULL);
         }
 
-
         Mui_Rectangle screen_inset = mui_shrink(screen, 5);
 
         Mui_Rectangle stage_view_rect;
         Mui_Rectangle rest = screen_inset;
 
         for (size_t i = 0; i < n_comps; i ++) {
-            float width = 200.0f;
+            float width = 160.0f;
             if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
                 width = 420.0f;
             rest = mui_cut_left(rest, width, &stage_view_rect);
-            //stage_view_draw(&stage_views[i], stage_view_rect, selected_stage == i);
             circuit_component_view_draw(&component_view_array[i], stage_view_rect, selected_comp == i);
         }
 

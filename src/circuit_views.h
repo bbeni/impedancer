@@ -79,11 +79,35 @@ struct Resistor_Ideal_Parallel_View {
     Mui_Collapsable_Section_State collapsable_section_1;
 };
 
+struct Capacitor_Ideal_View {
+    struct Circuit_Component_Capacitor_Ideal *capacitor;
+    Mui_Collapsable_Section_State collapsable_section_1;
+};
+
+struct Capacitor_Ideal_Parallel_View {
+    struct Circuit_Component_Capacitor_Ideal_Parallel *capacitor;
+    Mui_Collapsable_Section_State collapsable_section_1;
+};
+
+struct Inductor_Ideal_View {
+    struct Circuit_Component_Inductor_Ideal *inductor;
+    Mui_Collapsable_Section_State collapsable_section_1;
+};
+
+struct Inductor_Ideal_Parallel_View {
+    struct Circuit_Component_Inductor_Ideal_Parallel *inductor;
+    Mui_Collapsable_Section_State collapsable_section_1;
+};
+
 struct Circuit_Component_View {
     union {
         struct Stage_View stage_view;
         struct Resistor_Ideal_View resistor_ideal_view;
         struct Resistor_Ideal_Parallel_View resistor_ideal_parallel_view;
+        struct Capacitor_Ideal_View capacitor_ideal_view;
+        struct Capacitor_Ideal_Parallel_View capacitor_ideal_parallel_view;
+        struct Inductor_Ideal_View inductor_ideal_view;
+        struct Inductor_Ideal_Parallel_View inductor_ideal_parallel_view;
     } as;
     CIRCUIT_COMPONENT_KIND kind;
 };
@@ -103,10 +127,23 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
 // resistor
 void resistor_view_init(struct Resistor_Ideal_View* resistor_view, struct Circuit_Component_Resistor_Ideal* resistor);
 void resistor_view_draw(struct Resistor_Ideal_View* resistor_view, Mui_Rectangle widget_area, bool is_selected);
-
 // resistor parallel
 void resistor_parallel_view_init(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, struct Circuit_Component_Resistor_Ideal_Parallel* resistor);
 void resistor_parallel_view_draw(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, Mui_Rectangle widget_area, bool is_selected);
+
+// capacitor
+void capacitor_view_init(struct Capacitor_Ideal_View* capacitor_view, struct Circuit_Component_Capacitor_Ideal* capacitor);
+void capacitor_view_draw(struct Capacitor_Ideal_View* capacitor_view, Mui_Rectangle widget_area, bool is_selected);
+// capacitor parallel
+void capacitor_parallel_view_init(struct Capacitor_Ideal_Parallel_View* capacitor_parallel_view, struct Circuit_Component_Capacitor_Ideal_Parallel* capacitor);
+void capacitor_parallel_view_draw(struct Capacitor_Ideal_Parallel_View* resistor_parallel_view, Mui_Rectangle widget_area, bool is_selected);
+
+// inductor
+void inductor_view_init(struct Inductor_Ideal_View* inductor_view, struct Circuit_Component_Inductor_Ideal* inductor);
+void inductor_view_draw(struct Inductor_Ideal_View* inductor_view, Mui_Rectangle widget_area, bool is_selected);
+// inductor parallel
+void inductor_parallel_view_init(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, struct Circuit_Component_Inductor_Ideal_Parallel* inductor);
+void inductor_parallel_view_draw(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, Mui_Rectangle widget_area, bool is_selected);
 
 
 #endif //CIRCUIT_VIEWS_H_

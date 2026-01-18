@@ -96,47 +96,51 @@ bool circuit_create_stage_archetype(char* device_settings_csv_file_name, char* d
 
     assert(i == length);
 
-    for (size_t i = 0; i < length; i ++) {
-        printf("%s\n", component_out->models[i]);
-        printf("%f\n", component_out->voltage_ds_array[i]);
-        printf("%f\n", component_out->current_ds_array[i]);
-        printf("%f\n", component_out->temperatures[i]);
-    }
-
     return true;
 }
 
 
-bool circuit_create_stage( struct Circuit_Component_Stage *stage_archetype, struct Circuit_Component *component_out) {
+bool circuit_create_stage(struct Circuit_Component_Stage *stage_archetype, struct Circuit_Component *component_out) {
     component_out->kind = CIRCUIT_COMPONENT_STAGE;
     // shallow copy archetype
     component_out->as.stage = *stage_archetype;
+    return true;
 }
 
 bool circuit_create_resistor_ideal(double resistance, struct Circuit_Component *component_out) {
     component_out->kind = CIRCUIT_COMPONENT_RESISTOR_IDEAL;
     component_out->as.resistor_ideal.R = resistance;
+    return true;
 }
 
 bool circuit_create_capacitor_ideal(double capacitance, struct Circuit_Component *component_out) {
-
+    component_out->kind = CIRCUIT_COMPONENT_CAPACITOR_IDEAL;
+    component_out->as.capacitor_ideal.C = capacitance;
+    return true;
 }
 
 bool circuit_create_inductor_ideal(double inductance, struct Circuit_Component *component_out) {
-
+    component_out->kind = CIRCUIT_COMPONENT_INDUCTOR_IDEAL;
+    component_out->as.inductor_ideal.L = inductance;
+    return true;
 }
 
 bool circuit_create_resistor_ideal_parallel(double resistance, struct Circuit_Component *component_out) {
     component_out->kind = CIRCUIT_COMPONENT_RESISTOR_IDEAL_PARALLEL;
     component_out->as.resistor_ideal_parallel.R = resistance;
+    return true;
 }
 
 bool circuit_create_capacitor_ideal_parallel(double capacitance, struct Circuit_Component *component_out) {
-
+    component_out->kind = CIRCUIT_COMPONENT_CAPACITOR_IDEAL_PARALLEL;
+    component_out->as.capacitor_ideal_parallel.C = capacitance;
+    return true;
 }
 
 bool circuit_create_inductor_ideal_parallel(double inductance, struct Circuit_Component *component_out) {
-
+    component_out->kind = CIRCUIT_COMPONENT_INDUCTOR_IDEAL_PARALLEL;
+    component_out->as.inductor_ideal_parallel.L = inductance;
+    return true;
 }
 
 

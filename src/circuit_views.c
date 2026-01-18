@@ -176,21 +176,22 @@ void stage_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color bg = mui_protos_theme_g.bg;
     Mui_Color hl_color = mui_protos_theme_g.primary;
 
+    mui_draw_rectangle(symbol_area, bg);
+    if (should_highlight) {
+        float border = 4.0f;
+        mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
+    }
+
     float w = min(symbol_area.width, symbol_area.height);
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
-    mui_draw_rectangle(symbol_area, bg);
+
 
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
     Mui_Vector2 center = mui_center_of_rectangle(r_inset);
-    if (should_highlight) {
-        float radius = r_inset.width * 0.5f;
-        mui_draw_circle(center, radius, hl_color);
-        mui_draw_rectangle_rounded(r_inset, 10.0f, hl_color);
-    }
 
     float upper_y = r.y + 3.0f / 16.0f * r.height;
     float lower_y = r.y + 13.0f / 16.0f * r.height;
@@ -423,22 +424,22 @@ void resistor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color bg = mui_protos_theme_g.bg;
     Mui_Color hl_color = mui_protos_theme_g.primary;
 
+    mui_draw_rectangle(symbol_area, bg);
+    if (should_highlight) {
+        float border = 4.0f;
+        mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
+    }
+
     float w = min(symbol_area.width, symbol_area.height);
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
-    mui_draw_rectangle(symbol_area, bg);
 
     float line_thickness = 3;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
     Mui_Vector2 center = mui_center_of_rectangle(r_inset);
-    if (should_highlight) {
-        float radius = r_inset.width * 0.5f;
-        mui_draw_circle(center, radius, hl_color);
-        mui_draw_rectangle_rounded(r_inset, 10.0f, hl_color);
-    }
 
     float upper_y = r.y + 3.0f / 16.0f * r.height;
     float lower_y = r.y + 13.0f / 16.0f * r.height;
@@ -476,7 +477,7 @@ void resistor_view_settings_draw(struct Resistor_Ideal_View* resistor_view, Mui_
     }
 
     // top left
-    const char text[] = "R";
+    const char text[] = " R ";
     Mui_Vector2 text_size = mui_measure_text(font, text, font_size, 0.2f, 0, strlen(text));
     Mui_Vector2 pos;
     pos.x = inset_area.x;
@@ -533,22 +534,22 @@ void resistor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highli
     Mui_Color bg = mui_protos_theme_g.bg;
     Mui_Color hl_color = mui_protos_theme_g.primary;
 
+    mui_draw_rectangle(symbol_area, bg);
+    if (should_highlight) {
+        float border = 4.0f;
+        mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
+    }
+
     float w = min(symbol_area.width, symbol_area.height);
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
-    mui_draw_rectangle(symbol_area, bg);
 
     float line_thickness = 3;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
     Mui_Vector2 center = mui_center_of_rectangle(r_inset);
-    if (should_highlight) {
-        float radius = r_inset.width * 0.5f;
-        mui_draw_circle(center, radius, hl_color);
-        mui_draw_rectangle_rounded(r_inset, 10.0f, hl_color);
-    }
 
     float upper_y = r.y + 3.0f / 16.0f * r.height;
     float lower_y = r.y + 13.0f / 16.0f * r.height;
@@ -590,7 +591,7 @@ void resistor_parallel_view_settings_draw(struct Resistor_Ideal_Parallel_View* r
     }
 
     // top left
-    const char text[] = "R";
+    const char text[] = " R ";
     Mui_Vector2 text_size = mui_measure_text(font, text, font_size, 0.2f, 0, strlen(text));
     Mui_Vector2 pos;
     pos.x = inset_area.x;
@@ -634,6 +635,456 @@ void resistor_parallel_view_draw(struct Resistor_Ideal_Parallel_View* resistor_p
 
 }
 
+// capacitor
+
+void capacitor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
+    Mui_Color hl_color = mui_protos_theme_g.primary;
+
+    mui_draw_rectangle(symbol_area, bg);
+    if (should_highlight) {
+        float border = 4.0f;
+        mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
+    }
+
+    float w = min(symbol_area.width, symbol_area.height);
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+
+    float line_thickness = 3;
+    float f = w * 0.05f;
+    Mui_Rectangle r_inset = mui_shrink(r, f);
+    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
+
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+    Mui_Rectangle body_rect;
+    body_rect.width = 2.0f / 16.0f * r_inset.width;
+    body_rect.height = 5.0f / 16.0f * r_inset.width;
+    body_rect.y = upper_y - body_rect.height * 0.5f;
+    body_rect.x = center.x - body_rect.width * 0.5f;
+    mui_draw_line(body_rect.x, body_rect.y, body_rect.x, body_rect.y + body_rect.height,  line_thickness, col);
+    mui_draw_line(body_rect.x + body_rect.width, body_rect.y, body_rect.x + body_rect.width, body_rect.y + body_rect.height, line_thickness, col);
+
+    mui_draw_line(symbol_area.x, upper_y, body_rect.x, upper_y, line_thickness, col);
+    mui_draw_line(body_rect.x + body_rect.width, upper_y, symbol_area.x + symbol_area.width, upper_y, line_thickness, col);
+    mui_draw_line(symbol_area.x, lower_y, symbol_area.x + symbol_area.width, lower_y, line_thickness, col);
+}
+
+void capacitor_view_settings_draw(struct Capacitor_Ideal_View* capacitor_view, Mui_Rectangle symbol_area) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg_dark;
+    struct Mui_Font *font = mui_protos_theme_g.font;
+    float font_size = mui_protos_theme_g.font_size;
+
+    Mui_Rectangle inset_area = mui_shrink(symbol_area, 5);
+
+    double c = capacitor_view->capacitor->C;
+    char rendered_capacitance[40];
+    if (c < 1e-12) {
+        snprintf(rendered_capacitance, 40, "%.2ff", c * 1e15);
+    } else if (c < 1e-9) {
+        snprintf(rendered_capacitance, 40, "%.2fp", c * 1e12);
+    } else if (c < 1e-6) {
+        snprintf(rendered_capacitance, 40, "%.2fn", c * 1e9);
+    } else if (c < 1e-3) {
+        snprintf(rendered_capacitance, 40, "%.2fu", c * 1e6);
+    } else {
+        snprintf(rendered_capacitance, 40, "%.2fm", c * 1e3);
+    }
+
+    // left
+    const char text[] = " C ";
+    Mui_Vector2 text_size = mui_measure_text(font, text, font_size, 0.2f, 0, strlen(text));
+    Mui_Vector2 pos;
+    pos.x = inset_area.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
+    mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
+    mui_draw_text_line(font, pos, 0.2f, font_size, text, col, 0, strlen(text));
+
+    // right
+    text_size = mui_measure_text(font, rendered_capacitance, font_size, 0.2f, 0, strlen(rendered_capacitance));
+    pos.x = inset_area.x + inset_area.width - text_size.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_capacitance, col, 0, strlen(rendered_capacitance));
+}
+
+void capacitor_view_init(struct Capacitor_Ideal_View* capacitor_view, struct Circuit_Component_Capacitor_Ideal* capacitor) {
+    capacitor_view->capacitor = capacitor;
+    capacitor_view->collapsable_section_1.open = false;
+}
+
+void capacitor_view_draw(struct Capacitor_Ideal_View* capacitor_view, Mui_Rectangle widget_area, bool is_selected) {
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
+
+    capacitor_symbol_draw(symbol_area, is_selected);
+    capacitor_view_settings_draw(capacitor_view, symbol_area);
+
+    float padding = 5;
+    Mui_Rectangle rest = widget_area;
+    const float checkbox_s = 36;
+    Mui_Rectangle collabsable_area_1;
+    rest = mui_cut_top(rest, 36, &collabsable_area_1);
+    //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
+    if (mui_collapsable_section(&capacitor_view->collapsable_section_1, "C Series", collabsable_area_1)) {
+        Mui_Rectangle sg_r;
+        rest = mui_cut_top(rest, checkbox_s, &sg_r);
+        sg_r = mui_shrink(sg_r, padding);
+        mui_draw_rectangle(sg_r, MUI_RED);
+    }
+}
+
+// capacitor parallel
+
+void capacitor_parallel_view_init(struct Capacitor_Ideal_Parallel_View* capacitor_parallel_view, struct Circuit_Component_Capacitor_Ideal_Parallel* capacitor) {
+    capacitor_parallel_view->capacitor = capacitor;
+    capacitor_parallel_view->collapsable_section_1.open = false;
+}
+
+void capacitor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
+    Mui_Color hl_color = mui_protos_theme_g.primary;
+
+    mui_draw_rectangle(symbol_area, bg);
+    if (should_highlight) {
+        float border = 4.0f;
+        mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
+    }
+
+    float w = min(symbol_area.width, symbol_area.height);
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+
+    float line_thickness = 3;
+    float f = w * 0.05f;
+    Mui_Rectangle r_inset = mui_shrink(r, f);
+    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
+
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+    float dy = lower_y - upper_y;
+    Mui_Rectangle body_rect;
+    body_rect.height = 2.0f / 16.0f * r_inset.width;
+    body_rect.width = 5.0f / 16.0f * r_inset.width;
+    body_rect.y = upper_y + (dy - body_rect.height) * 0.5f;
+    body_rect.x = center.x - body_rect.width * 0.5f;
+
+    float r_x = body_rect.x + body_rect.width;
+    float l_x = body_rect.x;
+    float y1 = body_rect.y;
+    float y2 = body_rect.y + body_rect.height;
+
+    mui_draw_line(l_x, y1, r_x, y1, line_thickness, col);
+    mui_draw_line(l_x, y2, r_x, y2, line_thickness, col);
+
+    mui_draw_line(body_rect.x + body_rect.width * 0.5f, upper_y, body_rect.x + body_rect.width * 0.5f, body_rect.y, line_thickness, col);
+    mui_draw_line(body_rect.x + body_rect.width * 0.5f, lower_y, body_rect.x + body_rect.width * 0.5f, body_rect.y + body_rect.height, line_thickness, col);
+
+    mui_draw_line(symbol_area.x, upper_y, symbol_area.x + symbol_area.width, upper_y, line_thickness, col);
+    mui_draw_line(symbol_area.x, lower_y, symbol_area.x + symbol_area.width, lower_y, line_thickness, col);
+}
+
+void capacitor_parallel_view_settings_draw(struct Capacitor_Ideal_Parallel_View* capacitor_parallel_view, Mui_Rectangle symbol_area) {
+
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg_dark;
+    struct Mui_Font *font = mui_protos_theme_g.font;
+    float font_size = mui_protos_theme_g.font_size;
+
+    Mui_Rectangle inset_area = mui_shrink(symbol_area, 5);
+
+    double c = capacitor_parallel_view->capacitor->C;
+    char rendered_capacitance[40];
+    if (c < 1e-12) {
+        snprintf(rendered_capacitance, 40, "%.2ff", c * 1e15);
+    } else if (c < 1e-9) {
+        snprintf(rendered_capacitance, 40, "%.2fp", c * 1e12);
+    } else if (c < 1e-6) {
+        snprintf(rendered_capacitance, 40, "%.2fn", c * 1e9);
+    } else if (c < 1e-3) {
+        snprintf(rendered_capacitance, 40, "%.2fu", c * 1e6);
+    } else {
+        snprintf(rendered_capacitance, 40, "%.2fm", c * 1e3);
+    }
+
+    // top left
+    const char text[] = " C ";
+    Mui_Vector2 text_size = mui_measure_text(font, text, font_size, 0.2f, 0, strlen(text));
+    Mui_Vector2 pos;
+    pos.x = inset_area.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
+    mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
+    mui_draw_text_line(font, pos, 0.2f, font_size, text, col, 0, strlen(text));
+
+
+    // bot right
+    text_size = mui_measure_text(font, rendered_capacitance, font_size, 0.2f, 0, strlen(rendered_capacitance));
+    pos.x = inset_area.x + inset_area.width - text_size.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_capacitance, col, 0, strlen(rendered_capacitance));
+
+}
+
+
+void capacitor_parallel_view_draw(struct Capacitor_Ideal_Parallel_View* resistor_parallel_view, Mui_Rectangle widget_area, bool is_selected) {
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
+
+    capacitor_parallel_symbol_draw(symbol_area, is_selected);
+    capacitor_parallel_view_settings_draw(resistor_parallel_view, symbol_area);
+
+    float padding = 5;
+    Mui_Rectangle rest = widget_area;
+    const float checkbox_s = 36;
+    Mui_Rectangle collabsable_area_1;
+    rest = mui_cut_top(rest, 36, &collabsable_area_1);
+    //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
+    if (mui_collapsable_section(&resistor_parallel_view->collapsable_section_1, "C Parallel", collabsable_area_1)) {
+        Mui_Rectangle sg_r;
+        rest = mui_cut_top(rest, checkbox_s, &sg_r);
+        sg_r = mui_shrink(sg_r, padding);
+        mui_draw_rectangle(sg_r, MUI_RED);
+    }
+}
+
+
+// inductor
+void inductor_view_init(struct Inductor_Ideal_View* inductor_view, struct Circuit_Component_Inductor_Ideal* inductor) {
+    inductor_view->inductor = inductor;
+    inductor_view->collapsable_section_1.open = false;
+}
+
+void inductor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
+    Mui_Color hl_color = mui_protos_theme_g.primary;
+
+    mui_draw_rectangle(symbol_area, bg);
+    if (should_highlight) {
+        float border = 4.0f;
+        mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
+    }
+
+    float w = min(symbol_area.width, symbol_area.height);
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+
+    float line_thickness = 3;
+    float f = w * 0.05f;
+    Mui_Rectangle r_inset = mui_shrink(r, f);
+    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
+
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+
+    float rad = 1.0f / 8.0f * r_inset.width;
+    Mui_Vector2 pos;
+    pos.y = upper_y;
+    pos.x = r_inset.x + rad * 2;
+    mui_draw_arc_lines(pos, rad, 0, 180, col, line_thickness);
+    pos.x = r_inset.x + rad * 4;
+    mui_draw_arc_lines(pos, rad, 0, 180, col, line_thickness);
+    pos.x = r_inset.x + rad * 6;
+    mui_draw_arc_lines(pos, rad, 0, 180, col, line_thickness);
+
+    mui_draw_line(symbol_area.x, upper_y, r_inset.x + rad, upper_y, line_thickness, col);
+    mui_draw_line(r_inset.x + r_inset.width - rad, upper_y, symbol_area.x + symbol_area.width, upper_y, line_thickness, col);
+    mui_draw_line(symbol_area.x, lower_y, symbol_area.x + symbol_area.width, lower_y, line_thickness, col);
+}
+
+void inductor_view_settings_draw(struct Inductor_Ideal_View* inductor_view, Mui_Rectangle symbol_area) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg_dark;
+    struct Mui_Font *font = mui_protos_theme_g.font;
+    float font_size = mui_protos_theme_g.font_size;
+
+    Mui_Rectangle inset_area = mui_shrink(symbol_area, 5);
+
+    double l = inductor_view->inductor->L;
+    char rendered_capacitance[40];
+    if (l < 1e-12) {
+        snprintf(rendered_capacitance, 40, "%.2ff", l * 1e15);
+    } else if (l < 1e-9) {
+        snprintf(rendered_capacitance, 40, "%.2fp", l * 1e12);
+    } else if (l < 1e-6) {
+        snprintf(rendered_capacitance, 40, "%.2fn", l * 1e9);
+    } else if (l < 1e-3) {
+        snprintf(rendered_capacitance, 40, "%.2fu", l * 1e6);
+    } else {
+        snprintf(rendered_capacitance, 40, "%.2fm", l * 1e3);
+    }
+
+    // left
+    const char text[] = " L ";
+    Mui_Vector2 text_size = mui_measure_text(font, text, font_size, 0.2f, 0, strlen(text));
+    Mui_Vector2 pos;
+    pos.x = inset_area.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
+    mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
+    mui_draw_text_line(font, pos, 0.2f, font_size, text, col, 0, strlen(text));
+
+
+    // right
+    text_size = mui_measure_text(font, rendered_capacitance, font_size, 0.2f, 0, strlen(rendered_capacitance));
+    pos.x = inset_area.x + inset_area.width - text_size.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_capacitance, col, 0, strlen(rendered_capacitance));
+}
+
+
+void inductor_view_draw(struct Inductor_Ideal_View* inductor_view, Mui_Rectangle widget_area, bool is_selected) {
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
+
+    inductor_symbol_draw(symbol_area, is_selected);
+    inductor_view_settings_draw(inductor_view, symbol_area);
+
+    float padding = 5;
+    Mui_Rectangle rest = widget_area;
+    const float checkbox_s = 36;
+    Mui_Rectangle collabsable_area_1;
+    rest = mui_cut_top(rest, 36, &collabsable_area_1);
+    //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
+    if (mui_collapsable_section(&inductor_view->collapsable_section_1, "L Series", collabsable_area_1)) {
+        Mui_Rectangle sg_r;
+        rest = mui_cut_top(rest, checkbox_s, &sg_r);
+        sg_r = mui_shrink(sg_r, padding);
+        mui_draw_rectangle(sg_r, MUI_RED);
+    }
+
+}
+
+
+
+// inductor parallel
+
+void inductor_parallel_view_init(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, struct Circuit_Component_Inductor_Ideal_Parallel* inductor) {
+    inductor_parallel_view->inductor = inductor;
+    inductor_parallel_view->collapsable_section_1.open = false;
+}
+
+
+void inductor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
+    Mui_Color hl_color = mui_protos_theme_g.primary;
+
+    mui_draw_rectangle(symbol_area, bg);
+    if (should_highlight) {
+        float border = 4.0f;
+        mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
+    }
+
+    float w = min(symbol_area.width, symbol_area.height);
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+
+    float line_thickness = 3;
+    float f = w * 0.05f;
+    Mui_Rectangle r_inset = mui_shrink(r, f);
+    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
+
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+    float dy = lower_y - upper_y;
+    float mid = r_inset.x + r_inset.width * 0.5f;
+
+    float rad = 1.0f / 8.0f * dy;
+    Mui_Vector2 pos;
+    pos.x = mid;
+    pos.y = upper_y + rad * 2;
+    mui_draw_arc_lines(pos, rad, 90, 270, col, line_thickness);
+    pos.y = upper_y + rad * 4;
+    mui_draw_arc_lines(pos, rad, 90, 270, col, line_thickness);
+    pos.y = upper_y + rad * 6;
+    mui_draw_arc_lines(pos, rad, 90, 270, col, line_thickness);
+
+
+    mui_draw_line(mid, upper_y, mid, upper_y + rad, line_thickness, col);
+    mui_draw_line(mid, lower_y, mid, lower_y - rad, line_thickness, col);
+
+    mui_draw_line(symbol_area.x, upper_y, symbol_area.x + symbol_area.width, upper_y, line_thickness, col);
+    mui_draw_line(symbol_area.x, lower_y, symbol_area.x + symbol_area.width, lower_y, line_thickness, col);
+}
+
+void inductor_parallel_view_settings_draw(struct Inductor_Ideal_Parallel_View* inductor_view, Mui_Rectangle symbol_area) {
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg_dark;
+    struct Mui_Font *font = mui_protos_theme_g.font;
+    float font_size = mui_protos_theme_g.font_size;
+
+    Mui_Rectangle inset_area = mui_shrink(symbol_area, 5);
+
+    double l = inductor_view->inductor->L;
+    char rendered_capacitance[40];
+    if (l < 1e-12) {
+        snprintf(rendered_capacitance, 40, "%.2ff", l * 1e15);
+    } else if (l < 1e-9) {
+        snprintf(rendered_capacitance, 40, "%.2fp", l * 1e12);
+    } else if (l < 1e-6) {
+        snprintf(rendered_capacitance, 40, "%.2fn", l * 1e9);
+    } else if (l < 1e-3) {
+        snprintf(rendered_capacitance, 40, "%.2fu", l * 1e6);
+    } else {
+        snprintf(rendered_capacitance, 40, "%.2fm", l * 1e3);
+    }
+
+    // left
+    const char text[] = " L ";
+    Mui_Vector2 text_size = mui_measure_text(font, text, font_size, 0.2f, 0, strlen(text));
+    Mui_Vector2 pos;
+    pos.x = inset_area.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    Mui_Rectangle bg_rect = mui_rectangle(pos.x, pos.y, text_size.x, text_size.y);
+    mui_draw_rectangle_rounded(bg_rect, 4.0f, bg);
+    mui_draw_text_line(font, pos, 0.2f, font_size, text, col, 0, strlen(text));
+
+
+    // right
+    text_size = mui_measure_text(font, rendered_capacitance, font_size, 0.2f, 0, strlen(rendered_capacitance));
+    pos.x = inset_area.x + inset_area.width - text_size.x;
+    pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
+    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_capacitance, col, 0, strlen(rendered_capacitance));
+}
+
+
+void inductor_parallel_view_draw(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, Mui_Rectangle widget_area, bool is_selected) {
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
+
+    inductor_parallel_symbol_draw(symbol_area, is_selected);
+    inductor_parallel_view_settings_draw(inductor_parallel_view, symbol_area);
+
+    float padding = 5;
+    Mui_Rectangle rest = widget_area;
+    const float checkbox_s = 36;
+    Mui_Rectangle collabsable_area_1;
+    rest = mui_cut_top(rest, 36, &collabsable_area_1);
+    //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
+    if (mui_collapsable_section(&inductor_parallel_view->collapsable_section_1, "L Parallel", collabsable_area_1)) {
+        Mui_Rectangle sg_r;
+        rest = mui_cut_top(rest, checkbox_s, &sg_r);
+        sg_r = mui_shrink(sg_r, padding);
+        mui_draw_rectangle(sg_r, MUI_RED);
+    }
+
+}
+
+
 
 //
 // polymorphism stuff
@@ -645,10 +1096,10 @@ void circuit_component_view_init(struct Circuit_Component_View* component_view, 
         resistor_view_init(&component_view->as.resistor_ideal_view, &component->as.resistor_ideal);
     break;
     case CIRCUIT_COMPONENT_CAPACITOR_IDEAL:
-        assert(false && "TODO: implement the next kind here!");
+        capacitor_view_init(&component_view->as.capacitor_ideal_view, &component->as.capacitor_ideal);
     break;
     case CIRCUIT_COMPONENT_INDUCTOR_IDEAL:
-        assert(false && "TODO: implement the next kind here!");
+        inductor_view_init(&component_view->as.inductor_ideal_view, &component->as.inductor_ideal);
     break;
     case CIRCUIT_COMPONENT_STAGE:
         stage_view_init(&component_view->as.stage_view, &component->as.stage);
@@ -657,10 +1108,10 @@ void circuit_component_view_init(struct Circuit_Component_View* component_view, 
         resistor_parallel_view_init(&component_view->as.resistor_ideal_parallel_view, &component->as.resistor_ideal_parallel);
     break;
     case CIRCUIT_COMPONENT_CAPACITOR_IDEAL_PARALLEL:
-        assert(false && "TODO: implement the next kind here!");
+        capacitor_parallel_view_init(&component_view->as.capacitor_ideal_parallel_view, &component->as.capacitor_ideal_parallel);
     break;
     case CIRCUIT_COMPONENT_INDUCTOR_IDEAL_PARALLEL:
-        assert(false && "TODO: implement the next kind here!");
+        inductor_parallel_view_init(&component_view->as.inductor_ideal_parallel_view, &component->as.inductor_ideal_parallel);
     break;
     case CIRCUIT_COMPONENT_KIND_COUNT:
         assert(false && "TODO: implement the next kind here!");
@@ -680,10 +1131,10 @@ void circuit_component_view_draw(struct Circuit_Component_View* component_view, 
         resistor_view_draw(&component_view->as.resistor_ideal_view, widget_area, is_selected);
     break;
     case CIRCUIT_COMPONENT_CAPACITOR_IDEAL:
-        assert(false && "TODO: implement the next kind here!");
+        capacitor_view_draw(&component_view->as.capacitor_ideal_view, widget_area, is_selected);
     break;
     case CIRCUIT_COMPONENT_INDUCTOR_IDEAL:
-        assert(false && "TODO: implement the next kind here!");
+        inductor_view_draw(&component_view->as.inductor_ideal_view, widget_area, is_selected);
     break;
     case CIRCUIT_COMPONENT_STAGE:
         stage_view_draw(&component_view->as.stage_view, widget_area, is_selected);
@@ -692,13 +1143,13 @@ void circuit_component_view_draw(struct Circuit_Component_View* component_view, 
         resistor_parallel_view_draw(&component_view->as.resistor_ideal_parallel_view, widget_area, is_selected);
     break;
     case CIRCUIT_COMPONENT_CAPACITOR_IDEAL_PARALLEL:
-        assert(false && "TODO: implement the next kind here!");
+        capacitor_parallel_view_draw(&component_view->as.capacitor_ideal_parallel_view, widget_area, is_selected);
     break;
     case CIRCUIT_COMPONENT_INDUCTOR_IDEAL_PARALLEL:
-        assert(false && "TODO: implement the next kind here!");
+        inductor_parallel_view_draw(&component_view->as.inductor_ideal_parallel_view, widget_area, is_selected);
     break;
     case CIRCUIT_COMPONENT_KIND_COUNT:
-        assert(false && "TODO: implement the next kind here!");
+        assert(false && "TODO: implement the next kind, add case ...: above !");
     break;
     default:
         assert(false);

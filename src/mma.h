@@ -42,6 +42,7 @@ struct Complex {
 extern const struct Mat4f mat4f_unit;
 
 struct Complex mma_complex(double r, double i);
+struct Complex mma_complex_negate(struct Complex c1);
 struct Complex mma_complex_mult(struct Complex a, struct Complex b);
 struct Complex mma_complex_divide_or_zero(struct Complex a, struct Complex b);
 struct Complex mma_complex_add(struct Complex a, struct Complex b);
@@ -91,9 +92,15 @@ float mma_matrix_detmat4f(struct Mat4f *m);
 // a_i b_i are used to derive the spline and are related for example to
 //        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
 //
+// S''(x0) = S''(x(n-1)) = 0 natural condition
+// functions to determine parameters for spline
 void mma_spline_cubic_natural_ab(const double *x, const double *y, size_t n_in, double *a_out, double *b_out);
-void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_in, double *y_out, size_t n_out, double x_min, double x_max);
 void mma_spline_cubic_natural_ab_complex(const double *x, const struct Complex *z, size_t n_in, struct Complex *a_out, struct Complex *b_out);
+// higher level functions:
+void mma_spline_cubic_natural(const double *x, const double *y, size_t n_in, double *y_out, double* x_resamples, size_t n_out);
+void mma_spline_cubic_natural_complex(const double *x, const struct Complex *z, size_t n_in, struct Complex *z_out, double *x_resamples, size_t n_out);
+void mma_spline_cubic_natural_complex_2(const double *x, const struct Complex *z, size_t n_in, double *real_out, double *imaginary_out, double *x_resamples, size_t n_out);
+void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_in, double *y_out, size_t n_out, double x_min, double x_max);
 void mma_spline_cubic_natural_linear_complex(const double *x, const struct Complex *z, size_t n_in, struct Complex *z_out, size_t n_out, double x_min, double x_max);
 
 
@@ -103,6 +110,22 @@ void mma_temp_reset(void);
 void* mma_temp_alloc(size_t requested_size);
 void mma_temp_set_restore_point();
 void mma_temp_restore();
+
+//
+// electronics stuff
+//
+
+struct Mma_Complex_2x2 {
+	struct Complex v[2][2];
+};
+
+// z-parameters
+void calc_z_from_s(struct Complex s[2][2], struct Complex *z_out[2][2]);
+void calc_z_from_gamma(struct Complex gamma, struct Complex *z_out);
+
+// t-parameters
+struct Mma_Complex_2x2 calc_t_from_s(struct Complex s[2][2]);
+struct Mma_Complex_2x2 calc_s_from_t(struct Complex t[2][2]);
 
 
 #endif // MMA_H_

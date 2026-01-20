@@ -27,14 +27,17 @@ BUILD_DIR := build
 TARGET := $(BUILD_DIR)/impedancer
 SRCS := $(SRC_DIR)/main.c $(SRC_DIR)/s2p.c $(SRC_DIR)/mui.c $(SRC_DIR)/gra.c \
 		$(SRC_DIR)/uti.c $(SRC_DIR)/mma.c $(SRC_DIR)/mui_platform_raylib.c \
-		$(SRC_DIR)/gra_smithchart.c $(SRC_DIR)/circuit_views.c $(SRC_DIR)/circuit_creation.c
+		$(SRC_DIR)/gra_smithchart.c $(SRC_DIR)/circuit_views.c $(SRC_DIR)/circuit_creation.c \
+		$(SRC_DIR)/circuit_simulation.c
 
 OBJS := $(BUILD_DIR)/main.o $(BUILD_DIR)/s2p.o $(BUILD_DIR)/mui.o $(BUILD_DIR)/gra.o \
 		$(BUILD_DIR)/uti.o $(BUILD_DIR)/mma.o $(BUILD_DIR)/mui_platform_raylib.o \
-		$(BUILD_DIR)/gra_smithchart.o $(BUILD_DIR)/circuit_views.o $(BUILD_DIR)/circuit_creation.o
+		$(BUILD_DIR)/gra_smithchart.o $(BUILD_DIR)/circuit_views.o $(BUILD_DIR)/circuit_creation.o \
+		$(BUILD_DIR)/circuit_simulation.o
 
 
-HEADER_DEPS :=
+HEADER_DEPS := $(SRC_DIR)/s2p.h $(SRC_DIR)/mui.h $(SRC_DIR)/gra.h \
+		$(SRC_DIR)/uti.h $(SRC_DIR)/mma.h $(SRC_DIR)/circuit.h
 
 all: $(TARGET)
 

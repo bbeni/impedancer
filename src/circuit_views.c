@@ -82,6 +82,7 @@ void stage_view_init(struct Stage_View* stage_view, struct Circuit_Component_Sta
 void stage_view_update_active_setting(struct Stage_View* stage_view, size_t new_setting) {
 
     stage_view->active_setting = new_setting;
+    stage_view->stage->selected_setting = new_setting;
 
     size_t active_setting = stage_view->active_setting;
     struct S2P_Info* info = &stage_view->stage->s2p_infos[active_setting];

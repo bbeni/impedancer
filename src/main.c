@@ -63,9 +63,10 @@ int main(int argc, char** argv) {
     component_view_array = malloc(sizeof(*component_view_array) * MAX_CIRCUIT_COMPONENTS);
 
 
-    // stage resistor resistor resistor
-    size_t n_comps = 8;
+    size_t n_comps = 2;
     size_t i = 0;
+
+    /*
     // C 12 pF
     circuit_create_capacitor_ideal(12e-12, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
@@ -78,18 +79,28 @@ int main(int argc, char** argv) {
     circuit_create_stage(&stage_archetype, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    // R 2M Ohm
-    circuit_create_resistor_ideal(2e6, &component_array[i]);
+    */
+    // R 160
+    circuit_create_resistor_ideal(160, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
+    /*
     // L 6.8 uH parallel
     circuit_create_inductor_ideal_parallel(6.8e-6, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
+    */
     // stage 2
     circuit_create_stage(&stage_archetype, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
+
+    /*
+    // R 100
+    circuit_create_resistor_ideal(100, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
     // L 360 nH
     circuit_create_inductor_ideal(360e-9, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
@@ -98,6 +109,8 @@ int main(int argc, char** argv) {
     circuit_create_capacitor_ideal_parallel(1.5e-9, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
+    */
+
     assert(i == n_comps && "update n_comps please");
 
     size_t selected_comp = 0;
@@ -106,12 +119,15 @@ int main(int argc, char** argv) {
     bool disco_mode = false;
 
     Mui_Button_State dark_mode_btn = mui_button_state();
-    mui_protos_theme_g = mui_protos_theme_dark_g;
-    bool dark_mode = true;
+    mui_protos_theme_g = mui_protos_theme_light_g;
+    bool dark_mode = false;
 
     Mui_Slider_State chroma_slider = mui_slider_state();
     Mui_Slider_State hue_slider = mui_slider_state();
 
+
+    struct Simulation_State simulation_state;
+    bool todo_first_sim = true;
 
     while (!mui_window_should_close())
     {
@@ -123,6 +139,15 @@ int main(int argc, char** argv) {
         //
         // input handling
         //
+        if (component_array[selected_comp].kind == CIRCUIT_COMPONENT_RESISTOR_IDEAL) {
+            if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN)) {
+                component_array[selected_comp].as.resistor_ideal.R *= 0.5f;
+            }
+            if (mui_is_key_pressed(MUI_KEY_UP) || mui_is_key_pressed_repeat(MUI_KEY_UP)) {
+                component_array[selected_comp].as.resistor_ideal.R *= 2;
+            }
+        }
+
 
         if (component_array[selected_comp].kind == CIRCUIT_COMPONENT_STAGE) {
             struct Stage_View* stage_view = &(component_view_array[selected_comp].as.stage_view);
@@ -154,9 +179,18 @@ int main(int argc, char** argv) {
         if (mui_is_key_pressed(MUI_KEY_RIGHT) || mui_is_key_pressed_repeat(MUI_KEY_RIGHT)) {
             selected_comp = (selected_comp + 1) % n_comps;
         }
+
         if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
             if (selected_comp == 0) selected_comp = n_comps;
             selected_comp = (selected_comp - 1) % n_comps;
+        }
+
+        if (mui_is_key_pressed(MUI_KEY_S)) {
+            if (!todo_first_sim) circuit_simulation_destroy(&simulation_state);
+            circuit_simulation_setup(component_array, n_comps, &simulation_state);
+            circuit_simulation_do(&simulation_state);
+
+            if (todo_first_sim) todo_first_sim = false;
         }
 
         //
@@ -217,16 +251,59 @@ int main(int argc, char** argv) {
 
         Mui_Rectangle screen_inset = mui_shrink(screen, 5);
 
-        Mui_Rectangle stage_view_rect;
+        Mui_Rectangle component_view_rect;
         Mui_Rectangle rest = screen_inset;
 
         for (size_t i = 0; i < n_comps; i ++) {
             float width = 160.0f;
             if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
                 width = 420.0f;
-            rest = mui_cut_left(rest, width, &stage_view_rect);
-            circuit_component_view_draw(&component_view_array[i], stage_view_rect, selected_comp == i);
+            rest = mui_cut_left(rest, width, &component_view_rect);
+            circuit_component_view_draw(&component_view_array[i], component_view_rect, selected_comp == i);
         }
+
+        if (!todo_first_sim) {
+            Mui_Rectangle simulation_plot_rect;
+            rest = mui_cut_left(rest, 840.0f, &simulation_plot_rect);
+            simulation_plot_rect.height = 630.0f;
+
+            double fmi = simulation_state.frequencies[0];
+            double fma = simulation_state.frequencies[simulation_state.n_frequencies - 1];
+            double ymi = -10;
+            double yma = 10;
+            double ystep = 5;
+            double fstep = 10e9;
+
+            // TODO change signature
+            simulation_plot_rect = gra_xy_plot_labels_and_grid(
+                "f [GHz]", "real(S)",
+                fmi, fma, ymi, yma, fstep, ystep, true, simulation_plot_rect
+            );
+            gra_xy_plot_data_points(
+                simulation_state.frequencies,
+                simulation_state.s_result.r11, NULL, simulation_state.n_frequencies,
+                fmi, fma, ymi, yma, MUI_RED, 2, simulation_plot_rect
+            );
+            gra_xy_plot_data_points(
+                simulation_state.frequencies,
+                simulation_state.s_result.r12, NULL, simulation_state.n_frequencies,
+                fmi, fma, ymi, yma, MUI_BLUE, 2, simulation_plot_rect
+            );
+            gra_xy_plot_data_points(
+                simulation_state.frequencies,
+                simulation_state.s_result.r21, NULL, simulation_state.n_frequencies,
+                fmi, fma, ymi, yma, MUI_GREEN, 2, simulation_plot_rect
+            );
+
+            gra_xy_plot_data_points(
+                simulation_state.frequencies,
+                simulation_state.s_result.r22, NULL, simulation_state.n_frequencies,
+                fmi, fma, ymi, yma, MUI_YELLOW, 2, simulation_plot_rect
+            );
+
+
+        }
+
 
         mui_end_drawing();
         uti_temp_reset();

@@ -120,15 +120,12 @@ void mma_solve_tridiagonal_matrix(const size_t N, const double *a, const double 
         x_out[ix-1] -= scratch_buffer[ix-1] * x_out[ix];
 }
 
-// S''(x0) = S''(x(n-1)) = 0
+// S''(x0) = S''(x(n-1)) = 0 natural condition
 // make sure there is enough space in y_out
-void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_in, double *y_out, size_t n_out, double x_min, double x_max) {
+// general function that accepts and x_resamples array (needs to be in ascending order!)
+void mma_spline_cubic_natural(const double *x, const double *y, size_t n_in, double *y_out, double* x_resamples, size_t n_out) {
 	assert(n_out >= 2);
-	assert(x_min >= x[0]);
-	assert(x_max <= x[n_in - 1]);
-	assert(x_max >= x_min);
 
-	double x_step = (x_max - x_min) / (n_out - 1);
 	mma_temp_set_restore_point();
 	double *a = mma_temp_alloc(sizeof(double) * (n_in - 1));
 	double *b = mma_temp_alloc(sizeof(double) * (n_in - 1));
@@ -138,13 +135,108 @@ void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_
 
 	size_t j = 0;
 	for (size_t i = 0; i < n_out; i ++) {
-		double x_now = i * x_step + x[0];
+		double x_now = x_resamples[i];
+
 		// we increase j until x is in [x[j], x[j+1]]
-		while (x_now > x[j + 1]) {
+		while (j + 1 < n_in && x_now > x[j + 1]) {
 			j++;
 		}
 
 		double t = (x_now - x[j]) / (x[j + 1] - x[j]);
+		y_out[i] = (1 - t) * y[j] + t * y[j + 1] + t * (1 - t) * ((1 - t) * a[j] + t * b[j]);
+	}
+
+	mma_temp_restore();
+}
+
+// S''(x0) = S''(x(n-1)) = 0 natural condition
+// make sure there is enough space in y_out
+// general function that accepts and x_resamples array (needs to be in ascending order!)
+void mma_spline_cubic_natural_complex(const double *x, const struct Complex *z, size_t n_in, struct Complex *z_out, double *x_resamples, size_t n_out) {
+	assert(n_out >= 2);
+
+	mma_temp_set_restore_point();
+	struct Complex *a = mma_temp_alloc(sizeof(struct Complex) * (n_in - 1));
+	struct Complex *b = mma_temp_alloc(sizeof(struct Complex) * (n_in - 1));
+	mma_spline_cubic_natural_ab_complex(x, z, n_in, a, b);
+	// a_i b_i are used to derive the spline and are related for example to
+	//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
+
+	size_t j = 0;
+	for (size_t i = 0; i < n_out ; i ++) {
+		double x_now = x_resamples[i];
+		// we increase j until x is in [x[j], x[j+1]]
+		while (j + 1 < n_in - 1 && x_now > x[j + 1]) {
+			j++;
+		}
+
+		double t = (x_now - x[j]) / (x[j + 1] - x[j]);
+
+		z_out[i].r = (1 - t) * z[j].r + t * z[j + 1].r + t * (1 - t) * ((1 - t) * a[j].r + t * b[j].r);
+		z_out[i].i = (1 - t) * z[j].i + t * z[j + 1].i + t * (1 - t) * ((1 - t) * a[j].i + t * b[j].i);
+	}
+
+	mma_temp_restore();
+}
+
+// S''(x0) = S''(x(n-1)) = 0 natural condition
+// make sure there is enough space in y_out
+// general function that accepts and x_resamples array (needs to be in ascending order!)
+void mma_spline_cubic_natural_complex_2(const double *x, const struct Complex *z, size_t n_in, double *real_out, double *imaginary_out, double *x_resamples, size_t n_out) {
+	assert(n_out >= 2);
+
+	mma_temp_set_restore_point();
+	struct Complex *a = mma_temp_alloc(sizeof(struct Complex) * (n_in - 1));
+	struct Complex *b = mma_temp_alloc(sizeof(struct Complex) * (n_in - 1));
+	mma_spline_cubic_natural_ab_complex(x, z, n_in, a, b);
+	// a_i b_i are used to derive the spline and are related for example to
+	//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
+
+	size_t j = 0;
+	for (size_t i = 0; i < n_out ; i ++) {
+		double x_now = x_resamples[i];
+		// we increase j until x is in [x[j], x[j+1]]
+		while (j + 1 < n_in - 1 && x_now > x[j + 1]) {
+			j++;
+		}
+
+		double t = (x_now - x[j]) / (x[j + 1] - x[j]);
+
+		real_out[i] = (1 - t) * z[j].r + t * z[j + 1].r + t * (1 - t) * ((1 - t) * a[j].r + t * b[j].r);
+		imaginary_out[i] = (1 - t) * z[j].i + t * z[j + 1].i + t * (1 - t) * ((1 - t) * a[j].i + t * b[j].i);
+	}
+
+	mma_temp_restore();
+}
+
+
+// S''(x0) = S''(x(n-1)) = 0
+// make sure there is enough space in y_out
+void mma_spline_cubic_natural_linear(const double *x, const double *y, size_t n_in, double *y_out, size_t n_out, double x_min, double x_max) {
+	assert(n_out >= 2);
+	assert(x_min >= x[0]);
+	assert(x_max <= x[n_in - 1]);
+	assert(x_max >= x_min);
+
+	double dx = (x_max - x_min) / (n_out - 1);
+
+	mma_temp_set_restore_point();
+	double *a = mma_temp_alloc(sizeof(double) * (n_in - 1));
+	double *b = mma_temp_alloc(sizeof(double) * (n_in - 1));
+	mma_spline_cubic_natural_ab(x, y, n_in, a, b);
+	// a_i b_i are used to derive the spline and are related for example to
+	//        q_i(x) = (1-t) y_(i-1) + t y_i + t (t-1) ((1-t)a_i + tb_i)
+
+	size_t j = 0;
+	for (size_t i = 0; i < n_out; i ++) {
+		double x_now = i * dx + x_min;
+		// we increase j until x is in [x[j], x[j+1]]
+		while (j + 1 < n_in - 1 && x_now > x[j + 1]) {
+			j++;
+		}
+		double dx = x[j + 1] - x[j];
+		assert(dx > 0);
+		double t = (x_now - x[j]) / dx;
 		assert(t >= 0);
 		y_out[i] = (1 - t) * y[j] + t * y[j + 1] + t * (1 - t) * ((1 - t) * a[j] + t * b[j]);
 	}
@@ -159,7 +251,7 @@ void mma_spline_cubic_natural_linear_complex(const double *x, const struct Compl
 	assert(x_max <= x[n_in - 1]);
 	assert(x_max >= x_min);
 
-	double x_step = (x_max - x_min) / (n_out - 1);
+	double dx = (x_max - x_min) / (n_out - 1);
 	mma_temp_set_restore_point();
 	struct Complex *a = mma_temp_alloc(sizeof(struct Complex) * (n_in - 1));
 	struct Complex *b = mma_temp_alloc(sizeof(struct Complex) * (n_in - 1));
@@ -169,9 +261,9 @@ void mma_spline_cubic_natural_linear_complex(const double *x, const struct Compl
 
 	size_t j = 0;
 	for (size_t i = 0; i < n_out ; i ++) {
-		double x_now = i * x_step + x[0];
+		double x_now = i * dx + x_min;
 		// we increase j until x is in [x[j], x[j+1]]
-		while (x_now > x[j + 1]) {
+		while (j + 1 < n_in - 1 && x_now > x[j + 1]) {
 			j++;
 		}
 
@@ -475,6 +567,12 @@ struct Complex mma_complex(double r, double i) {
 	return c;
 }
 
+struct Complex mma_complex_negate(struct Complex c1) {
+	struct Complex c2;
+	c2.r = -c1.r;
+	c2.i = -c1.i;
+	return c2;
+}
 
 struct Complex mma_complex_add(struct Complex a, struct Complex b) {
 	return (struct Complex) {
@@ -824,3 +922,27 @@ void mma_temp_restore() {
 
 
 // end temp allocator
+
+
+
+//
+// electronics stuff
+//
+
+struct Mma_Complex_2x2 calc_t_from_s(struct Complex s[2][2]) {
+	struct Mma_Complex_2x2 t_out;
+    t_out.v[0][0] = mma_complex_subtract(s[0][1], mma_complex_divide_or_zero(mma_complex_mult(s[0][0], s[1][1]), s[1][0]));
+    t_out.v[0][1] = mma_complex_divide_or_zero(s[0][0], s[1][0]);
+    t_out.v[1][0] = mma_complex_divide_or_zero(mma_complex_negate(s[1][1]), s[0][1]);
+    t_out.v[1][1] = mma_complex_divide_or_zero(mma_complex(1.0, 0), s[1][0]);
+	return t_out;
+}
+
+struct Mma_Complex_2x2 calc_s_from_t(struct Complex t[2][2]) {
+	struct Mma_Complex_2x2 s_out;
+    s_out.v[0][0] = mma_complex_divide_or_zero(t[0][1], t[1][1]);
+    s_out.v[0][1] = mma_complex_subtract(t[0][0], mma_complex_divide_or_zero(mma_complex_mult(t[0][1], t[1][0]), t[1][1]));
+    s_out.v[1][0] = mma_complex_divide_or_zero(mma_complex(1.0, 0), t[1][1]);
+    s_out.v[1][1] = mma_complex_divide_or_zero(mma_complex_negate(t[1][0]), t[1][1]);
+	return s_out;
+}

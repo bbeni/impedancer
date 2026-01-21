@@ -109,9 +109,6 @@ int main(int argc, char** argv) {
 
     size_t selected_comp = 0;
 
-    Mui_Button_State disco_mode_btn = mui_button_state();
-    bool disco_mode = false;
-
     Mui_Button_State dark_mode_btn = mui_button_state();
     mui_protos_theme_g = mui_protos_theme_light_g;
     bool dark_mode = false;
@@ -263,17 +260,7 @@ int main(int argc, char** argv) {
         float hue_slider_last_value = hue_slider.value;
         mui_simple_slider(&hue_slider, false, hue_slider_area);
 
-        Mui_Rectangle disco_mode_btn_area;
-        menu_bar_area = mui_cut_left(menu_bar_area, 140, &disco_mode_btn_area);
-        disco_mode_btn_area = mui_shrink(disco_mode_btn_area, 5.0f);
-        char* disco_mode_text = disco_mode ? "disco mode" : "disco mode";
-        if (mui_button(&disco_mode_btn, disco_mode_text, disco_mode_btn_area)) {
-            disco_mode = !disco_mode;
-        }
         // update themes
-        if (disco_mode) {
-            hue_slider.value = fmodf(disco_mode_btn.last_time * 0.2f, 1.0f);
-        }
         if (hue_slider_last_value != hue_slider.value || chroma_slider_last_value != chroma_slider.value) {
             mui_init_themes(chroma_slider.value * 0.1f, hue_slider.value*360, dark_mode, NULL);
         }
@@ -297,12 +284,12 @@ int main(int argc, char** argv) {
             double fmi = simulation_state.frequencies[0];
             double fma = simulation_state.frequencies[simulation_state.n_frequencies - 1];
             double ymi = -30;
-            double yma = 60;
+            double yma = 50;
             double ystep = 10;
             double fstep = 10e9;
 
             bool should_plot_mask[4] = {true, true, true, true};
-            char* x_label = "f [GHz]";
+            char* x_label = "f [10 GHz steps]";
             char* labels[4] = {"dB(S11)", "dB(S21)", "dB(S12)", "dB(S22)"};
             Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
             struct Complex* s[4] = {
@@ -326,13 +313,13 @@ int main(int argc, char** argv) {
             }
             gra_xy_legend(labels, colors, should_plot_mask, 4, simulation_plot_rect);
 
-            // stability
+            // stability plot TODO
 
             gra_xy_plot_labels_and_grid(
                 x_label, "stability factor mu, mu'", fmi, fma, ymi, yma, fstep, ystep, true, stability_plot_rect
             );
         } else {
-            mui_label(&mui_protos_theme_g, "Press S to simulate :)", bottom_place);
+            mui_label(&mui_protos_theme_g, "Move LEFT-RIGHT/UP-DOWN to select/change component. Press S to simulate circuit :)", bottom_place);
         }
 
 
@@ -340,7 +327,7 @@ int main(int argc, char** argv) {
         // circuit elements draw
         //
         for (size_t i = 0; i < n_comps; i ++) {
-            float width = 160.0f;
+            float width = 180.0f;
             if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
                 width = 360.0f;
             rest = mui_cut_left(rest, width, &component_view_rect);

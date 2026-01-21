@@ -197,14 +197,14 @@ static inline Mui_Color mui_hsl_to_rgb(float h, float s, float l) {
 Mui_Theme mui_protos_theme_dark_generate(float bg_hue, float bg_chroma) {
     return (Mui_Theme) {
 
-        .bg_dark      = _OKLCH(0.25f, bg_chroma, bg_hue),
-        .bg           = _OKLCH(0.32f, bg_chroma, bg_hue),
-        .bg_light     = _OKLCH(0.4f, bg_chroma, bg_hue),
-        .text         = _OKLCH(0.95f, bg_chroma, bg_hue),
-        .text_muted   = _OKLCH(0.5f, bg_chroma, bg_hue),
-        .border       = _OKLCH(0.45f, bg_chroma, bg_hue),
-        .primary      = _OKLCH(0.7f, bg_chroma + 0.1, 243),
-        .primary_dark = _OKLCH(0.6f, bg_chroma + 0.1, 243),
+        .bg_dark      = _OKLCH(0.25f, bg_chroma, 243 + bg_hue),
+        .bg           = _OKLCH(0.32f, bg_chroma, 243 + bg_hue),
+        .bg_light     = _OKLCH(0.4f, bg_chroma, 243 + bg_hue),
+        .text         = _OKLCH(0.95f, bg_chroma, 243 + bg_hue),
+        .text_muted   = _OKLCH(0.5f, bg_chroma, 243 + bg_hue),
+        .border       = _OKLCH(0.45f, bg_chroma, 243 + bg_hue),
+        .primary      = _OKLCH(0.7f, bg_chroma + 0.1, 243 + bg_hue),
+        .primary_dark = _OKLCH(0.6f, bg_chroma + 0.1, 243 + bg_hue),
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,
@@ -226,14 +226,14 @@ Mui_Theme mui_protos_theme_dark_generate(float bg_hue, float bg_chroma) {
 Mui_Theme mui_protos_theme_light_generate(float bg_hue, float bg_chroma) {
     return (Mui_Theme) {
 
-        .bg_dark      = _OKLCH(0.75f, bg_chroma, bg_hue),
-        .bg           = _OKLCH(0.85f, bg_chroma, bg_hue),
-        .bg_light     = _OKLCH(0.95f, bg_chroma, bg_hue),
-        .text         = _OKLCH(0.05f, bg_chroma, bg_hue),
-        .text_muted   = _OKLCH(0.5f, bg_chroma, bg_hue),
-        .border       = _OKLCH(0.55f, bg_chroma, bg_hue),
-        .primary      = _OKLCH(0.7f, bg_chroma+0.09, 33 + bg_hue),
-        .primary_dark = _OKLCH(0.6f, bg_chroma+0.09, 33 + bg_hue),
+        .bg_dark      = _OKLCH(0.75f, bg_chroma, 243 + bg_hue),
+        .bg           = _OKLCH(0.85f, bg_chroma, 243 + bg_hue),
+        .bg_light     = _OKLCH(0.95f, bg_chroma, 243 + bg_hue),
+        .text         = _OKLCH(0.05f, bg_chroma, 243 + bg_hue),
+        .text_muted   = _OKLCH(0.5f, bg_chroma, 243 + bg_hue),
+        .border       = _OKLCH(0.55f, bg_chroma, 243 + bg_hue),
+        .primary      = _OKLCH(0.7f, bg_chroma+0.09, 243 + bg_hue),
+        .primary_dark = _OKLCH(0.6f, bg_chroma+0.09, 243 + bg_hue),
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,

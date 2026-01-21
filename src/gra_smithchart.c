@@ -21,7 +21,9 @@ void draw_smith_grid(bool plot_reactance_circles, bool plot_admittance_circles, 
     Mui_Vector2 center = mui_center_of_rectangle(plot_area);
     float r_outer = fmin(plot_area.height, plot_area.width) * 0.49f;
 
+    mui_draw_rectangle(mui_shrink(plot_area, 1.0f), mui_protos_theme_g.bg_dark);
     mui_draw_rectangle_lines(mui_shrink(plot_area, 1.0f), _color_border_smith(), 2.0f);
+
 
     mui_draw_circle(center, r_outer, _color_bg_smith());
     mui_draw_circle_lines(center, r_outer, _color_text_smith(), 2.0f);

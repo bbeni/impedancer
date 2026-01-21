@@ -24,7 +24,6 @@ char* next(int* count, char*** argv) {
     return *((*argv)++);
 }
 
-
 int main(int argc, char** argv) {
 
     char* prog_name = next(&argc, &argv);
@@ -63,53 +62,48 @@ int main(int argc, char** argv) {
     component_view_array = malloc(sizeof(*component_view_array) * MAX_CIRCUIT_COMPONENTS);
 
 
-    size_t n_comps = 2;
+    size_t n_comps = 8;
     size_t i = 0;
 
-    /*
-    // C 12 pF
-    circuit_create_capacitor_ideal(12e-12, &component_array[i]);
-    circuit_component_view_init(&component_view_array[i], &component_array[i]);
-    i++;
+
     // R 35k Ohm parallel
     circuit_create_resistor_ideal_parallel(35e3, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
+
+    // C 120 pF
+    circuit_create_capacitor_ideal(120e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
     // stage 1
     circuit_create_stage(&stage_archetype, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    */
-    // R 160
-    circuit_create_resistor_ideal(160, &component_array[i]);
+
+    // R 5
+    circuit_create_resistor_ideal(5, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    /*
-    // L 6.8 uH parallel
-    circuit_create_inductor_ideal_parallel(6.8e-6, &component_array[i]);
+
+    // L 1.7 uH parallel
+    circuit_create_inductor_ideal_parallel(1.7e-6, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    */
+
     // stage 2
     circuit_create_stage(&stage_archetype, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
 
-    /*
-    // R 100
-    circuit_create_resistor_ideal(100, &component_array[i]);
+    // L 5.5 nH
+    circuit_create_inductor_ideal(5.5e-9, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-
-    // L 360 nH
-    circuit_create_inductor_ideal(360e-9, &component_array[i]);
+    // C 95 fF
+    circuit_create_capacitor_ideal_parallel(95e-15, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    // C 1.5 nF
-    circuit_create_capacitor_ideal_parallel(1.5e-9, &component_array[i]);
-    circuit_component_view_init(&component_view_array[i], &component_array[i]);
-    i++;
-    */
 
     assert(i == n_comps && "update n_comps please");
 
@@ -139,12 +133,47 @@ int main(int argc, char** argv) {
         //
         // input handling
         //
-        if (component_array[selected_comp].kind == CIRCUIT_COMPONENT_RESISTOR_IDEAL) {
-            if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN)) {
-                component_array[selected_comp].as.resistor_ideal.R *= 0.5f;
+        if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN) ||
+            mui_is_key_pressed(MUI_KEY_UP) || mui_is_key_pressed_repeat(MUI_KEY_UP)) {
+            double* vptr = NULL;
+            switch(component_array[selected_comp].kind) {
+                case CIRCUIT_COMPONENT_RESISTOR_IDEAL:
+                    vptr = &component_array[selected_comp].as.resistor_ideal.R;
+                break;
+                case CIRCUIT_COMPONENT_CAPACITOR_IDEAL:
+                    vptr = &component_array[selected_comp].as.capacitor_ideal.C ;
+                break;
+                case CIRCUIT_COMPONENT_INDUCTOR_IDEAL:
+                    vptr = &component_array[selected_comp].as.inductor_ideal.L;
+                break;
+                case CIRCUIT_COMPONENT_STAGE:
+                    // dont do anything handle it later down
+                break;
+                case CIRCUIT_COMPONENT_RESISTOR_IDEAL_PARALLEL:
+                    vptr = &component_array[selected_comp].as.resistor_ideal_parallel.R;
+                break;
+                case CIRCUIT_COMPONENT_CAPACITOR_IDEAL_PARALLEL:
+                    vptr = &component_array[selected_comp].as.capacitor_ideal_parallel.C;
+                break;
+                case CIRCUIT_COMPONENT_INDUCTOR_IDEAL_PARALLEL:
+                    vptr = &component_array[selected_comp].as.inductor_ideal_parallel.L;
+                break;
+                case CIRCUIT_COMPONENT_KIND_COUNT:
+                    assert(false && "TODO: implement UP/DOWN for me");
+                break;
+                default:
+                    assert(false && "TODO: implement UP/DOWN for me (2+ cases)");
+                break;
             }
-            if (mui_is_key_pressed(MUI_KEY_UP) || mui_is_key_pressed_repeat(MUI_KEY_UP)) {
-                component_array[selected_comp].as.resistor_ideal.R *= 2;
+
+            if (vptr) {
+                if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN)) {
+                    *vptr *= 0.5f;
+                }
+
+                if (mui_is_key_pressed(MUI_KEY_UP) || mui_is_key_pressed_repeat(MUI_KEY_UP)) {
+                    *vptr *= 2;
+                }
             }
         }
 
@@ -243,7 +272,7 @@ int main(int argc, char** argv) {
         }
         // update themes
         if (disco_mode) {
-            hue_slider.value = fmodf(disco_mode_btn.last_time * 0.1f, 1.0f);
+            hue_slider.value = fmodf(disco_mode_btn.last_time * 0.2f, 1.0f);
         }
         if (hue_slider_last_value != hue_slider.value || chroma_slider_last_value != chroma_slider.value) {
             mui_init_themes(chroma_slider.value * 0.1f, hue_slider.value*360, dark_mode, NULL);
@@ -254,54 +283,68 @@ int main(int argc, char** argv) {
         Mui_Rectangle component_view_rect;
         Mui_Rectangle rest = screen_inset;
 
-        for (size_t i = 0; i < n_comps; i ++) {
-            float width = 160.0f;
-            if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
-                width = 420.0f;
-            rest = mui_cut_left(rest, width, &component_view_rect);
-            circuit_component_view_draw(&component_view_array[i], component_view_rect, selected_comp == i);
-        }
 
+        //
+        // simulation results draw
+        //
+        Mui_Rectangle bottom_place = screen_inset;
+        Mui_Rectangle simulation_plot_rect;
+        bottom_place.height *= 0.5f;
+        bottom_place.y += bottom_place.height;
         if (!todo_first_sim) {
-            Mui_Rectangle simulation_plot_rect;
-            rest = mui_cut_left(rest, 840.0f, &simulation_plot_rect);
-            simulation_plot_rect.height = 630.0f;
+            Mui_Rectangle stability_plot_rect = mui_cut_left(bottom_place, 840.0f, &simulation_plot_rect);
 
             double fmi = simulation_state.frequencies[0];
             double fma = simulation_state.frequencies[simulation_state.n_frequencies - 1];
-            double ymi = -10;
-            double yma = 10;
-            double ystep = 5;
+            double ymi = -30;
+            double yma = 60;
+            double ystep = 10;
             double fstep = 10e9;
+
+            bool should_plot_mask[4] = {true, true, true, true};
+            char* x_label = "f [GHz]";
+            char* labels[4] = {"dB(S11)", "dB(S21)", "dB(S12)", "dB(S22)"};
+            Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
+            struct Complex* s[4] = {
+                simulation_state.s11_result_plottable,
+                simulation_state.s21_result_plottable,
+                simulation_state.s12_result_plottable,
+                simulation_state.s22_result_plottable
+            };
 
             // TODO change signature
             simulation_plot_rect = gra_xy_plot_labels_and_grid(
-                "f [GHz]", "real(S)",
+                x_label, "real(S)",
                 fmi, fma, ymi, yma, fstep, ystep, true, simulation_plot_rect
             );
-            gra_xy_plot_data_points(
-                simulation_state.frequencies,
-                simulation_state.s_result.r11, NULL, simulation_state.n_frequencies,
-                fmi, fma, ymi, yma, MUI_RED, 2, simulation_plot_rect
-            );
-            gra_xy_plot_data_points(
-                simulation_state.frequencies,
-                simulation_state.s_result.r12, NULL, simulation_state.n_frequencies,
-                fmi, fma, ymi, yma, MUI_BLUE, 2, simulation_plot_rect
-            );
-            gra_xy_plot_data_points(
-                simulation_state.frequencies,
-                simulation_state.s_result.r21, NULL, simulation_state.n_frequencies,
-                fmi, fma, ymi, yma, MUI_GREEN, 2, simulation_plot_rect
-            );
+            for (size_t i = 0; i < 4; i++) {
+                gra_xy_plot_data_points(
+                    simulation_state.frequencies,
+                    s[i], dB, simulation_state.n_frequencies,
+                    fmi, fma, ymi, yma, colors[i], 2, simulation_plot_rect
+                );
+            }
+            gra_xy_legend(labels, colors, should_plot_mask, 4, simulation_plot_rect);
 
-            gra_xy_plot_data_points(
-                simulation_state.frequencies,
-                simulation_state.s_result.r22, NULL, simulation_state.n_frequencies,
-                fmi, fma, ymi, yma, MUI_YELLOW, 2, simulation_plot_rect
+            // stability
+
+            gra_xy_plot_labels_and_grid(
+                x_label, "stability factor mu, mu'", fmi, fma, ymi, yma, fstep, ystep, true, stability_plot_rect
             );
+        } else {
+            mui_label(&mui_protos_theme_g, "Press S to simulate :)", bottom_place);
+        }
 
 
+        //
+        // circuit elements draw
+        //
+        for (size_t i = 0; i < n_comps; i ++) {
+            float width = 160.0f;
+            if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
+                width = 360.0f;
+            rest = mui_cut_left(rest, width, &component_view_rect);
+            circuit_component_view_draw(&component_view_array[i], component_view_rect, selected_comp == i);
         }
 
 

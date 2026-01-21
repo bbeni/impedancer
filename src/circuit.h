@@ -104,6 +104,10 @@ struct Simulation_State {
     double *frequencies;
     struct Complex_2x2_SoA s_result;
     struct Complex_2x2_SoA t_result;
+    struct Complex* s11_result_plottable;
+    struct Complex* s12_result_plottable;
+    struct Complex* s21_result_plottable;
+    struct Complex* s22_result_plottable;
 };
 
 

@@ -924,25 +924,24 @@ void mma_temp_restore() {
 // end temp allocator
 
 
-
 //
 // electronics stuff
 //
 
 struct Mma_Complex_2x2 calc_t_from_s(struct Complex s[2][2]) {
 	struct Mma_Complex_2x2 t_out;
-    t_out.v[0][0] = mma_complex_subtract(s[0][1], mma_complex_divide_or_zero(mma_complex_mult(s[0][0], s[1][1]), s[1][0]));
-    t_out.v[0][1] = mma_complex_divide_or_zero(s[0][0], s[1][0]);
-    t_out.v[1][0] = mma_complex_divide_or_zero(mma_complex_negate(s[1][1]), s[0][1]);
-    t_out.v[1][1] = mma_complex_divide_or_zero(mma_complex(1.0, 0), s[1][0]);
+	t_out.v[0][0] = mma_complex_divide_or_zero(mma_complex(1.0, 0), s[1][0]);
+    t_out.v[0][1] = mma_complex_divide_or_zero(mma_complex_negate(s[1][1]), s[1][0]);
+	t_out.v[1][0] = mma_complex_divide_or_zero(s[0][0], s[1][0]);
+    t_out.v[1][1] = mma_complex_subtract(s[0][1], mma_complex_divide_or_zero(mma_complex_mult(s[0][0], s[1][1]), s[1][0]));
 	return t_out;
 }
 
 struct Mma_Complex_2x2 calc_s_from_t(struct Complex t[2][2]) {
 	struct Mma_Complex_2x2 s_out;
-    s_out.v[0][0] = mma_complex_divide_or_zero(t[0][1], t[1][1]);
-    s_out.v[0][1] = mma_complex_subtract(t[0][0], mma_complex_divide_or_zero(mma_complex_mult(t[0][1], t[1][0]), t[1][1]));
-    s_out.v[1][0] = mma_complex_divide_or_zero(mma_complex(1.0, 0), t[1][1]);
-    s_out.v[1][1] = mma_complex_divide_or_zero(mma_complex_negate(t[1][0]), t[1][1]);
+    s_out.v[0][0] = mma_complex_divide_or_zero(t[1][0], t[0][0]);
+    s_out.v[0][1] = mma_complex_subtract(t[1][1], mma_complex_divide_or_zero(mma_complex_mult(t[0][1], t[1][0]), t[0][0]));
+    s_out.v[1][0] = mma_complex_divide_or_zero(mma_complex(1.0, 0), t[0][0]);
+    s_out.v[1][1] = mma_complex_divide_or_zero(mma_complex_negate(t[0][1]), t[0][0]);
 	return s_out;
 }

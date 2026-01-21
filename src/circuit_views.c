@@ -307,6 +307,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
     if (mui_collapsable_section(&stage_view->collapsable_section_state_1, "Stage Settings", collabsable_area_1)) {
         Mui_Rectangle sg_r;
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
+        mui_draw_rectangle(sg_r, mui_protos_theme_g.bg_dark);
         sg_r = mui_shrink(sg_r, padding);
         mui_checkbox(&stage_view->show_no_idea_what_state, "show no idea what", sg_r);
     }
@@ -316,8 +317,12 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
     rest = mui_cut_top(rest, 36, &collabsable_area_2);
     //collabsable_area_2 = mui_cut_top(collabsable_area_2, 2, NULL);
     if (mui_collapsable_section(&stage_view->collapsable_section_state_2, "S-parameter plot", collabsable_area_2)) {
+        //
+        // s paremter plot
+        //
         Mui_Rectangle s_param_plot_area;
         rest = mui_cut_top(rest, 300, &s_param_plot_area);
+        mui_draw_rectangle(s_param_plot_area, mui_protos_theme_g.bg_dark);
 
         Mui_Rectangle slider_rect;
         s_param_plot_area = mui_cut_top(s_param_plot_area, 50, &slider_rect);
@@ -335,6 +340,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
         //
         // s parameter plot draw
         //
+        mui_draw_rectangle(s_param_plot_area, mui_protos_theme_g.bg_dark);
         Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid("frequency [Hz]", "mag(S11)", min_f, max_f, min_y, max_y, step_f, step_y, true, s_param_plot_area);
         for (int i = 0; i < 4; i++) {
             if (stage_view->mask[i]) {
@@ -355,6 +361,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
         //
         // smith chart draw
         //
+        mui_draw_rectangle(smith_plot_area, mui_protos_theme_g.bg_dark);
         draw_smith_grid(true, true, NULL, 0, smith_plot_area);
         for (int i = 0; i < 4; i++) {
             if (stage_view->mask[i]) {
@@ -364,13 +371,6 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
         if (stage_view->show_Gopt_checkbox_state.checked) {
             gra_smith_plot_data(stage_view->fs_interpolated, stage_view->zGopt_interpolated, N_INTERPOL-1, min_f, max_f, MUI_BEIGE, '-', 2, smith_plot_area);
         }
-        //
-        // Text data view
-        //
-        Mui_Rectangle text_data_view;
-        rest = mui_cut_top(rest, 440, &text_data_view);
-        mui_text_selectable(stage_view->selectable_text, &stage_view->selector_start, &stage_view->selector_end, text_data_view);
-
     }
 
     Mui_Rectangle collabsable_area_4;
@@ -378,10 +378,11 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
     //collabsable_area_4 = mui_cut_top(collabsable_area_4, 2, NULL);
     if (mui_collapsable_section(&stage_view->collapsable_section_state_4, "NFmin plot", collabsable_area_4)) {
         Mui_Rectangle noise_plot_area;
-        rest = mui_cut_top(rest, 350, &noise_plot_area);
+        rest = mui_cut_top(rest, 200, &noise_plot_area);
         //
         // noise plot draw
         //
+        mui_draw_rectangle(noise_plot_area, mui_protos_theme_g.bg_dark);
         Mui_Rectangle plot_area2 = gra_xy_plot_labels_and_grid("frequency [Hz]", "NFmin", min_f, max_f, min_nfmin, max_nfmin, step_f, step_nfmin, true, noise_plot_area);
         gra_xy_plot_data_points(stage_view->fs_interpolated, stage_view->NFmins_interpolated, NULL, N_INTERPOL, min_f, max_f, min_nfmin, max_nfmin, MUI_GREEN, 1.0f, plot_area2);
         gra_xy_plot_data_points(stage_view->noise_fs, stage_view->NFmins, NULL, stage_view->noise_length, min_f, max_f, min_nfmin, max_nfmin, MUI_BLUE, 3.0f, plot_area2);
@@ -407,6 +408,16 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
         sg_r = mui_shrink(sg_r, padding);
         mui_checkbox(&stage_view->show_Gopt_checkbox_state, "Show Gopt", sg_r);
+    }
+    Mui_Rectangle collabsable_area_6;
+    rest = mui_cut_top(rest, 36, &collabsable_area_6);
+    if (mui_collapsable_section(&stage_view->collapsable_section_state_6, "Impedances at min(f)", collabsable_area_6)) {
+        //
+        // Text data view
+        //
+        Mui_Rectangle text_data_view;
+        rest = mui_cut_top(rest, 440, &text_data_view);
+        mui_text_selectable(stage_view->selectable_text, &stage_view->selector_start, &stage_view->selector_end, text_data_view);
     }
 
 }

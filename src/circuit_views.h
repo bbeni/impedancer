@@ -29,6 +29,7 @@ struct Stage_View {
     Mui_Collapsable_Section_State collapsable_section_state_3;
     Mui_Collapsable_Section_State collapsable_section_state_4;
     Mui_Collapsable_Section_State collapsable_section_state_5;
+    Mui_Collapsable_Section_State collapsable_section_state_6;
 
     // text selection
     #define SELECTABLE_TEXT_LENGTH 8*4096
@@ -145,5 +146,10 @@ void inductor_view_draw(struct Inductor_Ideal_View* inductor_view, Mui_Rectangle
 void inductor_parallel_view_init(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, struct Circuit_Component_Inductor_Ideal_Parallel* inductor);
 void inductor_parallel_view_draw(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, Mui_Rectangle widget_area, bool is_selected);
 
+
+// utility functions
+double mag(size_t i, void* x);
+double dB_from_squared(double x);
+double dB(size_t i, void* x);
 
 #endif //CIRCUIT_VIEWS_H_

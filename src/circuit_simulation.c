@@ -287,7 +287,7 @@ bool circuit_simulation_destroy(struct Simulation_State *sim_state) {
 
 bool circuit_simulation_do(struct Simulation_State *sim_state) {
 
-    printf("simulation started with %lld components and %lld frequencies\n", sim_state->n_components, sim_state->n_frequencies);
+    printf("simulation started with %zu components and %zu frequencies\n", sim_state->n_components, sim_state->n_frequencies);
 
 
     if (sim_state->n_components < 1) {

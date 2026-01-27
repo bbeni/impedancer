@@ -9,7 +9,7 @@ bool pack_resource_c_file(const char* path, size_t index, char* data, size_t dat
     {
         FILE *out = fopen(c_path, "wb");
         if (out == NULL) {
-            sprintf("ERROR: could not open file %s for writing\n", c_path);
+            printf("ERROR: could not open file %s for writing\n", c_path);
             return false;
         }
 
@@ -42,7 +42,7 @@ bool pack_resource_accessor_header(const char* path) {
     snprintf(filename, 512 - 1, "%s/resource_accessor.h", path);
     FILE *out = fopen(filename, "wb");
     if (out == NULL) {
-        sprintf("ERROR: could not open file %s for writing\n", filename);
+        printf("ERROR: could not open file %s for writing\n", filename);
         return false;
     }
 
@@ -66,7 +66,7 @@ bool pack_resource_accessor_c_file(const char* path, size_t* size_array, char** 
     snprintf(filename, 512 - 1, "%s/resource_accessor.c", path);
     FILE *out = fopen(filename, "wb");
     if (out == NULL) {
-        sprintf("ERROR: could not open file %s for writing\n", filename);
+        printf("ERROR: could not open file %s for writing\n", filename);
         return false;
     }
 

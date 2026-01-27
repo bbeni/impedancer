@@ -22,8 +22,14 @@ void mui_update_core() {
     mui_global_time_internal = mui_get_time_now();
 }
 
+
 bool mui_load_resource_from_file(const char *file_path, size_t *out_size, void **data) {
+#ifdef RESOURCE_PACKER
+#include "resource_accessor.h"
+    return ra_access_resource_by_file_path(file_path, (char**)data, out_size);
+#else
     return uti_read_entire_file(file_path, (char**)data, out_size);
+#endif
 }
 
 

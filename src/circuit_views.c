@@ -895,7 +895,6 @@ void inductor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     float line_thickness = 3;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
-    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
 
     float upper_y = r.y + 3.0f / 16.0f * r.height;
     float lower_y = r.y + 13.0f / 16.0f * r.height;
@@ -1008,7 +1007,6 @@ void inductor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highli
     float line_thickness = 3;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
-    Mui_Vector2 center = mui_center_of_rectangle(r_inset);
 
     float upper_y = r.y + 3.0f / 16.0f * r.height;
     float lower_y = r.y + 13.0f / 16.0f * r.height;

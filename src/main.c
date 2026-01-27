@@ -313,11 +313,33 @@ int main(int argc, char** argv) {
             }
             gra_xy_legend(labels, colors, should_plot_mask, 4, simulation_plot_rect);
 
-            // stability plot TODO
+            // stability plot
 
-            gra_xy_plot_labels_and_grid(
-                x_label, "stability factor mu, mu'", fmi, fma, ymi, yma, fstep, ystep, true, stability_plot_rect
+            double mu_min = -1;
+            double mu_max = 4;
+            double mu_step = 1;
+            stability_plot_rect = gra_xy_plot_labels_and_grid(
+                x_label, "stability factor mu, mu'", fmi, fma, mu_min, mu_max, fstep, mu_step, true, stability_plot_rect
             );
+
+            gra_xy_plot_data_points(
+                simulation_state.frequencies,
+                simulation_state.stab_mu, NULL, simulation_state.n_frequencies,
+                fmi, fma, mu_min, mu_max, MUI_GREEN, 2, stability_plot_rect
+            );
+
+            gra_xy_plot_data_points(
+                simulation_state.frequencies,
+                simulation_state.stab_mu_prime, NULL, simulation_state.n_frequencies,
+                fmi, fma, mu_min, mu_max, MUI_DARKGREEN, 2, stability_plot_rect
+            );
+
+            char* mu_labels[2] = {"mu", "mu'"};
+            Mui_Color mu_colors[2] = {MUI_GREEN, MUI_DARKGREEN};
+            bool mu_mask[2] = {true, true};
+            gra_xy_legend(mu_labels, mu_colors, mu_mask, 2, stability_plot_rect);
+
+
         } else {
             mui_label(&mui_protos_theme_g, "Move LEFT-RIGHT/UP-DOWN to select/change component. Press S to simulate circuit :)", bottom_place);
         }

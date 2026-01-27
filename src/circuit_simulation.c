@@ -62,6 +62,27 @@ void calc_s_from_t_array(struct Complex_2x2_SoA *t, struct Complex_2x2_SoA *s_ou
 }
 
 
+
+void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex s21, struct Complex s22, double* mu_out, double* mu_prime_out) {
+
+    // formula https://ch.mathworks.com/help/rf/ref/stabilitymu.html
+    struct Complex det = mma_complex_subtract(mma_complex_mult(s11, s22), mma_complex_mult(s12, s21));
+    double s21s12_abs = mma_complex_absolute(mma_complex_mult(s21, s12));
+    double s11_abs_sq = mma_complex_absolute_squared(s11);
+    double s22_abs_sq = mma_complex_absolute_squared(s22);
+    double s22_m_s11_conj_det = mma_complex_absolute(
+        mma_complex_subtract(s22, mma_complex_mult(mma_complex_conjugate(s11), det))
+    );
+    double s11_m_s22_conj_det = mma_complex_absolute(
+        mma_complex_subtract(s11, mma_complex_mult(mma_complex_conjugate(s22), det))
+    );
+
+    *mu_out = (1 - s11_abs_sq) / (s22_m_s11_conj_det + s21s12_abs);
+    *mu_prime_out = (1 - s22_abs_sq) / (s11_m_s22_conj_det + s21s12_abs);
+
+}
+
+
 #define Z0 50.0
 #define OMEGA_ZERO_SNAP 1e-12
 
@@ -202,6 +223,8 @@ bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_
     sim_state->s12_result_plottable = malloc(sizeof(*sim_state->s12_result_plottable) * n_frequencies);
     sim_state->s21_result_plottable = malloc(sizeof(*sim_state->s21_result_plottable) * n_frequencies);
     sim_state->s22_result_plottable = malloc(sizeof(*sim_state->s22_result_plottable) * n_frequencies);
+    sim_state->stab_mu = malloc(sizeof(*sim_state->stab_mu) * n_frequencies);
+    sim_state->stab_mu_prime = malloc(sizeof(*sim_state->stab_mu_prime) * n_frequencies);
     sim_state->s_result.r11 = malloc(8 * sizeof(*sim_state->s_result.r11) * sim_state->n_frequencies);
     sim_state->s_result.r12 = &sim_state->s_result.r11[1 * sim_state->n_frequencies];
     sim_state->s_result.r21 = &sim_state->s_result.r11[2 * sim_state->n_frequencies];
@@ -377,7 +400,16 @@ bool circuit_simulation_do(struct Simulation_State *sim_state) {
         sim_state->s12_result_plottable[i].i = s_soa->i12[i];
         sim_state->s21_result_plottable[i].i = s_soa->i21[i];
         sim_state->s22_result_plottable[i].i = s_soa->i22[i];
+        calc_mu_and_mu_prime(
+            sim_state->s11_result_plottable[i],
+            sim_state->s12_result_plottable[i],
+            sim_state->s21_result_plottable[i],
+            sim_state->s22_result_plottable[i],
+            &sim_state->stab_mu[i],
+            &sim_state->stab_mu_prime[i]
+        );
     }
+
 
     printf("simulation finished.\n");
 
@@ -385,3 +417,5 @@ bool circuit_simulation_do(struct Simulation_State *sim_state) {
 
     return true;
 }
+
+

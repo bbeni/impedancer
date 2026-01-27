@@ -567,6 +567,21 @@ struct Complex mma_complex(double r, double i) {
 	return c;
 }
 
+struct Complex mma_complex_conjugate(struct Complex c) {
+	struct Complex c1;
+	c1.r = c.r;
+	c1.i = -c.i;
+	return c1;
+}
+
+double mma_complex_absolute(struct Complex c) {
+	return sqrt(c.r * c.r + c.i * c.i);
+}
+
+double mma_complex_absolute_squared(struct Complex c) {
+	return c.r * c.r + c.i * c.i;
+}
+
 struct Complex mma_complex_negate(struct Complex c1) {
 	struct Complex c2;
 	c2.r = -c1.r;

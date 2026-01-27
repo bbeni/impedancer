@@ -42,6 +42,9 @@ struct Complex {
 extern const struct Mat4f mat4f_unit;
 
 struct Complex mma_complex(double r, double i);
+struct Complex mma_complex_conjugate(struct Complex c);
+double mma_complex_absolute(struct Complex c);
+double mma_complex_absolute_squared(struct Complex c);
 struct Complex mma_complex_negate(struct Complex c1);
 struct Complex mma_complex_mult(struct Complex a, struct Complex b);
 struct Complex mma_complex_divide_or_zero(struct Complex a, struct Complex b);

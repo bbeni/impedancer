@@ -104,15 +104,19 @@ struct Simulation_State {
     double *frequencies;
     struct Complex_2x2_SoA s_result;
     struct Complex_2x2_SoA t_result;
+    // plottable / derived results
     struct Complex* s11_result_plottable;
     struct Complex* s12_result_plottable;
     struct Complex* s21_result_plottable;
     struct Complex* s22_result_plottable;
+    double* stab_mu;
+    double* stab_mu_prime;
 };
 
 
 void calc_s_from_t_array(struct Complex_2x2_SoA *t, struct Complex_2x2_SoA *s_out, size_t length);
 void calc_t_from_s_array(struct Complex_2x2_SoA *s, struct Complex_2x2_SoA *t_out, size_t length);
+void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex s21, struct Complex s22, double* mu_out, double* mu_prime_out);
 
 bool simulation_interpolate_sparams_circuit_component(struct Circuit_Component *component, double *frequencies, struct Complex_2x2_SoA *s_out, size_t n_frequencies);
 bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state);

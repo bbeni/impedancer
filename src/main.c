@@ -128,8 +128,9 @@ int main(int argc, char** argv) {
         h = mui_screen_height();
 
         //
-        // input handling
+        // input handling and simulation
         //
+        // change setting values of components (stage excluded)
         if (mui_is_key_pressed(MUI_KEY_DOWN) || mui_is_key_pressed_repeat(MUI_KEY_DOWN) ||
             mui_is_key_pressed(MUI_KEY_UP) || mui_is_key_pressed_repeat(MUI_KEY_UP)) {
             double* vptr = NULL;
@@ -174,7 +175,7 @@ int main(int argc, char** argv) {
             }
         }
 
-
+        // change setting values of stage
         if (component_array[selected_comp].kind == CIRCUIT_COMPONENT_STAGE) {
             struct Stage_View* stage_view = &(component_view_array[selected_comp].as.stage_view);
             size_t selected_before = stage_view->active_setting;
@@ -190,7 +191,6 @@ int main(int argc, char** argv) {
                 stage_view_update_active_setting(stage_view, active_setting);
             }
 
-
             if (mui_is_key_down(MUI_KEY_LEFT_CONTROL) || mui_is_key_down(MUI_KEY_RIGHT_CONTROL)) {
                 if (mui_is_key_pressed(MUI_KEY_C)) {
                     if (stage_view->selector_start < stage_view->selector_end) {
@@ -202,15 +202,18 @@ int main(int argc, char** argv) {
 
         }
 
+        // select component
         if (mui_is_key_pressed(MUI_KEY_RIGHT) || mui_is_key_pressed_repeat(MUI_KEY_RIGHT)) {
             selected_comp = (selected_comp + 1) % n_comps;
         }
 
+        // select component
         if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
             if (selected_comp == 0) selected_comp = n_comps;
             selected_comp = (selected_comp - 1) % n_comps;
         }
 
+        // simulate
         if (mui_is_key_pressed(MUI_KEY_S)) {
             if (!todo_first_sim) circuit_simulation_destroy(&simulation_state);
             circuit_simulation_setup(component_array, n_comps, &simulation_state);
@@ -218,11 +221,6 @@ int main(int argc, char** argv) {
 
             if (todo_first_sim) todo_first_sim = false;
         }
-
-        //
-        // data loading
-        //
-
 
         //
         // drawing
@@ -314,7 +312,6 @@ int main(int argc, char** argv) {
             gra_xy_legend(labels, colors, should_plot_mask, 4, simulation_plot_rect);
 
             // stability plot
-
             double mu_min = -1;
             double mu_max = 4;
             double mu_step = 1;
@@ -341,7 +338,7 @@ int main(int argc, char** argv) {
 
 
         } else {
-            mui_label(&mui_protos_theme_g, "Move LEFT-RIGHT/UP-DOWN to select/change component. Press S to simulate circuit :)", bottom_place);
+            mui_label(&mui_protos_theme_g, "Move LEFT-RIGHT/UP-DOWN to select/change component. Press S to simulate circuit :)", MUI_TEXT_ALIGN_CENTER, bottom_place);
         }
 
 

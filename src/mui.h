@@ -61,10 +61,12 @@ typedef struct {
     Mui_Color primary_dark;
 
     float font_size;
+    float font_small_size;
     float label_text_size;
     float textinput_text_size;
 
     struct Mui_Font *font;
+    struct Mui_Font *font_small;
     struct Mui_Font *label_font;
     struct Mui_Font *textinput_font;
 
@@ -162,6 +164,8 @@ Mui_Slider_State mui_slider_state();
 Mui_Collapsable_Section_State mui_collapsable_state();
 Mui_Textinput_State mui_textinput_state();
 
+
+
 //
 // mui.h utility API
 //
@@ -179,6 +183,16 @@ void mui_grid_22(Mui_Rectangle r, float factor_x, float factor_y, Mui_Rectangle 
 bool mui_is_inside_rectangle(Mui_Vector2, Mui_Rectangle);
 void mui_center_rectangle_inside_rectangle(Mui_Rectangle* inner, Mui_Rectangle outer);
 
+typedef enum {
+    MUI_TEXT_ALIGN_DEFAULT = 0x0,
+    MUI_TEXT_ALIGN_LEFT = 0x1,
+    MUI_TEXT_ALIGN_CENTER = 0x2,
+    MUI_TEXT_ALIGN_RIGHT = 0x4,
+    MUI_TEXT_ALIGN_TOP = 0x8,
+    MUI_TEXT_ALIGN_MID = 0x10,
+    MUI_TEXT_ALIGN_BOTTOM = 0x20,
+} MUI_TEXT_ALIGN_FLAGS;
+
 //
 // mui elements API
 //
@@ -187,13 +201,15 @@ bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme);
 // returns the rest of the space left ( to the left or right ) as a rectangle
 Mui_Rectangle mui_window_decoration(float height, bool window_movable, bool closeable, bool minimizable, bool maximizable, bool to_the_right, Mui_Rectangle window_rect);
 bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place);
-void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place);
-void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place);
+bool mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place);
+void mui_label(Mui_Theme *theme, char *text, MUI_TEXT_ALIGN_FLAGS text_align_flags, Mui_Rectangle place);
 float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle place);
 void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle place);
 void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *hint, Mui_Rectangle place);
 void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_Rectangle place);
 bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, Mui_Rectangle place);
+bool mui_n_status_button(Mui_Button_State *state, const char* text, const Mui_Color* status_colors_array, int status_count, int status, Mui_Rectangle place);
+void mui_n_status_label(Mui_Theme* theme, const char* text, const Mui_Color* status_colors_array, int status_count, int status, MUI_TEXT_ALIGN_FLAGS text_align_flags, Mui_Rectangle place);
 
 //
 // window API platform
@@ -227,7 +243,6 @@ void mui_window_set_position(int x, int y);
 void mui_window_set_size(int width, int height);
 
 
-
 void mui_clear_background(Mui_Color color, Mui_Image* image);
 void mui_begin_drawing();
 void mui_end_drawing();
@@ -236,6 +251,7 @@ void mui_close_window();
 size_t mui_text_len(const char* text, size_t size);
 
 double mui_get_time();
+double mui_previous_time();
 void mui_update_core();
 
 //
@@ -264,6 +280,7 @@ void mui_draw_rectangle_rounded_lines(Mui_Rectangle rect, float corner_radius, M
 Mui_Vector2 mui_measure_text(struct Mui_Font* font, const char *text, float font_size, float spacing, size_t start, size_t end);
 struct Mui_Font *mui_load_font_ttf(void* ttf_data, int ttf_data_size, float font_size);
 void mui_draw_text_line(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, size_t start, size_t end);
+void mui_draw_text_line_angle(struct Mui_Font* font, Mui_Vector2 pos, float letter_space, float letter_size, const char* text, Mui_Color color, size_t start, size_t end, float angle);
 
 #define MUI_LIGHTGRAY  (Mui_Color){ 200, 200, 200, 255 }   // Light Gray
 #define MUI_GRAY       (Mui_Color){ 130, 130, 130, 255 }   // Gray

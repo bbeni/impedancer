@@ -61,8 +61,6 @@ void calc_s_from_t_array(struct Complex_2x2_SoA *t, struct Complex_2x2_SoA *s_ou
     }
 }
 
-
-
 void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex s21, struct Complex s22, double* mu_out, double* mu_prime_out) {
 
     // formula https://ch.mathworks.com/help/rf/ref/stabilitymu.html
@@ -81,7 +79,6 @@ void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex
     *mu_prime_out = (1 - s22_abs_sq) / (s11_m_s22_conj_det + s21s12_abs);
 
 }
-
 
 #define Z0 50.0
 #define OMEGA_ZERO_SNAP 1e-12

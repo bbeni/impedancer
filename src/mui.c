@@ -12,14 +12,26 @@
 
 
 // globals need to be updated by calling mui_update_input()
-float mui_global_time_internal = 0.0f;
-Mui_Vector2 mui_global_mouse_position_internal = {0};
+float _internal_global_time = 0.0f;
+float _internal_global_previous_time = -0.001f;
+Mui_Vector2 _internal_global_mouse_position = {0};
 
-double mui_get_time() {return mui_global_time_internal;}
-Mui_Vector2 mui_get_mouse_position() {return mui_global_mouse_position_internal;}
+double mui_get_time() {
+    return _internal_global_time;
+}
+
+double mui_previous_time() {
+    return _internal_global_previous_time;
+}
+
+Mui_Vector2 mui_get_mouse_position() {
+    return _internal_global_mouse_position;
+}
+
 void mui_update_core() {
-    mui_global_mouse_position_internal = mui_get_mouse_position_now();
-    mui_global_time_internal = mui_get_time_now();
+    _internal_global_previous_time = _internal_global_time;
+    _internal_global_time = mui_get_time_now();
+    _internal_global_mouse_position = mui_get_mouse_position_now();
 }
 
 
@@ -52,20 +64,23 @@ bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme) {
     }
 
     mui_font_catalog_g[mui_font_catalog_length_g    ] = mui_load_font_ttf(data, size, theme->font_size);
-    mui_font_catalog_g[mui_font_catalog_length_g + 1] = mui_load_font_ttf(data, size, theme->label_text_size);
-    mui_font_catalog_g[mui_font_catalog_length_g + 2] = mui_load_font_ttf(data, size, theme->textinput_text_size);
-    theme->font = mui_font_catalog_g[mui_font_catalog_length_g];
-    theme->label_font = mui_font_catalog_g[mui_font_catalog_length_g + 1];
-    theme->textinput_font = mui_font_catalog_g[mui_font_catalog_length_g + 2];
-    mui_font_catalog_length_g += 3;
+    mui_font_catalog_g[mui_font_catalog_length_g + 1] = mui_load_font_ttf(data, size, theme->font_small_size);
+    mui_font_catalog_g[mui_font_catalog_length_g + 2] = mui_load_font_ttf(data, size, theme->label_text_size);
+    mui_font_catalog_g[mui_font_catalog_length_g + 3] = mui_load_font_ttf(data, size, theme->textinput_text_size);
+    theme->font =           mui_font_catalog_g[mui_font_catalog_length_g];
+    theme->font_small =     mui_font_catalog_g[mui_font_catalog_length_g + 1];
+    theme->label_font =     mui_font_catalog_g[mui_font_catalog_length_g + 2];
+    theme->textinput_font = mui_font_catalog_g[mui_font_catalog_length_g + 3];
+    mui_font_catalog_length_g += 4;
 
     return true;
 }
 
 void mui_load_latest_fonts_for_theme(Mui_Theme *theme) {
-    assert(mui_font_catalog_length_g >= 3);
-    theme->font = mui_font_catalog_g[mui_font_catalog_length_g - 3];
-    theme->label_font = mui_font_catalog_g[mui_font_catalog_length_g - 2];
+    assert(mui_font_catalog_length_g >= 4);
+    theme->font =           mui_font_catalog_g[mui_font_catalog_length_g - 4];
+    theme->font_small =     mui_font_catalog_g[mui_font_catalog_length_g - 3];
+    theme->label_font =     mui_font_catalog_g[mui_font_catalog_length_g - 2];
     theme->textinput_font = mui_font_catalog_g[mui_font_catalog_length_g - 1];
 }
 
@@ -214,6 +229,7 @@ Mui_Theme mui_protos_theme_dark_generate(float bg_hue, float bg_chroma) {
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,
+        .font_small_size = 20.0f,
         .label_text_size = 32.0f,
         .textinput_text_size = 32.0f,
 
@@ -243,6 +259,7 @@ Mui_Theme mui_protos_theme_light_generate(float bg_hue, float bg_chroma) {
 
         .border_thickness = 2.0f,
         .font_size = 32.0f,
+        .font_small_size = 20.0f,
         .label_text_size = 32.0f,
         .textinput_text_size = 32.0f,
 
@@ -604,19 +621,39 @@ Mui_Rectangle mui_window_decoration(float height, bool movable, bool closeable, 
     return ret_val;
 }
 
-void mui_label(Mui_Theme *theme, char *text, Mui_Rectangle place) {
+Mui_Vector2 _internal_get_text_draw_position_by_align(MUI_TEXT_ALIGN_FLAGS text_align_flags, Mui_Vector2 text_measure, Mui_Rectangle place) {
+
+    Mui_Vector2 position;
+    position.x = place.x;
+    position.y = place.y;
+
+    if (text_align_flags == MUI_TEXT_ALIGN_DEFAULT) {
+        text_align_flags = MUI_TEXT_ALIGN_LEFT | MUI_TEXT_ALIGN_MID;
+    }
+
+    if (text_align_flags & MUI_TEXT_ALIGN_LEFT) position.x += text_measure.y * 0.25f;
+    else if (text_align_flags & MUI_TEXT_ALIGN_CENTER) position.x += (place.width - text_measure.x) * 0.5f;
+    else if (text_align_flags & MUI_TEXT_ALIGN_RIGHT) position.x += (place.width - text_measure.x) - text_measure.y * 0.25f;
+
+    if (text_align_flags & MUI_TEXT_ALIGN_TOP) {}
+    else if (text_align_flags & MUI_TEXT_ALIGN_MID) position.y += (place.height - text_measure.y) * 0.5f;
+    else if (text_align_flags & MUI_TEXT_ALIGN_BOTTOM) position.y += (place.height - text_measure.y);
+    else position.y += (place.height - text_measure.y) * 0.5f; // defualt mid
+
+    return position;
+}
+
+void mui_label(Mui_Theme *theme, char *text, MUI_TEXT_ALIGN_FLAGS text_align_flags, Mui_Rectangle place) {
     if (theme == NULL) {
         theme = &mui_protos_theme_g;
     }
 
-    mui_draw_rectangle_rounded(place, theme->corner_radius, theme->bg);
-
-    Mui_Vector2 position;
-    position.x = place.x + 20;
-    position.y = place.y + place.height / 2 - theme->label_text_size / 2;
+    //mui_draw_rectangle_rounded(place, theme->corner_radius, theme->bg);
 
     int l = mui_text_len(text, strlen(text));
-    mui_draw_text_line(theme->label_font, position, 0.1, theme->label_text_size, text, theme->text, 0, l);
+    Mui_Vector2 text_measure = mui_measure_text(theme->font, text, theme->label_text_size, 0.0f, 0, l);
+    Mui_Vector2 position = _internal_get_text_draw_position_by_align(text_align_flags, text_measure, place);
+    mui_draw_text_line(theme->label_font, position, 0.0f, theme->label_text_size, text, theme->text, 0, l);
 }
 
 bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, Mui_Rectangle place) {
@@ -669,7 +706,9 @@ bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, M
     return state->open;
 }
 
-void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place) {
+bool mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place) {
+
+    bool clicked = false;
 
     Mui_Theme *theme = state->theme;
     if (theme == NULL) theme = &mui_protos_theme_g;
@@ -681,6 +720,7 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
     if (mui_is_inside_rectangle(mui_get_mouse_position(), place)) {
         if (mui_is_mouse_button_pressed(0)) {
             state->checked = !state->checked;
+            clicked = true;
         }
         mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
     } else {
@@ -711,6 +751,8 @@ void mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle pla
     position.y = place.y + place.height / 2 - theme->font_size / 2;
     size_t l = mui_text_len(text, strlen(text));
     mui_draw_text_line(theme->font, position, 0, theme->font_size, text, text_color, 0, l);
+
+    return clicked;
 }
 
 float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle place) {
@@ -737,7 +779,7 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
     if (state->grabbed) {
 
         float s;
-        if (vertical) s = fmin(fmax(0.0f, (mpos.y - place.y) / place.height), 1.0f);
+        if (vertical) s = 1.0f - fmin(fmax(0.0f, (mpos.y - place.y) / place.height), 1.0f);
         else          s = fmin(fmax(0.0f, (mpos.x - place.x) / place.width), 1.0f);
         state->value = s;
         mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
@@ -781,7 +823,7 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
 
         Mui_Rectangle wagon;
         wagon.x = place.x + 0.5f * place.width - 0.5f * theme->slider_wagon_height;
-        wagon.y = state->value * w + place.y;
+        wagon.y = (1.0f - state->value) * w + place.y;
         wagon.width = theme->slider_wagon_height;
         wagon.height = theme->slider_wagon_width;
 
@@ -827,14 +869,85 @@ bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place) 
 
     Mui_Color text_color = mui_interpolate_color(theme->text, theme->primary, state->hover_t);
 
-    float offset = theme->font_size / 4;
-    Mui_Vector2 position;
-    position.x = place.x + offset;
-    position.y = place.y + place.height / 2 - theme->font_size / 2;
     size_t l = mui_text_len(text, strlen(text));
+    Mui_Vector2 text_meaurement = mui_measure_text(theme->label_font, text, theme->font_size, 0.1f, 0, l);
+    Mui_Vector2 position;
+    position.x = place.x +  (place.width - text_meaurement.x) * 0.5f;
+    position.y = place.y + place.height / 2 - theme->font_size / 2;
     mui_draw_text_line(theme->label_font, position, 0, theme->font_size, text, text_color, 0, l);
     return returnstate;
 }
+
+
+bool mui_n_status_button(Mui_Button_State *state, const char* text, const Mui_Color* status_colors_array, int status_count, int status, Mui_Rectangle place) {
+
+    assert(status < status_count);
+    assert(status >= 0);
+
+    Mui_Theme *theme = state->theme;
+    if (theme == NULL) {
+        theme = &mui_protos_theme_g;
+    }
+
+    // Update the time
+    float dt = mui_get_time() - state->last_time;
+    state->last_time = mui_get_time();
+
+    bool returnstate = false;
+
+    if (mui_is_inside_rectangle(mui_get_mouse_position(), place)) {
+        if (mui_is_mouse_button_pressed(0)) {
+            returnstate = true;
+        }
+        mui_move_towards(&(state->hover_t), 1, theme->animation_speed_to_hover, dt);
+    } else {
+        mui_move_towards(&(state->hover_t), 0, theme->animation_speed_to_normal, dt);
+    }
+
+    Mui_Color bg;
+
+    bg = mui_interpolate_color(theme->bg, theme->primary_dark, state->hover_t);
+    bg = status_colors_array[status];
+
+    float outline_thickness = 2.0f;
+
+    mui_draw_rectangle_rounded(place, theme->corner_radius - 0.25f * theme->corner_radius, bg);
+    mui_draw_rectangle_rounded_lines(mui_shrink(place, outline_thickness), theme->corner_radius, theme->border, outline_thickness);
+
+
+    Mui_Color text_color = mui_interpolate_color(theme->text, theme->primary, state->hover_t);
+
+    size_t l = mui_text_len(text, strlen(text));
+    Mui_Vector2 text_meaurement = mui_measure_text(theme->label_font, text, theme->font_size, 0.1f, 0, l);
+    Mui_Vector2 position;
+    position.x = place.x +  (place.width - text_meaurement.x) * 0.5f;
+    position.y = place.y + place.height / 2 - theme->font_size / 2;
+    mui_draw_text_line(theme->label_font, position, 0, theme->font_size, text, text_color, 0, l);
+    return returnstate;
+
+}
+
+
+void mui_n_status_label(Mui_Theme* theme, const char* text, const Mui_Color* status_colors_array, int status_count, int status, MUI_TEXT_ALIGN_FLAGS text_align_flags, Mui_Rectangle place) {
+
+    assert(status < status_count);
+    assert(status >= 0);
+
+    Mui_Color text_color = theme->text;
+    Mui_Color bg = status_colors_array[status];
+    float outline_thickness = 2.0f;
+
+    mui_draw_rectangle_rounded(place, theme->corner_radius - 0.25f * theme->corner_radius, bg);
+    mui_draw_rectangle_rounded_lines(mui_shrink(place, outline_thickness), theme->corner_radius, theme->border, outline_thickness);
+
+    size_t l = mui_text_len(text, strlen(text));
+    Mui_Vector2 text_measure = mui_measure_text(theme->font, text, theme->label_text_size, 0.1f, 0, l);
+    Mui_Vector2 position = _internal_get_text_draw_position_by_align(text_align_flags, text_measure, place);
+
+    mui_draw_text_line(theme->label_font, position, 0, theme->font_size, text, text_color, 0, l);
+
+}
+
 
 /*
 void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *hint, Mui_Rectangle place) {

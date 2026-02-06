@@ -21,7 +21,7 @@ struct Stage_View {
     Mui_Checkbox_State show_s12_checkbox_state;
     Mui_Checkbox_State show_s22_checkbox_state;
     Mui_Checkbox_State show_Gopt_checkbox_state;
-    Mui_Checkbox_State show_no_idea_what_state;
+    Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Slider_State slider_state_1;
     Mui_Slider_State slider_state_2;
     Mui_Collapsable_Section_State collapsable_section_state_1;
@@ -72,31 +72,37 @@ struct Stage_View {
 
 struct Resistor_Ideal_View {
     struct Circuit_Component_Resistor_Ideal *resistor;
+    Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
 };
 
 struct Resistor_Ideal_Parallel_View {
     struct Circuit_Component_Resistor_Ideal_Parallel *resistor;
+    Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
 };
 
 struct Capacitor_Ideal_View {
     struct Circuit_Component_Capacitor_Ideal *capacitor;
+    Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
 };
 
 struct Capacitor_Ideal_Parallel_View {
     struct Circuit_Component_Capacitor_Ideal_Parallel *capacitor;
+    Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
 };
 
 struct Inductor_Ideal_View {
     struct Circuit_Component_Inductor_Ideal *inductor;
+    Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
 };
 
 struct Inductor_Ideal_Parallel_View {
     struct Circuit_Component_Inductor_Ideal_Parallel *inductor;
+    Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
 };
 

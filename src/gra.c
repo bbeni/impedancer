@@ -229,7 +229,7 @@ void _gridded_draw_tick_labels(Mui_Rectangle plot_area,
     float y = y_a + off_y;
     int count_y = (y_b - y_a) / step_y + 1;
     for (int i = 0; i < count_y && y <= y_b; i++) {
-        snprintf(buffer, 24, fmt_y, y_bot - i * (y_bot - y_top) / (count_y - 1));
+        snprintf(buffer, 24, fmt_y, y_top - i * (y_top - y_bot) / (count_y - 1));
         size_t l = mui_text_len(buffer, strlen(buffer));
         Mui_Vector2 text_measure = mui_measure_text(mui_protos_theme_g.font_small, buffer, mui_protos_theme_g.font_small_size, 0.0f, 0, l);
         Mui_Vector2 pos;
@@ -280,8 +280,7 @@ Mui_Rectangle gra_gridded_xy_base(struct Gra_Gridded_Base_Arguments* args, Mui_R
         Mui_Vector2 measure = mui_measure_text(font, args->y_label, font_size, 0.0f, 0, l);
         // TODO: mui: refactor so that both functions start with the common arguments
         Mui_Vector2 pos = mui_center_of_rectangle(y_axis_rect);
-        pos.x -= measure.x * 0.5f;
-        pos.y -= measure.y * 0.5f;
+        pos.x -= y_axis_rect.width * 0.5f - measure.y * 0.5f;
         mui_draw_text_line_angle(font, pos, 0.0f, font_size, args->y_label, _color_border(), 0, l, -90.0f);
     }
 

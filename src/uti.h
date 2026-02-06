@@ -7,6 +7,9 @@
 #include "stdbool.h"
 #include "stddef.h"
 
+// render 0.0001 -> 100u etc.
+void uti_render_postfix_number(char* buffer, const size_t max_char_count, double number);
+
 // allocate space for file content + \0 terminator and read into it. out size is without \0 terminator.
 bool uti_read_entire_file(const char *path, char** content, size_t* out_size);
 bool uti_read_entire_dir(const char *parent_dir, char*** children, size_t *children_count);

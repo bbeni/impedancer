@@ -14,6 +14,31 @@
 #include "uti.h"
 
 
+void uti_render_postfix_number(char* buffer, const size_t max_char_count, double number) {
+    if (number < 1e-12) {
+        snprintf(buffer, max_char_count, "%.2ff", number * 1e15);
+    } else if (number < 1e-9) {
+        snprintf(buffer, max_char_count, "%.2fp", number * 1e12);
+    } else if (number < 1e-6) {
+        snprintf(buffer, max_char_count, "%.2fn", number * 1e9);
+    } else if (number < 1e-3) {
+        snprintf(buffer, max_char_count, "%.2fu", number * 1e6);
+    } else if (number < 1e0) {
+        snprintf(buffer, max_char_count, "%.2fm", number * 1e3);
+    } else if (number < 1e3) {
+        snprintf(buffer, max_char_count, "%.2f", number * 1e0);
+    } else if (number < 1e6) {
+        snprintf(buffer, max_char_count, "%.2fk", number * 1e-3);
+    } else if (number < 1e9) {
+        snprintf(buffer, max_char_count, "%.2fM", number * 1e-6);
+    } else if (number < 1e12) {
+        snprintf(buffer, max_char_count, "%.2fG", number * 1e-9);
+    } else {
+        snprintf(buffer, max_char_count, "%.2fT", number * 1e-12);
+    }
+}
+
+
 #ifdef _WIN32
 
 // noisy header -> disable warnings

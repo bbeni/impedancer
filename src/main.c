@@ -47,10 +47,11 @@ int main(int argc, char** argv) {
     //if(!parse_s2p_files(&infos, true) != 0)
     //    return 1;
 
+    int grid_pixels = 40;
 
     int w, h;
     w = 1900;
-    h = 1100;
+    h = 1120;
 
     mui_open_window(w, h, 10, 10, "Impedancer (s2p stats for impedance matching) - by bbeni", 1.0f, MUI_WINDOW_RESIZEABLE | MUI_WINDOW_UNDECORATED, NULL);
     mui_init_themes(0, 0, true, "resources/font/NimbusSans-Regular.ttf");
@@ -69,6 +70,7 @@ int main(int argc, char** argv) {
     // R 35k Ohm parallel
     circuit_create_resistor_ideal_parallel(35e3, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    component_view_array[i].as.resistor_ideal_parallel_view.collapsable_section_1.open = true;
     i++;
 
     // C 120 pF
@@ -277,17 +279,17 @@ int main(int argc, char** argv) {
         bottom_place.height *= 0.5f;
         bottom_place.y += bottom_place.height;
         if (!todo_first_sim) {
-            Mui_Rectangle stability_plot_rect = mui_cut_left(bottom_place, 840.0f, &simulation_plot_rect);
 
             double fmi = simulation_state.frequencies[0];
             double fma = simulation_state.frequencies[simulation_state.n_frequencies - 1];
             double ymi = -30;
-            double yma = 50;
+            double yma = 60;
             double ystep = 10;
             double fstep = 10e9;
 
             bool should_plot_mask[4] = {true, true, true, true};
-            char* x_label = "f [10 GHz steps]";
+            char* x_label = "f [Hz]";
+            char* y_label = "dB(S)";
             char* labels[4] = {"dB(S11)", "dB(S21)", "dB(S12)", "dB(S22)"};
             Mui_Color colors[4] = {MUI_RED, MUI_ORANGE, MUI_GREEN, MUI_BLUE};
             struct Complex* s[4] = {
@@ -297,11 +299,33 @@ int main(int argc, char** argv) {
                 simulation_state.s22_result_plottable
             };
 
-            // TODO change signature
-            simulation_plot_rect = gra_xy_plot_labels_and_grid(
-                x_label, "real(S)",
-                fmi, fma, ymi, yma, fstep, ystep, true, simulation_plot_rect
-            );
+            // TODO: gra: change signature
+            //simulation_plot_rect = gra_xy_plot_labels_and_grid(
+            //    x_label, "real(S)",
+            //    fmi, fma, ymi, yma, fstep, ystep, true, simulation_plot_rect
+            //);
+
+            struct Gra_Gridded_Base_Arguments sim_plot_args;
+            sim_plot_args.grid_unit_pixels = grid_pixels;
+            sim_plot_args.grid_w = 22;
+            sim_plot_args.grid_h = 14;
+            sim_plot_args.grid_left_axis_off = 2;
+            sim_plot_args.grid_bot_axis_off = 2;
+            sim_plot_args.grid_skip_x = 3;
+            sim_plot_args.grid_skip_y = 3;
+            sim_plot_args.x_left = fmi;
+            sim_plot_args.x_right = fma;
+            sim_plot_args.y_bot = ymi;
+            sim_plot_args.y_top = yma;
+            sim_plot_args.x_label = x_label;
+            sim_plot_args.y_label = y_label;
+            sim_plot_args.thick_y_zero = true;
+            sim_plot_args.tick_x_label_fmt = "%.0f";
+            sim_plot_args.tick_y_label_fmt = "%.0f";
+
+            Mui_Rectangle stability_plot_rect = mui_cut_left(bottom_place, (sim_plot_args.grid_w + 1) * grid_pixels, &simulation_plot_rect);
+            simulation_plot_rect = gra_gridded_xy_base(&sim_plot_args, simulation_plot_rect);
+
             for (size_t i = 0; i < 4; i++) {
                 gra_xy_plot_data_points(
                     simulation_state.frequencies,
@@ -313,11 +337,28 @@ int main(int argc, char** argv) {
 
             // stability plot
             double mu_min = -1;
-            double mu_max = 4;
-            double mu_step = 1;
-            stability_plot_rect = gra_xy_plot_labels_and_grid(
-                x_label, "stability factor mu, mu'", fmi, fma, mu_min, mu_max, fstep, mu_step, true, stability_plot_rect
-            );
+            double mu_max = 5;
+
+
+            struct Gra_Gridded_Base_Arguments stability_plot_args;
+            stability_plot_args.grid_unit_pixels = grid_pixels;
+            stability_plot_args.grid_w = 22;
+            stability_plot_args.grid_h = 14;
+            stability_plot_args.grid_left_axis_off = 2;
+            stability_plot_args.grid_bot_axis_off = 2;
+            stability_plot_args.grid_skip_x = 3;
+            stability_plot_args.grid_skip_y = 0;
+            stability_plot_args.x_left = fmi;
+            stability_plot_args.x_right = fma;
+            stability_plot_args.y_bot = mu_min;
+            stability_plot_args.y_top = mu_max;
+            stability_plot_args.x_label = "f [Hz]";
+            stability_plot_args.y_label = "Stabilty Factor mu, mu'";
+            stability_plot_args.thick_y_zero = true;
+            stability_plot_args.tick_x_label_fmt = "%.0f";
+            stability_plot_args.tick_y_label_fmt = "%.1f";
+
+            stability_plot_rect = gra_gridded_xy_base(&stability_plot_args, stability_plot_rect);
 
             gra_xy_plot_data_points(
                 simulation_state.frequencies,

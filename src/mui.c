@@ -231,7 +231,7 @@ Mui_Theme mui_protos_theme_dark_generate(float bg_hue, float bg_chroma) {
         .font_size = 32.0f,
         .font_small_size = 20.0f,
         .label_text_size = 32.0f,
-        .textinput_text_size = 32.0f,
+        .textinput_text_size = 24.0f,
 
         .slider_thickness = 8.0f,
         .slider_wagon_width = 32.0f,
@@ -261,7 +261,7 @@ Mui_Theme mui_protos_theme_light_generate(float bg_hue, float bg_chroma) {
         .font_size = 32.0f,
         .font_small_size = 20.0f,
         .label_text_size = 32.0f,
-        .textinput_text_size = 32.0f,
+        .textinput_text_size = 24.0f,
 
         .slider_thickness = 8.0f,
         .slider_wagon_width = 32.0f,
@@ -1123,7 +1123,7 @@ void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_R
 
     size_t total_length = strlen(text);
     mui_draw_rectangle(place, theme->bg_light);
-    place = mui_shrink(place, 2.0f * 2);
+    place = mui_shrink(place, ceil(font_size / 6));
 
     //
     // segent into text lines
@@ -1190,7 +1190,7 @@ void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_R
 
     // clamp selectors
     *selector1 = max(*selector1, 0);
-    *selector2 = min(*selector2, total_length-1);
+    *selector2 = min(*selector2, total_length);
 
     //
     // find stuff about selections

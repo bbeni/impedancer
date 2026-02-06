@@ -478,15 +478,8 @@ void resistor_view_settings_draw(struct Resistor_Ideal_View* resistor_view, Mui_
 
     double r = resistor_view->resistor->R;
     char rendered_resistance[40];
-    if (r < 1000) {
-        snprintf(rendered_resistance, 40, "%.2f", r);
-    } else if (r < 1e6) {
-        snprintf(rendered_resistance, 40, "%.2fk", r/1000);
-    } else if (r < 1e9) {
-        snprintf(rendered_resistance, 40, "%.2fM", r/1e6);
-    } else {
-        snprintf(rendered_resistance, 40, "%.2fG", r/1e9);
-    }
+    uti_render_postfix_number(rendered_resistance, 40, r);
+
 
     // top left
     const char text[] = " R ";
@@ -592,15 +585,7 @@ void resistor_parallel_view_settings_draw(struct Resistor_Ideal_Parallel_View* r
 
     double r = resistor_parallel_view->resistor->R;
     char rendered_resistance[40];
-    if (r < 1000) {
-        snprintf(rendered_resistance, 40, "%.2f", r);
-    } else if (r < 1e6) {
-        snprintf(rendered_resistance, 40, "%.2fk", r/1000);
-    } else if (r < 1e9) {
-        snprintf(rendered_resistance, 40, "%.2fM", r/1e6);
-    } else {
-        snprintf(rendered_resistance, 40, "%.2fG", r/1e9);
-    }
+    uti_render_postfix_number(rendered_resistance, 40, r);
 
     // top left
     const char text[] = " R ";
@@ -640,9 +625,15 @@ void resistor_parallel_view_draw(struct Resistor_Ideal_Parallel_View* resistor_p
     //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
     if (mui_collapsable_section(&resistor_parallel_view->collapsable_section_1, "R Parallel", collabsable_area_1)) {
         Mui_Rectangle sg_r;
-        rest = mui_cut_top(rest, checkbox_s, &sg_r);
+        rest = mui_cut_top(rest, 42, &sg_r);
         sg_r = mui_shrink(sg_r, padding);
         mui_draw_rectangle(sg_r, MUI_RED);
+
+        size_t a = 0, b = 1;
+        char r_text[10];
+        uti_render_postfix_number(r_text, 10, resistor_parallel_view->resistor->R);
+        mui_text_selectable(r_text, &a, &b, sg_r);
+
     }
 
 }
@@ -696,17 +687,7 @@ void capacitor_view_settings_draw(struct Capacitor_Ideal_View* capacitor_view, M
 
     double c = capacitor_view->capacitor->C;
     char rendered_capacitance[40];
-    if (c < 1e-12) {
-        snprintf(rendered_capacitance, 40, "%.2ff", c * 1e15);
-    } else if (c < 1e-9) {
-        snprintf(rendered_capacitance, 40, "%.2fp", c * 1e12);
-    } else if (c < 1e-6) {
-        snprintf(rendered_capacitance, 40, "%.2fn", c * 1e9);
-    } else if (c < 1e-3) {
-        snprintf(rendered_capacitance, 40, "%.2fu", c * 1e6);
-    } else {
-        snprintf(rendered_capacitance, 40, "%.2fm", c * 1e3);
-    }
+    uti_render_postfix_number(rendered_capacitance, 40, c);
 
     // left
     const char text[] = " C ";
@@ -815,17 +796,7 @@ void capacitor_parallel_view_settings_draw(struct Capacitor_Ideal_Parallel_View*
 
     double c = capacitor_parallel_view->capacitor->C;
     char rendered_capacitance[40];
-    if (c < 1e-12) {
-        snprintf(rendered_capacitance, 40, "%.2ff", c * 1e15);
-    } else if (c < 1e-9) {
-        snprintf(rendered_capacitance, 40, "%.2fp", c * 1e12);
-    } else if (c < 1e-6) {
-        snprintf(rendered_capacitance, 40, "%.2fn", c * 1e9);
-    } else if (c < 1e-3) {
-        snprintf(rendered_capacitance, 40, "%.2fu", c * 1e6);
-    } else {
-        snprintf(rendered_capacitance, 40, "%.2fm", c * 1e3);
-    }
+    uti_render_postfix_number(rendered_capacitance, 40, c);
 
     // top left
     const char text[] = " C ";
@@ -923,18 +894,8 @@ void inductor_view_settings_draw(struct Inductor_Ideal_View* inductor_view, Mui_
     Mui_Rectangle inset_area = mui_shrink(symbol_area, 5);
 
     double l = inductor_view->inductor->L;
-    char rendered_capacitance[40];
-    if (l < 1e-12) {
-        snprintf(rendered_capacitance, 40, "%.2ff", l * 1e15);
-    } else if (l < 1e-9) {
-        snprintf(rendered_capacitance, 40, "%.2fp", l * 1e12);
-    } else if (l < 1e-6) {
-        snprintf(rendered_capacitance, 40, "%.2fn", l * 1e9);
-    } else if (l < 1e-3) {
-        snprintf(rendered_capacitance, 40, "%.2fu", l * 1e6);
-    } else {
-        snprintf(rendered_capacitance, 40, "%.2fm", l * 1e3);
-    }
+    char rendered_inductance[40];
+    uti_render_postfix_number(rendered_inductance, 40, l);
 
     // left
     const char text[] = " L ";
@@ -948,10 +909,10 @@ void inductor_view_settings_draw(struct Inductor_Ideal_View* inductor_view, Mui_
 
 
     // right
-    text_size = mui_measure_text(font, rendered_capacitance, font_size, 0.2f, 0, strlen(rendered_capacitance));
+    text_size = mui_measure_text(font, rendered_inductance, font_size, 0.2f, 0, strlen(rendered_inductance));
     pos.x = inset_area.x + inset_area.width - text_size.x;
     pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
-    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_capacitance, col, 0, strlen(rendered_capacitance));
+    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_inductance, col, 0, strlen(rendered_inductance));
 }
 
 
@@ -1040,18 +1001,8 @@ void inductor_parallel_view_settings_draw(struct Inductor_Ideal_Parallel_View* i
     Mui_Rectangle inset_area = mui_shrink(symbol_area, 5);
 
     double l = inductor_view->inductor->L;
-    char rendered_capacitance[40];
-    if (l < 1e-12) {
-        snprintf(rendered_capacitance, 40, "%.2ff", l * 1e15);
-    } else if (l < 1e-9) {
-        snprintf(rendered_capacitance, 40, "%.2fp", l * 1e12);
-    } else if (l < 1e-6) {
-        snprintf(rendered_capacitance, 40, "%.2fn", l * 1e9);
-    } else if (l < 1e-3) {
-        snprintf(rendered_capacitance, 40, "%.2fu", l * 1e6);
-    } else {
-        snprintf(rendered_capacitance, 40, "%.2fm", l * 1e3);
-    }
+    char rendered_inductance[40];
+    uti_render_postfix_number(rendered_inductance, 40, l);
 
     // left
     const char text[] = " L ";
@@ -1065,10 +1016,10 @@ void inductor_parallel_view_settings_draw(struct Inductor_Ideal_Parallel_View* i
 
 
     // right
-    text_size = mui_measure_text(font, rendered_capacitance, font_size, 0.2f, 0, strlen(rendered_capacitance));
+    text_size = mui_measure_text(font, rendered_inductance, font_size, 0.2f, 0, strlen(rendered_inductance));
     pos.x = inset_area.x + inset_area.width - text_size.x;
     pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
-    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_capacitance, col, 0, strlen(rendered_capacitance));
+    mui_draw_text_line(font, pos, 0.2f, font_size, rendered_inductance, col, 0, strlen(rendered_inductance));
 }
 
 

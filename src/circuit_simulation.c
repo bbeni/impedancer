@@ -207,7 +207,7 @@ bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_
 
     size_t n_frequencies = 1000;
     double start_f = 1.0f;
-    double end_f = 50e9;
+    double end_f = 10e9;
     double df = (end_f - start_f) / (n_frequencies - 1);
 
     sim_state->n_components = n_components;

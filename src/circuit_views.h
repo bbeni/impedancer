@@ -80,6 +80,7 @@ struct Resistor_Ideal_Parallel_View {
     struct Circuit_Component_Resistor_Ideal_Parallel *resistor;
     Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
+    Mui_Number_Input_State number_input_state;
 };
 
 struct Capacitor_Ideal_View {

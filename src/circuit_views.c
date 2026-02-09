@@ -535,6 +535,7 @@ void resistor_view_draw(struct Resistor_Ideal_View* resistor_view, Mui_Rectangle
 void resistor_parallel_view_init(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, struct Circuit_Component_Resistor_Ideal_Parallel* resistor) {
     resistor_parallel_view->resistor = resistor;
     resistor_parallel_view->collapsable_section_1.open = true;
+    resistor_parallel_view->number_input_state = mui_number_input_state(resistor->R);
 }
 
 void resistor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
@@ -633,11 +634,13 @@ void resistor_parallel_view_draw(struct Resistor_Ideal_Parallel_View* resistor_p
         mui_checkbox(&resistor_parallel_view->is_optimizable_checkbox_state, "optimizable", sg_r);
 
         rest = mui_cut_top(rest, 42, &sg_r);
-        sg_r = mui_shrink(sg_r, padding);
-        size_t a = 0, b = 0;
-        char r_text[15];
-        uti_render_postfix_number(r_text, 15, resistor_parallel_view->resistor->R);
-        mui_text_selectable(r_text, &a, &b, sg_r);
+        Mui_Rectangle r_label;
+        sg_r = mui_cut_left(sg_r, 32, &r_label);
+        if (mui_number_input(&resistor_parallel_view->number_input_state, sg_r)) {
+            resistor_parallel_view->resistor->R = resistor_parallel_view->number_input_state.parsed_number;
+        }
+
+        mui_label(&mui_protos_theme_g, "R", MUI_TEXT_ALIGN_RIGHT, r_label);
 
     }
 

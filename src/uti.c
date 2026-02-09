@@ -38,6 +38,57 @@ void uti_render_postfix_number(char* buffer, const size_t max_char_count, double
     }
 }
 
+// TODO: also implement postfix parsing
+bool uti_parse_number(char* input, const size_t max_char_count, double* output) {
+    char* end;
+    double result = strtod(input, &end);
+    if (end == input) {
+        printf("ERROR: parsing '%s' as double is not possible\n", input);
+        printf("                ^\n");
+        return false;
+    }
+    size_t l = strlen(input);
+    if (l == 0) {
+        printf("ERROR: parsing empty string as double is not possible\n");
+        return false;
+    }
+    assert(l < max_char_count);
+    while (l - (end - input) > 0) {
+        if (!isspace(*end)) {
+            printf("ERROR: parsing '%s' as double is not possible\n", input);
+            printf("                ");
+            for (int i = 0; i < end - input && i < 100; i++) {
+                printf(" ");
+            }
+            printf("^\n");
+            return false;
+        }
+        end++;
+    }
+
+    *output = result;
+    return true;
+}
+
+char* uti_ltrim(char* s)
+{
+    while(isspace(*s)) s++;
+    return s;
+}
+
+char* uti_rtrim(char* s)
+{
+    char* back = s + strlen(s);
+    while(isspace(*--back));
+    *(back + 1) = '\0';
+    return s;
+}
+
+char* uti_trim(char *s)
+{
+    return uti_rtrim(uti_ltrim(s));
+}
+
 
 #ifdef _WIN32
 

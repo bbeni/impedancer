@@ -9,6 +9,7 @@
 #include "stdio.h"
 #include "assert.h"
 #include "stdlib.h"
+#include "ctype.h"
 
 
 // globals need to be updated by calling mui_update_input()
@@ -135,6 +136,21 @@ Mui_Textinput_State mui_textinput_state() {
     state.theme = &mui_protos_theme_g;
     return state;
 }
+
+Mui_Number_Input_State mui_number_input_state(double inital_value) {
+    Mui_Number_Input_State state;
+    state.selector_1 = 0;
+    state.selector_2 = 0;
+    state.active = false;
+    state.text[sizeof(state.text) - 1] = '\0';
+    state.text_length = 0;
+    state.parsed_number = inital_value;
+    state.parsed_valid = true;
+    state.parsed = true;
+    state.theme = &mui_protos_theme_g;
+    return state;
+}
+
 
 
 /* OKLAB maps
@@ -949,6 +965,7 @@ void mui_n_status_label(Mui_Theme* theme, const char* text, const Mui_Color* sta
 }
 
 
+
 /*
 void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *hint, Mui_Rectangle place) {
 
@@ -1078,6 +1095,126 @@ void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *h
         mui_draw_rectangle(rect_cursor, theme->textinput_text_color);
     }
 }*/
+size_t _internal_get_cursor_by_position(Mui_Vector2 pos, char* text, size_t* start_cursor, size_t* end_cursor, size_t n_lines, struct Mui_Font* font, float font_size, Mui_Rectangle place);
+
+// return true if the value changed
+bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
+
+    Mui_Theme *theme = state->theme;
+    if (theme == NULL) {
+        theme = &mui_protos_theme_g;
+    }
+
+    float font_size = theme->textinput_text_size;
+    struct Mui_Font *font = theme->textinput_font;
+
+    if (mui_is_mouse_button_pressed(0)) {
+        if (mui_is_inside_rectangle(mui_get_mouse_position(), place)) {
+            state->active = true;
+        } else {
+            state->active = false;
+        }
+    }
+
+    if (state->active) {
+
+        if (mui_is_key_pressed(MUI_KEY_ENTER) || mui_is_key_pressed_repeat(MUI_KEY_ENTER)) {
+            bool success = uti_parse_number(state->text, MUI_NUMBER_INPUT_MAX_INPUT_SIZE, &state->parsed_number);
+            state->parsed = true;
+            state->parsed_valid = success;
+        }
+
+        int unicode_char = mui_get_char_pressed();
+        if (unicode_char != 0) {
+            unsigned char c = unicode_char & 0xff; // TODO make it better
+
+            bool is_char_writable = isdigit(c) || c == '.' || c == 'e' || c == '-';
+
+            if (is_char_writable) {
+                if (state->selector_1 == state->selector_2) {
+                    // normal cursor mode
+                    if (state->text_length <= MUI_NUMBER_INPUT_MAX_INPUT_SIZE - 1) {
+                        for (int i = state->text_length; i > state->selector_1; i--) {
+                            state->text[i] = state->text[i - 1];
+                        }
+                        state->text[state->selector_1] = c;
+                        state->text_length++;
+                        state->selector_1++;
+                        state->selector_2++;
+                    }
+                } else {
+                    // selected text
+                }
+            }
+        }
+
+        if (mui_is_key_pressed(MUI_KEY_BACKSPACE) || mui_is_key_pressed_repeat(MUI_KEY_BACKSPACE)) {
+            if (state->selector_1 == state->selector_2) {
+                // normal cursor mode
+                // xxx|x
+                for (int i = state->selector_1 - 1; i < state->text_length; i++) {
+                    state->text[i] = state->text[i + 1];
+                }
+                state->text[state->text_length] = '\0';
+
+                if (state->selector_1 != 0) state->selector_1--;
+                if (state->selector_2 != 0) state->selector_2--;
+                if (state->text_length != 0) state->text_length--;
+
+            } else {
+                // selected text
+            }
+
+        }
+
+
+        if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
+            if (state->selector_1 == state->selector_2) {
+                if (state->selector_1 != 0) state->selector_1--;
+                if (state->selector_2 != 0) state->selector_2--;
+            }
+        }
+
+        if (mui_is_key_pressed(MUI_KEY_RIGHT) || mui_is_key_pressed_repeat(MUI_KEY_RIGHT)) {
+            if (state->selector_1 == state->selector_2) {
+                if (state->selector_1 < state->text_length) state->selector_1++;
+                if (state->selector_2 < state->text_length) state->selector_2++;
+            }
+        }
+    }
+
+    const float padding = 5.0f;
+    place = mui_shrink(place, padding);
+
+    bool number_changed = false;
+    if (state->parsed_valid && state->parsed) {
+        uti_render_postfix_number(state->text, MUI_NUMBER_INPUT_MAX_INPUT_SIZE, state->parsed_number);
+        state->text_length = strlen(state->text);
+        mui_text_selectable(state->text, &state->selector_1, &state->selector_2, place);
+        state->parsed = false;
+        number_changed = true;
+    } else {
+        mui_text_selectable(state->text, &state->selector_1, &state->selector_2, place);
+    }
+
+    //printf("selector %d %s\n", state->selector_1, state->text);
+
+    // cursor
+    if (state->active && state->selector_1 == state->selector_2) {
+        Mui_Rectangle rect_cursor;
+        rect_cursor.x = place.x + ceil(font_size / 6);
+        rect_cursor.y = place.y + padding;
+        rect_cursor.height = font_size;
+        rect_cursor.width = font_size / 11;
+
+        Mui_Vector2 measure = mui_measure_text(font, state->text, font_size, 0.1f, 0, state->selector_1);
+        rect_cursor.x += measure.x;
+        mui_draw_rectangle(rect_cursor, MUI_BLACK);
+    }
+
+    // return true if the number changed
+    return number_changed;
+}
 
 char* next_occurence_or_null(char* text, size_t start, char c) {
     while(text[start] != 0) {
@@ -1113,6 +1250,7 @@ size_t _internal_get_cursor_by_position(Mui_Vector2 pos, char* text, size_t* sta
 
 // for now we can only have one of these text_selectable elements I guess,
 // since we have one global mouse_down_selectable_text
+// TODO: make this part of a state
 static bool mouse_down_selectable_text;
 size_t mouse_down_pivot_cursor;
 void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_Rectangle place) {
@@ -1145,7 +1283,7 @@ void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_R
         next = next_occurence_or_null(next, 0, '\n');
         line_nr++;
     }
-    if ((size_t)(prev - text) < total_length - 1) {
+    if ((size_t)(prev - text) < total_length) {
         start_cursor[line_nr] = prev - text;
         end_cursor[line_nr] = total_length;
         line_nr++;

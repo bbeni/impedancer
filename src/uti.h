@@ -9,6 +9,12 @@
 
 // render 0.0001 -> 100u etc.
 void uti_render_postfix_number(char* buffer, const size_t max_char_count, double number);
+bool uti_parse_number(char* input, const size_t max_char_count, double* output);
+
+// from https://stackoverflow.com/questions/656542/trim-a-string-in-c
+char* uti_ltrim(char* s);
+char* uti_rtrim(char* s);
+char* uti_trim(char* s);
 
 // allocate space for file content + \0 terminator and read into it. out size is without \0 terminator.
 bool uti_read_entire_file(const char *path, char** content, size_t* out_size);

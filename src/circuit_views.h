@@ -34,8 +34,7 @@ struct Stage_View {
     // text selection
     #define SELECTABLE_TEXT_LENGTH 8*4096
     char selectable_text[SELECTABLE_TEXT_LENGTH];
-    size_t selector_start;
-    size_t selector_end;
+    Mui_Text_Selectable_State text_selectable_state;
 
     double min_f_before;
     double max_f_before;
@@ -74,6 +73,7 @@ struct Resistor_Ideal_View {
     struct Circuit_Component_Resistor_Ideal *resistor;
     Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
+    Mui_Number_Input_State number_input_state;
 };
 
 struct Resistor_Ideal_Parallel_View {
@@ -87,24 +87,28 @@ struct Capacitor_Ideal_View {
     struct Circuit_Component_Capacitor_Ideal *capacitor;
     Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
+    Mui_Number_Input_State number_input_state;
 };
 
 struct Capacitor_Ideal_Parallel_View {
     struct Circuit_Component_Capacitor_Ideal_Parallel *capacitor;
     Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
+    Mui_Number_Input_State number_input_state;
 };
 
 struct Inductor_Ideal_View {
     struct Circuit_Component_Inductor_Ideal *inductor;
     Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
+    Mui_Number_Input_State number_input_state;
 };
 
 struct Inductor_Ideal_Parallel_View {
     struct Circuit_Component_Inductor_Ideal_Parallel *inductor;
     Mui_Checkbox_State is_optimizable_checkbox_state;
     Mui_Collapsable_Section_State collapsable_section_1;
+    Mui_Number_Input_State number_input_state;
 };
 
 struct Circuit_Component_View {

@@ -154,11 +154,21 @@ typedef struct Mui_Textinput_Multiline_State {
     Mui_Theme *theme;
 } Mui_Textinput_Multiline_State;
 
+typedef struct Mui_Text_Selectable_State {
+    size_t selector_1;
+    size_t selector_2;
+
+    // internals
+    bool mouse_down_selectable_text;
+    size_t mouse_down_pivot_cursor;
+} Mui_Text_Selectable_State;
+
 
 typedef struct Mui_Number_Input_State {
     bool active; // wheter it was clicked and it is writable
-    size_t selector_1;
-    size_t selector_2;
+
+    Mui_Text_Selectable_State text_selectable_state;
+
     #define MUI_NUMBER_INPUT_MAX_INPUT_SIZE 255
     char text[MUI_NUMBER_INPUT_MAX_INPUT_SIZE];
     size_t text_length;
@@ -180,12 +190,18 @@ Mui_Slider_State mui_slider_state();
 Mui_Collapsable_Section_State mui_collapsable_state();
 Mui_Textinput_State mui_textinput_state();
 Mui_Number_Input_State mui_number_input_state(double inital_value);
+Mui_Text_Selectable_State mui_text_selectable_state();
 
 //
 // mui.h utility API
 //
 
 Mui_Color mui_interpolate_color(Mui_Color a, Mui_Color b, float t);
+float mui_linear_to_srgb(float x);
+Mui_Color mui_hsl_to_rgb(float h, float s, float l);
+float mui_hue_to_rgb(float p, float q, float t);
+Mui_Color mui_oklch_to_rgb(float l, float c, float h);
+
 void mui_move_towards(float *x, float target, float speed, float dt);
 Mui_Rectangle mui_rectangle(float x, float y, float width, float height);
 Mui_Rectangle mui_shrink(Mui_Rectangle r, float amount);
@@ -211,8 +227,6 @@ typedef enum {
 //
 // mui elements API
 //
-
-bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme);
 Mui_Rectangle mui_window_decoration(float height, bool window_movable, bool closeable, bool minimizable, bool maximizable, bool to_the_right, Mui_Rectangle window_rect);
 bool mui_button(Mui_Button_State *state, const char* text, Mui_Rectangle place);
 bool mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place);
@@ -221,10 +235,12 @@ float mui_simple_slider(Mui_Slider_State *state, bool vertical, Mui_Rectangle pl
 void mui_textinput(Mui_Textinput_State *state, const char *hint, Mui_Rectangle place);
 void mui_textinput_multiline(Mui_Textinput_Multiline_State *state, const char *hint, Mui_Rectangle place);
 bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place);
-void mui_text_selectable(char* text, size_t *selector1, size_t *selector2, Mui_Rectangle place);
+void mui_text_selectable(Mui_Text_Selectable_State* state, char* text, Mui_Rectangle place);
 bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, Mui_Rectangle place);
 bool mui_n_status_button(Mui_Button_State *state, const char* text, const Mui_Color* status_colors_array, int status_count, int status, Mui_Rectangle place);
 void mui_n_status_label(Mui_Theme* theme, const char* text, const Mui_Color* status_colors_array, int status_count, int status, MUI_TEXT_ALIGN_FLAGS text_align_flags, Mui_Rectangle place);
+bool mui_load_resource_from_file(const char *file_path, size_t *out_size, void **data);
+bool mui_load_ttf_font_for_theme(const char *font_file, Mui_Theme* theme);
 
 //
 // window API platform

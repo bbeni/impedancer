@@ -70,7 +70,6 @@ int main(int argc, char** argv) {
     // R 35k Ohm parallel
     circuit_create_resistor_ideal_parallel(35e3, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
-    component_view_array[i].as.resistor_ideal_parallel_view.collapsable_section_1.open = true;
     i++;
 
     // C 120 pF
@@ -191,15 +190,6 @@ int main(int argc, char** argv) {
             }
             if (selected_before != active_setting) {
                 stage_view_update_active_setting(stage_view, active_setting);
-            }
-
-            if (mui_is_key_down(MUI_KEY_LEFT_CONTROL) || mui_is_key_down(MUI_KEY_RIGHT_CONTROL)) {
-                if (mui_is_key_pressed(MUI_KEY_C)) {
-                    if (stage_view->selector_start < stage_view->selector_end) {
-                        char* temp_str = uti_temp_strndup(&stage_view->selectable_text[stage_view->selector_start], stage_view->selector_end - stage_view->selector_start);
-                        mui_set_clipboard_text(temp_str);
-                    }
-                }
             }
 
         }

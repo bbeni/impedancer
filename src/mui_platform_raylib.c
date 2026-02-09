@@ -10,9 +10,6 @@
 #include "string.h"
 #include "stdlib.h"
 
-
-
-
 uint8_t mui_open_window(int w, int h, int pos_x, int pos_y, char* title, float opacity, MUI_WINDOW_FLAGS flags, Mui_Image* icon) {
 
     // TODO: implement icon

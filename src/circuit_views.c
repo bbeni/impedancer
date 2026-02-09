@@ -24,7 +24,46 @@ double dB(size_t i, void* x) {
 }
 
 
-// stage
+//
+// initialization of views
+//
+// the views are linked to the component via a pointer.
+
+void inductor_parallel_view_init(struct Inductor_Ideal_Parallel_View* view, struct Circuit_Component_Inductor_Ideal_Parallel* component) {
+    view->inductor = component;
+    view->collapsable_section_1.open = false;
+    view->number_input_state = mui_number_input_state(component->L);
+}
+
+void inductor_view_init(struct Inductor_Ideal_View* view, struct Circuit_Component_Inductor_Ideal* component) {
+    view->inductor = component;
+    view->collapsable_section_1.open = false;
+    view->number_input_state = mui_number_input_state(component->L);
+}
+
+void capacitor_parallel_view_init(struct Capacitor_Ideal_Parallel_View* view, struct Circuit_Component_Capacitor_Ideal_Parallel* component) {
+    view->capacitor = component;
+    view->collapsable_section_1.open = false;
+    view->number_input_state = mui_number_input_state(component->C);
+}
+
+void capacitor_view_init(struct Capacitor_Ideal_View* view, struct Circuit_Component_Capacitor_Ideal* component) {
+    view->capacitor = component;
+    view->collapsable_section_1.open = false;
+    view->number_input_state = mui_number_input_state(component->C);
+}
+
+void resistor_parallel_view_init(struct Resistor_Ideal_Parallel_View* view, struct Circuit_Component_Resistor_Ideal_Parallel* component) {
+    view->resistor = component;
+    view->collapsable_section_1.open = false;
+    view->number_input_state = mui_number_input_state(component->R);
+}
+
+void resistor_view_init(struct Resistor_Ideal_View* view, struct Circuit_Component_Resistor_Ideal* component) {
+    view->resistor = component;
+    view->collapsable_section_1.open = false;
+    view->number_input_state = mui_number_input_state(component->R);
+}
 
 const char* stage_view_selectable_text_fmt =
     "impedances z = Z/Z_0 at %f Hz\n"
@@ -41,8 +80,6 @@ const char* stage_view_selectable_text_fmt =
     "Z%s      = (%.0f + j * %.0f) Ohm\n"
     "Z%s   = (%.0f + j * %.0f) Ohm\n";
 
-
-// compone the stage and stage_view and initialize state.
 void stage_view_init(struct Stage_View* stage_view, struct Circuit_Component_Stage* stage) {
     memset(stage_view, 0, sizeof(*stage_view));
 
@@ -59,8 +96,7 @@ void stage_view_init(struct Stage_View* stage_view, struct Circuit_Component_Sta
     stage_view->is_optimizable_checkbox_state.checked = false;
     stage_view->slider_state_1.value = 0.5f;
     stage_view->slider_state_2.value = 0.2f;
-    stage_view->selector_start = 0;
-    stage_view->selector_end = 0;
+    stage_view->text_selectable_state = mui_text_selectable_state();
 
     stage_view->colors[0] = MUI_RED;
     stage_view->colors[1] = MUI_ORANGE;
@@ -312,6 +348,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
         mui_draw_rectangle(sg_r, mui_protos_theme_g.bg_dark);
         sg_r = mui_shrink(sg_r, padding);
         mui_checkbox(&stage_view->is_optimizable_checkbox_state, "optimizable", sg_r);
+
     }
 
 
@@ -419,7 +456,7 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
         //
         Mui_Rectangle text_data_view;
         rest = mui_cut_top(rest, 440, &text_data_view);
-        mui_text_selectable(stage_view->selectable_text, &stage_view->selector_start, &stage_view->selector_end, text_data_view);
+        mui_text_selectable(&stage_view->text_selectable_state, stage_view->selectable_text, text_data_view);
     }
 
 }
@@ -427,11 +464,6 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
 //
 // resistor
 //
-
-void resistor_view_init(struct Resistor_Ideal_View* resistor_view, struct Circuit_Component_Resistor_Ideal* resistor) {
-    resistor_view->resistor = resistor;
-    resistor_view->collapsable_section_1.open = true;
-}
 
 void resistor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color col = mui_protos_theme_g.text;
@@ -501,13 +533,13 @@ void resistor_view_settings_draw(struct Resistor_Ideal_View* resistor_view, Mui_
     mui_draw_text_line(font, pos, 0.2f, font_size, rendered_resistance, col, 0, strlen(rendered_resistance));
 }
 
-void resistor_view_draw(struct Resistor_Ideal_View* resistor_view, Mui_Rectangle widget_area, bool is_selected) {
+void resistor_view_draw(struct Resistor_Ideal_View* view, Mui_Rectangle widget_area, bool is_selected) {
 
     Mui_Rectangle symbol_area;
     widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
 
     resistor_symbol_draw(symbol_area, is_selected);
-    resistor_view_settings_draw(resistor_view, symbol_area);
+    resistor_view_settings_draw(view, symbol_area);
 
     float padding = 5;
 
@@ -518,11 +550,19 @@ void resistor_view_draw(struct Resistor_Ideal_View* resistor_view, Mui_Rectangle
     Mui_Rectangle collabsable_area_1;
     rest = mui_cut_top(rest, 36, &collabsable_area_1);
     //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
-    if (mui_collapsable_section(&resistor_view->collapsable_section_1, "R Series", collabsable_area_1)) {
+    if (mui_collapsable_section(&view->collapsable_section_1, "R Series", collabsable_area_1)) {
         Mui_Rectangle sg_r;
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
         sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&resistor_view->is_optimizable_checkbox_state, "optimizable", sg_r);
+        mui_checkbox(&view->is_optimizable_checkbox_state, "optimizable", sg_r);
+
+        rest = mui_cut_top(rest, 42, &sg_r);
+        Mui_Rectangle r_label;
+        sg_r = mui_cut_left(sg_r, 32, &r_label);
+        if (mui_number_input(&view->number_input_state, sg_r)) {
+            view->resistor->R = view->number_input_state.parsed_number;
+        }
+        mui_label(&mui_protos_theme_g, "C", MUI_TEXT_ALIGN_RIGHT, r_label);
 
     }
 
@@ -532,11 +572,6 @@ void resistor_view_draw(struct Resistor_Ideal_View* resistor_view, Mui_Rectangle
 // resistor parallel
 //
 
-void resistor_parallel_view_init(struct Resistor_Ideal_Parallel_View* resistor_parallel_view, struct Circuit_Component_Resistor_Ideal_Parallel* resistor) {
-    resistor_parallel_view->resistor = resistor;
-    resistor_parallel_view->collapsable_section_1.open = true;
-    resistor_parallel_view->number_input_state = mui_number_input_state(resistor->R);
-}
 
 void resistor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color col = mui_protos_theme_g.text;
@@ -639,9 +674,7 @@ void resistor_parallel_view_draw(struct Resistor_Ideal_Parallel_View* resistor_p
         if (mui_number_input(&resistor_parallel_view->number_input_state, sg_r)) {
             resistor_parallel_view->resistor->R = resistor_parallel_view->number_input_state.parsed_number;
         }
-
         mui_label(&mui_protos_theme_g, "R", MUI_TEXT_ALIGN_RIGHT, r_label);
-
     }
 
 }
@@ -714,10 +747,6 @@ void capacitor_view_settings_draw(struct Capacitor_Ideal_View* capacitor_view, M
     mui_draw_text_line(font, pos, 0.2f, font_size, rendered_capacitance, col, 0, strlen(rendered_capacitance));
 }
 
-void capacitor_view_init(struct Capacitor_Ideal_View* capacitor_view, struct Circuit_Component_Capacitor_Ideal* capacitor) {
-    capacitor_view->capacitor = capacitor;
-    capacitor_view->collapsable_section_1.open = true;
-}
 
 void capacitor_view_draw(struct Capacitor_Ideal_View* capacitor_view, Mui_Rectangle widget_area, bool is_selected) {
     Mui_Rectangle symbol_area;
@@ -737,15 +766,19 @@ void capacitor_view_draw(struct Capacitor_Ideal_View* capacitor_view, Mui_Rectan
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
         sg_r = mui_shrink(sg_r, padding);
         mui_checkbox(&capacitor_view->is_optimizable_checkbox_state, "optimizable", sg_r);
+
+        rest = mui_cut_top(rest, 42, &sg_r);
+        Mui_Rectangle r_label;
+        sg_r = mui_cut_left(sg_r, 32, &r_label);
+        if (mui_number_input(&capacitor_view->number_input_state, sg_r)) {
+            capacitor_view->capacitor->C = capacitor_view->number_input_state.parsed_number;
+        }
+        mui_label(&mui_protos_theme_g, "R", MUI_TEXT_ALIGN_RIGHT, r_label);
     }
 }
 
 // capacitor parallel
 
-void capacitor_parallel_view_init(struct Capacitor_Ideal_Parallel_View* capacitor_parallel_view, struct Circuit_Component_Capacitor_Ideal_Parallel* capacitor) {
-    capacitor_parallel_view->capacitor = capacitor;
-    capacitor_parallel_view->collapsable_section_1.open = true;
-}
 
 void capacitor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color col = mui_protos_theme_g.text;
@@ -826,12 +859,12 @@ void capacitor_parallel_view_settings_draw(struct Capacitor_Ideal_Parallel_View*
 }
 
 
-void capacitor_parallel_view_draw(struct Capacitor_Ideal_Parallel_View* resistor_parallel_view, Mui_Rectangle widget_area, bool is_selected) {
+void capacitor_parallel_view_draw(struct Capacitor_Ideal_Parallel_View* view, Mui_Rectangle widget_area, bool is_selected) {
     Mui_Rectangle symbol_area;
     widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
 
     capacitor_parallel_symbol_draw(symbol_area, is_selected);
-    capacitor_parallel_view_settings_draw(resistor_parallel_view, symbol_area);
+    capacitor_parallel_view_settings_draw(view, symbol_area);
 
     float padding = 5;
     Mui_Rectangle rest = widget_area;
@@ -839,20 +872,24 @@ void capacitor_parallel_view_draw(struct Capacitor_Ideal_Parallel_View* resistor
     Mui_Rectangle collabsable_area_1;
     rest = mui_cut_top(rest, 36, &collabsable_area_1);
     //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
-    if (mui_collapsable_section(&resistor_parallel_view->collapsable_section_1, "C Parallel", collabsable_area_1)) {
+    if (mui_collapsable_section(&view->collapsable_section_1, "C Parallel", collabsable_area_1)) {
         Mui_Rectangle sg_r;
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
         sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&resistor_parallel_view->is_optimizable_checkbox_state, "optimizable", sg_r);
+        mui_checkbox(&view->is_optimizable_checkbox_state, "optimizable", sg_r);
+
+        rest = mui_cut_top(rest, 42, &sg_r);
+        Mui_Rectangle r_label;
+        sg_r = mui_cut_left(sg_r, 32, &r_label);
+        if (mui_number_input(&view->number_input_state, sg_r)) {
+            view->capacitor->C = view->number_input_state.parsed_number;
+        }
+        mui_label(&mui_protos_theme_g, "C", MUI_TEXT_ALIGN_RIGHT, r_label);
     }
 }
 
 
 // inductor
-void inductor_view_init(struct Inductor_Ideal_View* inductor_view, struct Circuit_Component_Inductor_Ideal* inductor) {
-    inductor_view->inductor = inductor;
-    inductor_view->collapsable_section_1.open = true;
-}
 
 void inductor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color col = mui_protos_theme_g.text;
@@ -924,12 +961,12 @@ void inductor_view_settings_draw(struct Inductor_Ideal_View* inductor_view, Mui_
 }
 
 
-void inductor_view_draw(struct Inductor_Ideal_View* inductor_view, Mui_Rectangle widget_area, bool is_selected) {
+void inductor_view_draw(struct Inductor_Ideal_View* view, Mui_Rectangle widget_area, bool is_selected) {
     Mui_Rectangle symbol_area;
     widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
 
     inductor_symbol_draw(symbol_area, is_selected);
-    inductor_view_settings_draw(inductor_view, symbol_area);
+    inductor_view_settings_draw(view, symbol_area);
 
     float padding = 5;
     Mui_Rectangle rest = widget_area;
@@ -937,11 +974,19 @@ void inductor_view_draw(struct Inductor_Ideal_View* inductor_view, Mui_Rectangle
     Mui_Rectangle collabsable_area_1;
     rest = mui_cut_top(rest, 36, &collabsable_area_1);
     //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
-    if (mui_collapsable_section(&inductor_view->collapsable_section_1, "L Series", collabsable_area_1)) {
+    if (mui_collapsable_section(&view->collapsable_section_1, "L Series", collabsable_area_1)) {
         Mui_Rectangle sg_r;
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
         sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&inductor_view->is_optimizable_checkbox_state, "optimizable", sg_r);
+        mui_checkbox(&view->is_optimizable_checkbox_state, "optimizable", sg_r);
+
+        rest = mui_cut_top(rest, 42, &sg_r);
+        Mui_Rectangle r_label;
+        sg_r = mui_cut_left(sg_r, 32, &r_label);
+        if (mui_number_input(&view->number_input_state, sg_r)) {
+            view->inductor->L = view->number_input_state.parsed_number;
+        }
+        mui_label(&mui_protos_theme_g, "C", MUI_TEXT_ALIGN_RIGHT, r_label);
     }
 
 }
@@ -949,12 +994,6 @@ void inductor_view_draw(struct Inductor_Ideal_View* inductor_view, Mui_Rectangle
 
 
 // inductor parallel
-
-void inductor_parallel_view_init(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, struct Circuit_Component_Inductor_Ideal_Parallel* inductor) {
-    inductor_parallel_view->inductor = inductor;
-    inductor_parallel_view->collapsable_section_1.open = true;
-}
-
 
 void inductor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     Mui_Color col = mui_protos_theme_g.text;
@@ -1031,12 +1070,12 @@ void inductor_parallel_view_settings_draw(struct Inductor_Ideal_Parallel_View* i
 }
 
 
-void inductor_parallel_view_draw(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, Mui_Rectangle widget_area, bool is_selected) {
+void inductor_parallel_view_draw(struct Inductor_Ideal_Parallel_View* view, Mui_Rectangle widget_area, bool is_selected) {
     Mui_Rectangle symbol_area;
     widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
 
     inductor_parallel_symbol_draw(symbol_area, is_selected);
-    inductor_parallel_view_settings_draw(inductor_parallel_view, symbol_area);
+    inductor_parallel_view_settings_draw(view, symbol_area);
 
     float padding = 5;
     Mui_Rectangle rest = widget_area;
@@ -1044,11 +1083,19 @@ void inductor_parallel_view_draw(struct Inductor_Ideal_Parallel_View* inductor_p
     Mui_Rectangle collabsable_area_1;
     rest = mui_cut_top(rest, 36, &collabsable_area_1);
     //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
-    if (mui_collapsable_section(&inductor_parallel_view->collapsable_section_1, "L Parallel", collabsable_area_1)) {
+    if (mui_collapsable_section(&view->collapsable_section_1, "L Parallel", collabsable_area_1)) {
         Mui_Rectangle sg_r;
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
         sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&inductor_parallel_view->is_optimizable_checkbox_state, "optimizable", sg_r);
+        mui_checkbox(&view->is_optimizable_checkbox_state, "optimizable", sg_r);
+
+        rest = mui_cut_top(rest, 42, &sg_r);
+        Mui_Rectangle r_label;
+        sg_r = mui_cut_left(sg_r, 32, &r_label);
+        if (mui_number_input(&view->number_input_state, sg_r)) {
+            view->inductor->L = view->number_input_state.parsed_number;
+        }
+        mui_label(&mui_protos_theme_g, "L", MUI_TEXT_ALIGN_RIGHT, r_label);
     }
 
 }

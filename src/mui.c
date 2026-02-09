@@ -1122,8 +1122,13 @@ bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
             bool success = uti_parse_number(state->text, MUI_NUMBER_INPUT_MAX_INPUT_SIZE, &state->parsed_number);
             state->parsed = true;
             state->parsed_valid = success;
+            if (success) {
+                state->selector_2 = state->text_length;
+                state->selector_1 = state->text_length;
+            }
         }
 
+        // handle text input
         int unicode_char = mui_get_char_pressed();
         if (unicode_char != 0) {
             unsigned char c = unicode_char & 0xff; // TODO make it better
@@ -1134,44 +1139,70 @@ bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
                 if (state->selector_1 == state->selector_2) {
                     // normal cursor mode
                     if (state->text_length <= MUI_NUMBER_INPUT_MAX_INPUT_SIZE - 1) {
-                        for (int i = state->text_length; i > state->selector_1; i--) {
+                        for (size_t i = state->text_length; i > state->selector_1; i--) {
                             state->text[i] = state->text[i - 1];
                         }
                         state->text[state->selector_1] = c;
                         state->text_length++;
                         state->selector_1++;
                         state->selector_2++;
+                        state->text[state->text_length] = '\0';
                     }
                 } else {
                     // selected text
+                    assert(state->selector_1 < state->selector_2);
+                    size_t diff = state->selector_2 - state->selector_1 - 1;
+                    for (size_t i = state->selector_1 + 1; i <= state->text_length && i + diff <= state->text_length; i++) {
+                        state->text[i] = state->text[i + diff];
+                    }
+                    state->text[state->selector_1] = c;
+                    state->text_length -= diff;
+                    state->selector_2 -= diff;
+                    state->selector_1 = state->selector_2;
                 }
             }
         }
 
+        // handle deleting stuff
         if (mui_is_key_pressed(MUI_KEY_BACKSPACE) || mui_is_key_pressed_repeat(MUI_KEY_BACKSPACE)) {
             if (state->selector_1 == state->selector_2) {
                 // normal cursor mode
-                // xxx|x
-                for (int i = state->selector_1 - 1; i < state->text_length; i++) {
-                    state->text[i] = state->text[i + 1];
+                if (state->selector_1 > 0) {
+                    // xxx|x
+                    for (size_t i = state->selector_1 - 1; i < state->text_length; i++) {
+                        state->text[i] = state->text[i + 1];
+                    }
+                    state->text[state->text_length] = '\0';
+                    state->selector_1--;
+                    state->selector_2--;
+                    state->text_length--;
                 }
-                state->text[state->text_length] = '\0';
-
-                if (state->selector_1 != 0) state->selector_1--;
-                if (state->selector_2 != 0) state->selector_2--;
-                if (state->text_length != 0) state->text_length--;
-
             } else {
                 // selected text
+                assert(state->selector_1 < state->selector_2);
+                size_t diff = state->selector_2 - state->selector_1;
+                for (size_t i = state->selector_1; i <= state->text_length && i + diff <= state->text_length; i++) {
+                    state->text[i] = state->text[i + diff];
+                }
+                state->text_length -= diff;
+                state->selector_2 -= diff;
             }
-
         }
 
 
+        // handle cursor and selection movement with keyboard
         if (mui_is_key_pressed(MUI_KEY_LEFT) || mui_is_key_pressed_repeat(MUI_KEY_LEFT)) {
             if (state->selector_1 == state->selector_2) {
                 if (state->selector_1 != 0) state->selector_1--;
                 if (state->selector_2 != 0) state->selector_2--;
+            }
+
+            if (state->selector_1 != state->selector_2) {
+                if (mui_is_key_down(MUI_KEY_LEFT_SHIFT) || mui_is_key_down(MUI_KEY_RIGHT_SHIFT)) {
+                    if (state->selector_1 != 0) state->selector_1--;
+                } else {
+                    state->selector_2 = state->selector_1;
+                }
             }
         }
 
@@ -1179,6 +1210,14 @@ bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
             if (state->selector_1 == state->selector_2) {
                 if (state->selector_1 < state->text_length) state->selector_1++;
                 if (state->selector_2 < state->text_length) state->selector_2++;
+            }
+
+            if (state->selector_1 != state->selector_2) {
+                if (mui_is_key_down(MUI_KEY_LEFT_SHIFT) || mui_is_key_down(MUI_KEY_RIGHT_SHIFT)) {
+                    if (state->selector_2 < state->text_length) state->selector_2++;
+                } else {
+                    state->selector_1 = state->selector_2;
+                }
             }
         }
     }
@@ -1196,8 +1235,6 @@ bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
     } else {
         mui_text_selectable(state->text, &state->selector_1, &state->selector_2, place);
     }
-
-    //printf("selector %d %s\n", state->selector_1, state->text);
 
     // cursor
     if (state->active && state->selector_1 == state->selector_2) {

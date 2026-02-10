@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     //if(!parse_s2p_files(&infos, true) != 0)
     //    return 1;
 
-    int grid_pixels = 40;
+    int grid_pixels = 36;
 
     int w, h;
     w = 1900;
@@ -117,6 +117,11 @@ int main(int argc, char** argv) {
     Mui_Slider_State chroma_slider = mui_slider_state();
     Mui_Slider_State hue_slider = mui_slider_state();
 
+
+    // TODO: extract the goals from ui state
+    struct Simulation_Cockpit_View_State sim_cockpit_view_state;
+    struct Simulation_Settings simulation_settings;
+    simulation_cockpit_view_init(&sim_cockpit_view_state, &simulation_settings, 1.0, 5e9, 1000);
 
     struct Simulation_State simulation_state;
     bool todo_first_sim = true;
@@ -208,9 +213,8 @@ int main(int argc, char** argv) {
         // simulate
         if (mui_is_key_pressed(MUI_KEY_S)) {
             if (!todo_first_sim) circuit_simulation_destroy(&simulation_state);
-            circuit_simulation_setup(component_array, n_comps, &simulation_state);
+            circuit_simulation_setup(component_array, n_comps, &simulation_state, &simulation_settings);
             circuit_simulation_do(&simulation_state);
-
             if (todo_first_sim) todo_first_sim = false;
         }
 
@@ -257,14 +261,47 @@ int main(int argc, char** argv) {
 
         Mui_Rectangle screen_inset = mui_shrink(screen, 5);
 
-        Mui_Rectangle component_view_rect;
-        Mui_Rectangle rest = screen_inset;
 
+        Mui_Rectangle component_view_rect;
+        Mui_Rectangle simulation_cockpit_rect;
+
+        Mui_Rectangle rest = mui_cut_left(screen_inset, grid_pixels * 6, &simulation_cockpit_rect);
+
+
+        //
+        // simulation cockpit
+        //
+
+        SIMULATION_COCKPIT_ACTION action;
+        action = simulation_cockpit_view_draw(&sim_cockpit_view_state, &simulation_settings, simulation_cockpit_rect, grid_pixels);
+
+        switch (action) {
+        case SIMULATION_COCKPIT_ACTION_NONE:
+        break;
+        case SIMULATION_COCKPIT_ACTION_SIMULATE:
+            if (!todo_first_sim) circuit_simulation_destroy(&simulation_state);
+            circuit_simulation_setup(component_array, n_comps, &simulation_state, &simulation_settings);
+            circuit_simulation_do(&simulation_state);
+            if (todo_first_sim) todo_first_sim = false;
+        break;
+        case SIMULATION_COCKPIT_ACTION_OPTIMIZE:
+            assert(false && "TODO implement me (the new action)");
+        break;
+        case SIMULATION_COCKPIT_ACTION_ERROR:
+            assert(false && "TODO implement me (the new action)");
+        break;
+        case SIMULATION_COCKPIT_ACTION_NUMBER:
+            assert(false && "TODO implement me (the new action)");
+        break;
+        default:
+            assert(false && "TODO implement me (the new actions?)");
+        break;
+        }
 
         //
         // simulation results draw
         //
-        Mui_Rectangle bottom_place = screen_inset;
+        Mui_Rectangle bottom_place = rest;
         Mui_Rectangle simulation_plot_rect;
         bottom_place.height *= 0.5f;
         bottom_place.y += bottom_place.height;
@@ -316,6 +353,8 @@ int main(int argc, char** argv) {
             Mui_Rectangle stability_plot_rect = mui_cut_left(bottom_place, (sim_plot_args.grid_w + 1) * grid_pixels, &simulation_plot_rect);
             simulation_plot_rect = gra_gridded_xy_base(&sim_plot_args, simulation_plot_rect);
 
+            simulation_optimization_goals_draw(simulation_plot_rect, sim_cockpit_view_state.goals, sim_cockpit_view_state.n_goals, fmi, fma, ymi, yma);
+
             for (size_t i = 0; i < 4; i++) {
                 gra_xy_plot_data_points(
                     simulation_state.frequencies,
@@ -350,6 +389,7 @@ int main(int argc, char** argv) {
 
             stability_plot_rect = gra_gridded_xy_base(&stability_plot_args, stability_plot_rect);
 
+
             gra_xy_plot_data_points(
                 simulation_state.frequencies,
                 simulation_state.stab_mu, NULL, simulation_state.n_frequencies,
@@ -377,9 +417,9 @@ int main(int argc, char** argv) {
         // circuit elements draw
         //
         for (size_t i = 0; i < n_comps; i ++) {
-            float width = 180.0f;
+            float width = grid_pixels * 5;
             if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
-                width = 360.0f;
+                width = grid_pixels * 10;
             rest = mui_cut_left(rest, width, &component_view_rect);
             circuit_component_view_draw(&component_view_array[i], component_view_rect, selected_comp == i);
         }

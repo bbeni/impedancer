@@ -1173,3 +1173,161 @@ void circuit_component_view_draw(struct Circuit_Component_View* component_view, 
     }
 
 }
+
+
+//
+// Simulation settings views
+//
+
+void simulation_cockpit_view_init(struct Simulation_Cockpit_View_State* view, struct Simulation_Settings *settings, double f_min, double f_max, size_t n_steps) {
+    settings->f_max = f_max;
+    settings->f_min = f_min;
+    settings->n_frequencies = n_steps;
+
+    view->f_start = mui_number_input_state(f_min);
+    view->f_end = mui_number_input_state(f_max);
+    view->n_steps = mui_number_input_state(n_steps);
+    view->add_goal_btn_state = mui_button_state();
+
+    view->n_goals = 1;
+
+    for (size_t i = 0; i < SIMULATION_COCKPIT_MAX_GOALS; i++) {
+        view->goals[i].active = false;
+        view->goals[i].f_max = f_max;
+        view->goals[i].f_min = f_min;
+        view->goals[i].target = 1.0;
+        view->goals[i].type = OPTIMIZATION_LESS_THAN;
+        view->goals[i].weight = 1.0;
+
+        view->goal_views[i].active = mui_checkbox_state();
+        view->goal_views[i].f_max = mui_number_input_state(f_max);
+        view->goal_views[i].f_min = mui_number_input_state(f_min);
+        view->goal_views[i].target = mui_number_input_state(1.0);
+        view->goal_views[i].type = mui_number_input_state(0);
+        view->goal_views[i].weight = mui_number_input_state(1.0);
+    }
+}
+
+// returns an action that needs to be performed by the caller
+SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit_View_State* view, struct Simulation_Settings* settings_out, Mui_Rectangle area, double grid_pixels) {
+    SIMULATION_COCKPIT_ACTION action = SIMULATION_COCKPIT_ACTION_NONE;
+
+    float padding = 5.0f;
+    mui_draw_rectangle(area, mui_protos_theme_g.bg_dark);
+
+    Mui_Rectangle a1, a2, a3, a4, a5, a6, a7;
+    area = mui_cut_top(area, grid_pixels * 1.0f, &a1);
+    area = mui_cut_top(area, grid_pixels * 3.0f, &a2);
+    area = mui_cut_top(area, grid_pixels * 1.0f, &a3);
+    area = mui_cut_top(area, grid_pixels * 1.0f, &a4);
+
+    // f_min, f_max, n_steps
+    Mui_Rectangle a2a_l, a2b_l, a2c_l;
+    Mui_Rectangle a2a_r, a2b_r, a2c_r;
+    a2 = mui_cut_top(a2, grid_pixels, &a2a_r);
+    a2 = mui_cut_top(a2, grid_pixels, &a2b_r);
+    a2 = mui_cut_top(a2, grid_pixels, &a2c_r);
+    a2a_r = mui_cut_left(a2a_r, grid_pixels * 2, &a2a_l);
+    a2b_r = mui_cut_left(a2b_r, grid_pixels * 2, &a2b_l);
+    a2c_r = mui_cut_left(a2c_r, grid_pixels * 2, &a2c_l);
+
+
+    mui_draw_rectangle_rounded(a1, mui_protos_theme_g.corner_radius, mui_protos_theme_g.primary);
+    mui_label(&mui_protos_theme_g, "SIMULATION", MUI_TEXT_ALIGN_DEFAULT, a1);
+    mui_label(&mui_protos_theme_g, "f_min", MUI_TEXT_ALIGN_DEFAULT, a2a_l);
+    mui_label(&mui_protos_theme_g, "f_max", MUI_TEXT_ALIGN_DEFAULT, a2b_l);
+    mui_label(&mui_protos_theme_g, "n_stp", MUI_TEXT_ALIGN_DEFAULT, a2c_l);
+
+    if (mui_number_input(&view->f_start, a2a_r)) {
+        settings_out->f_min = view->f_start.parsed_number;
+    }
+    if (mui_number_input(&view->f_end, a2b_r)) {
+        settings_out->f_max = view->f_end.parsed_number;
+    }
+    if (mui_number_input(&view->n_steps, a2c_r)) {
+        settings_out->n_frequencies = view->n_steps.parsed_number;
+    }
+
+    if (mui_button(&view->run_simulation_btn_state, "run simulation", mui_shrink(a3, padding))) {
+        action = SIMULATION_COCKPIT_ACTION_SIMULATE;
+    }
+    mui_draw_rectangle_rounded(a4, mui_protos_theme_g.corner_radius, mui_protos_theme_g.primary);
+    mui_label(&mui_protos_theme_g, "OPTIMIZATION", MUI_TEXT_ALIGN_DEFAULT, a4);
+
+
+    for (size_t i = 0; i < view->n_goals; i++) {
+        area = mui_cut_top(area, grid_pixels * 6.0f, &a5);
+
+        //goal, active
+        //goal.type(<, >),
+        //goal.target,
+        //goal.weight,
+        //goal.f_min
+        //goal.f_max,
+        Mui_Rectangle a5a_l, a5b_l, a5c_l, a5d_l, a5e_l, a5f_l;
+        Mui_Rectangle a5a_r, a5b_r, a5c_r, a5d_r, a5e_r, a5f_r;
+        a5 = mui_cut_top(a5, grid_pixels, &a5a_r);
+        a5 = mui_cut_top(a5, grid_pixels, &a5b_r);
+        a5 = mui_cut_top(a5, grid_pixels, &a5c_r);
+        a5 = mui_cut_top(a5, grid_pixels, &a5d_r);
+        a5 = mui_cut_top(a5, grid_pixels, &a5e_r);
+        a5 = mui_cut_top(a5, grid_pixels, &a5f_r);
+        a5a_r = mui_cut_left(a5a_r, grid_pixels * 2, &a5a_l);
+        a5b_r = mui_cut_left(a5b_r, grid_pixels * 2, &a5b_l);
+        a5c_r = mui_cut_left(a5c_r, grid_pixels * 2, &a5c_l);
+        a5d_r = mui_cut_left(a5d_r, grid_pixels * 2, &a5d_l);
+        a5e_r = mui_cut_left(a5e_r, grid_pixels * 2, &a5e_l);
+        a5f_r = mui_cut_left(a5f_r, grid_pixels * 2, &a5f_l);
+
+        char label[20];
+        snprintf(label, 20, "goal %d", i + 1);
+        mui_draw_rectangle(a5a_l, mui_protos_theme_g.primary_dark);
+        mui_label(&mui_protos_theme_g, label, MUI_TEXT_ALIGN_CENTER, a5a_l);
+        mui_label(&mui_protos_theme_g, "type", MUI_TEXT_ALIGN_DEFAULT, a5b_l);
+        mui_label(&mui_protos_theme_g, "target", MUI_TEXT_ALIGN_DEFAULT, a5c_l);
+        mui_label(&mui_protos_theme_g, "weight", MUI_TEXT_ALIGN_DEFAULT, a5d_l);
+        mui_label(&mui_protos_theme_g, "f_min", MUI_TEXT_ALIGN_DEFAULT, a5e_l);
+        mui_label(&mui_protos_theme_g, "f_max", MUI_TEXT_ALIGN_DEFAULT, a5f_l);
+        if (mui_checkbox(&view->goal_views[i].active, "active", a5a_r)) {
+            view->goals[i].active = view->goal_views[i].active.checked;
+        }
+        if (mui_number_input(&view->goal_views[i].type, a5b_r)) {
+            view->goals[i].type = view->goal_views[i].type.parsed_number;
+        }
+        if (mui_number_input(&view->goal_views[i].target, a5c_r)) {
+            view->goals[i].target = view->goal_views[i].target.parsed_number;
+        }
+        if (mui_number_input(&view->goal_views[i].weight, a5d_r)) {
+            view->goals[i].weight = view->goal_views[i].weight.parsed_number;
+        }
+        if (mui_number_input(&view->goal_views[i].f_min, a5e_r)) {
+            view->goals[i].f_min = view->goal_views[i].f_min.parsed_number;
+        }
+        if (mui_number_input(&view->goal_views[i].f_max, a5f_r)) {
+            view->goals[i].f_max = view->goal_views[i].f_max.parsed_number;
+        }
+    }
+
+    area = mui_cut_top(area, grid_pixels * 1.0f, &a6);
+    area = mui_cut_top(area, grid_pixels * 1.0f, &a7);
+
+    a6 = mui_shrink(a6, padding);
+    a6 = mui_cut_left(mui_cut_right(a6, grid_pixels, NULL), grid_pixels, NULL);
+    if (mui_button(&view->add_goal_btn_state, "add goal", a6)) {
+        if (view->n_goals < SIMULATION_COCKPIT_MAX_GOALS) {
+            view->n_goals++;
+        }
+    }
+    if (mui_button(&view->run_optimization_btn_state, "run optimization", mui_shrink(a7, padding))) {
+        action = SIMULATION_COCKPIT_ACTION_OPTIMIZE;
+    }
+
+    return action;
+}
+
+void simulation_optimization_goals_draw(Mui_Rectangle plot_area, struct Optimization_Goal* goals, size_t n_goals, double f_min, double f_max, double y_min, double y_max) {
+    for (size_t i = 0; i < n_goals; i++) {
+        if (!goals[i].active) continue;
+        gra_xy_plot_line(goals[i].f_min, goals[i].target, goals[i].f_max, goals[i].target, f_min, f_max, y_min, y_max, MUI_YELLOW, 7.0f, plot_area);
+    }
+}

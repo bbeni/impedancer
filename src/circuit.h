@@ -118,8 +118,29 @@ void calc_s_from_t_array(struct Complex_2x2_SoA *t, struct Complex_2x2_SoA *s_ou
 void calc_t_from_s_array(struct Complex_2x2_SoA *s, struct Complex_2x2_SoA *t_out, size_t length);
 void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex s21, struct Complex s22, double* mu_out, double* mu_prime_out);
 
+
+struct Simulation_Settings {
+    double f_min;
+    double f_max;
+    size_t n_frequencies;
+};
+
+typedef enum {
+    OPTIMIZATION_LESS_THAN,
+    OPTIMIZATION_MORE_THAN
+} OPTIMIZATION_TYPE;
+
+struct Optimization_Goal {
+    OPTIMIZATION_TYPE type;
+    double target;
+    double f_min;
+    double f_max;
+    double weight;
+    bool active;
+};
+
 bool simulation_interpolate_sparams_circuit_component(struct Circuit_Component *component, double *frequencies, struct Complex_2x2_SoA *s_out, size_t n_frequencies);
-bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state);
+bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, struct Simulation_Settings *settings);
 bool circuit_simulation_destroy(struct Simulation_State *sim_state);
 bool circuit_simulation_do(struct Simulation_State *sim_state);
 

@@ -158,6 +158,53 @@ void inductor_parallel_view_init(struct Inductor_Ideal_Parallel_View* inductor_p
 void inductor_parallel_view_draw(struct Inductor_Ideal_Parallel_View* inductor_parallel_view, Mui_Rectangle widget_area, bool is_selected);
 
 
+
+/*
+SIMULATION:
+f_start, f_end, n_steps
+do simulate
+OPTIMIZATION
+goal 1, type(<, >), target, f_min, f_max, weight
++
+do optimization
+*/
+
+struct Optimization_Goal_View {
+    Mui_Number_Input_State type;
+    Mui_Number_Input_State target;
+    Mui_Number_Input_State f_min;
+    Mui_Number_Input_State f_max;
+    Mui_Number_Input_State weight;
+    Mui_Checkbox_State active;
+};
+
+#define SIMULATION_COCKPIT_MAX_GOALS 128
+struct Simulation_Cockpit_View_State {
+    Mui_Button_State run_simulation_btn_state;
+    Mui_Button_State run_optimization_btn_state;
+    Mui_Button_State add_goal_btn_state;
+    Mui_Number_Input_State f_start;
+    Mui_Number_Input_State f_end;
+    Mui_Number_Input_State n_steps;
+    struct Optimization_Goal_View goal_views[SIMULATION_COCKPIT_MAX_GOALS];
+    struct Optimization_Goal goals[SIMULATION_COCKPIT_MAX_GOALS];
+    size_t n_goals;
+};
+
+
+typedef enum {
+    SIMULATION_COCKPIT_ACTION_NONE,
+    SIMULATION_COCKPIT_ACTION_SIMULATE,
+    SIMULATION_COCKPIT_ACTION_OPTIMIZE,
+    SIMULATION_COCKPIT_ACTION_ERROR,
+    SIMULATION_COCKPIT_ACTION_NUMBER,
+} SIMULATION_COCKPIT_ACTION;
+
+void simulation_cockpit_view_init(struct Simulation_Cockpit_View_State* view, struct Simulation_Settings *settings, double f_min, double f_max, size_t n_steps);
+SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit_View_State* view, struct Simulation_Settings* settings_out, Mui_Rectangle area, double grid_pixels);
+void simulation_optimization_goals_draw(Mui_Rectangle plot_area, struct Optimization_Goal* goals, size_t n_goals, double f_min, double f_max, double y_min, double y_max);
+
+
 // utility functions
 double mag(size_t i, void* x);
 double dB_from_squared(double x);

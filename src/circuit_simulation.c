@@ -203,11 +203,14 @@ bool simulation_interpolate_sparams_circuit_component(struct Circuit_Component *
     return true;
 }
 
-bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state) {
 
-    size_t n_frequencies = 1000;
-    double start_f = 1.0f;
-    double end_f = 10e9;
+
+bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, struct Simulation_Settings *settings) {
+
+    size_t n_frequencies = settings->n_frequencies;
+    double start_f = settings->f_min;
+    double end_f = settings->f_max;
+    printf("start %f  end %f\n", start_f, end_f);
     double df = (end_f - start_f) / (n_frequencies - 1);
 
     sim_state->n_components = n_components;

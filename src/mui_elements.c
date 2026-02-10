@@ -165,6 +165,7 @@ bool mui_collapsable_section(Mui_Collapsable_Section_State *state, char* text, M
     return state->open;
 }
 
+// returns true when clicked
 bool mui_checkbox(Mui_Checkbox_State *state, const char *text, Mui_Rectangle place) {
 
     bool clicked = false;

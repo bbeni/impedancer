@@ -164,6 +164,31 @@ void gra_xy_plot_data_points(double *x_data, void *y_data, double (* y_map)(size
     }
 }
 
+void gra_xy_plot_line(double x1, double y1, double x2, double y2,
+                 double x_min, double x_max, double y_min, double y_max,
+                 Mui_Color color, float line_thickness, Mui_Rectangle plot_area) {
+
+    Mui_Vector2 screen_coords_1;
+    Mui_Vector2 screen_coords_2;
+    {
+        float norm_x = (x1 - x_min) / (x_max - x_min);
+        float norm_y = (y1 - y_min) / (y_max - y_min);
+        screen_coords_1.x = norm_x * plot_area.width + plot_area.x;
+        screen_coords_1.y = (1 - norm_y) * plot_area.height + plot_area.y;
+    }
+
+    {
+        float norm_x = (x2 - x_min) / (x_max - x_min);
+        float norm_y = (y2 - y_min) / (y_max - y_min);
+        screen_coords_2.x = norm_x * plot_area.width + plot_area.x;
+        screen_coords_2.y = (1 - norm_y) * plot_area.height + plot_area.y;
+    }
+
+    mui_draw_line(screen_coords_1.x, screen_coords_1.y, screen_coords_2.x, screen_coords_2.y, line_thickness, color);
+
+}
+
+
 
 void _gridded_draw_grid(Mui_Rectangle plot_area, float step_x, float step_y, float off_x, float off_y, float thickness) {
     float x_a = plot_area.x;

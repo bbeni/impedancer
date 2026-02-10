@@ -15,23 +15,30 @@
 
 
 void uti_render_postfix_number(char* buffer, const size_t max_char_count, double number) {
-    if (number < 1e-12) {
+    double abs_number = number > 0.0 ? number : -number;
+
+    // if it is almost 0 just let it be
+    if (abs_number < 1e-18) {
+        snprintf(buffer, max_char_count, "%.2f", number);
+    } else if (abs_number < 1e-15) {
+        snprintf(buffer, max_char_count, "%.2fa", number * 1e18);
+    } else if (abs_number < 1e-12) {
         snprintf(buffer, max_char_count, "%.2ff", number * 1e15);
-    } else if (number < 1e-9) {
+    } else if (abs_number < 1e-9) {
         snprintf(buffer, max_char_count, "%.2fp", number * 1e12);
-    } else if (number < 1e-6) {
+    } else if (abs_number < 1e-6) {
         snprintf(buffer, max_char_count, "%.2fn", number * 1e9);
-    } else if (number < 1e-3) {
+    } else if (abs_number < 1e-3) {
         snprintf(buffer, max_char_count, "%.2fu", number * 1e6);
-    } else if (number < 1e0) {
+    } else if (abs_number < 1e0) {
         snprintf(buffer, max_char_count, "%.2fm", number * 1e3);
-    } else if (number < 1e3) {
+    } else if (abs_number < 1e3) {
         snprintf(buffer, max_char_count, "%.2f", number * 1e0);
-    } else if (number < 1e6) {
+    } else if (abs_number < 1e6) {
         snprintf(buffer, max_char_count, "%.2fk", number * 1e-3);
-    } else if (number < 1e9) {
+    } else if (abs_number < 1e9) {
         snprintf(buffer, max_char_count, "%.2fM", number * 1e-6);
-    } else if (number < 1e12) {
+    } else if (abs_number < 1e12) {
         snprintf(buffer, max_char_count, "%.2fG", number * 1e-9);
     } else {
         snprintf(buffer, max_char_count, "%.2fT", number * 1e-12);

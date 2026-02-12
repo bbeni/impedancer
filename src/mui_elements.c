@@ -569,7 +569,7 @@ bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
     if (state->active) {
 
         if (mui_is_key_pressed(MUI_KEY_ENTER) || mui_is_key_pressed_repeat(MUI_KEY_ENTER)) {
-            bool success = uti_parse_number(state->text, MUI_NUMBER_INPUT_MAX_INPUT_SIZE, &state->parsed_number);
+            bool success = uti_parse_number_postfixed(state->text, MUI_NUMBER_INPUT_MAX_INPUT_SIZE, &state->parsed_number);
             state->parsed = true;
             state->parsed_valid = success;
             if (success) {
@@ -583,7 +583,11 @@ bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
         if (unicode_char != 0) {
             unsigned char c = unicode_char & 0xff; // TODO make it better
 
-            bool is_char_writable = isdigit(c) || c == '.' || c == 'e' || c == '-';
+            // TODO: properly check what can be inputted
+            bool is_char_writable =
+                isdigit(c) || c == ' ' || c == '.' || c == 'e' || c == '-' ||
+                c == 'a' || c == 'f' || c == 'p' || c == 'n' || c == 'u' || c == 'm' ||
+                c == 'k' || c == 'M' || c == 'G' || c == 'T';
 
             if (is_char_writable) {
                 if (selector_1 == selector_2) {
@@ -677,11 +681,14 @@ bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
 
     // draw text
     const float padding = 5.0f;
-    place = mui_shrink(place, padding);
+    if (!state->parsed_valid) {
+        mui_draw_rectangle_lines(place, MUI_RED, padding);
+    }
 
+    place = mui_shrink(place, padding);
     bool number_changed = false;
     if (state->parsed_valid && state->parsed) {
-        uti_render_postfix_number(state->text, MUI_NUMBER_INPUT_MAX_INPUT_SIZE, state->parsed_number);
+        uti_render_postfix_number(state->text, MUI_NUMBER_INPUT_MAX_INPUT_SIZE, state->parsed_number, 3);
         state->text_length = strlen(state->text);
         mui_text_selectable(&state->text_selectable_state, state->text, place);
         state->parsed = false;
@@ -700,7 +707,7 @@ bool mui_number_input(Mui_Number_Input_State *state, Mui_Rectangle place) {
 
         Mui_Vector2 measure = mui_measure_text(font, state->text, font_size, 0.1f, 0, selector_1);
         rect_cursor.x += measure.x;
-        mui_draw_rectangle(rect_cursor, MUI_BLACK);
+        mui_draw_rectangle(rect_cursor, mui_protos_theme_g.text);
     }
 
     // return true if the number changed

@@ -495,8 +495,7 @@ void dotted_view_draw(Mui_Rectangle widget_area) {
     float dash_w = 0.5f;
     size_t n = 7;
     float step = symbol_area.width / (dash_w + n - 1);
-    for (int i = 0; i < n; i++) {
-        float x = i * step;
+    for (size_t i = 0; i < n; i++) {
         mui_draw_line(symbol_area.x + i * step, lower_y, symbol_area.x  + (i + dash_w) * step, lower_y, line_thickness, col);
         mui_draw_line(symbol_area.x + i * step, upper_y, symbol_area.x  + (i + dash_w) * step, upper_y, line_thickness, col);
     }
@@ -629,7 +628,7 @@ void resistor_view_settings_draw(struct Resistor_Ideal_View* resistor_view, Mui_
 
     double r = resistor_view->resistor->R;
     char rendered_resistance[40];
-    uti_render_postfix_number(rendered_resistance, 40, r);
+    uti_render_postfix_number(rendered_resistance, 40, r, CIRCUIT_RENDER_NUMBER_AFTER_COMMA);
 
 
     // top left
@@ -742,7 +741,7 @@ void resistor_parallel_view_settings_draw(struct Resistor_Ideal_Parallel_View* r
 
     double r = resistor_parallel_view->resistor->R;
     char rendered_resistance[40];
-    uti_render_postfix_number(rendered_resistance, 40, r);
+    uti_render_postfix_number(rendered_resistance, 40, r, CIRCUIT_RENDER_NUMBER_AFTER_COMMA);
 
     // top left
     const char text[] = " R ";
@@ -774,8 +773,6 @@ void resistor_parallel_view_draw(struct Resistor_Ideal_Parallel_View* resistor_p
     float padding = 5;
 
     Mui_Rectangle rest = widget_area;
-
-    const float checkbox_s = 36;
 
     Mui_Rectangle collabsable_area_1;
     rest = mui_cut_top(rest, 36, &collabsable_area_1);
@@ -846,7 +843,7 @@ void capacitor_view_settings_draw(struct Capacitor_Ideal_View* capacitor_view, M
 
     double c = capacitor_view->capacitor->C;
     char rendered_capacitance[40];
-    uti_render_postfix_number(rendered_capacitance, 40, c);
+    uti_render_postfix_number(rendered_capacitance, 40, c, CIRCUIT_RENDER_NUMBER_AFTER_COMMA);
 
     // left
     const char text[] = " C ";
@@ -955,7 +952,7 @@ void capacitor_parallel_view_settings_draw(struct Capacitor_Ideal_Parallel_View*
 
     double c = capacitor_parallel_view->capacitor->C;
     char rendered_capacitance[40];
-    uti_render_postfix_number(rendered_capacitance, 40, c);
+    uti_render_postfix_number(rendered_capacitance, 40, c, CIRCUIT_RENDER_NUMBER_AFTER_COMMA);
 
     // top left
     const char text[] = " C ";
@@ -1058,7 +1055,7 @@ void inductor_view_settings_draw(struct Inductor_Ideal_View* inductor_view, Mui_
 
     double l = inductor_view->inductor->L;
     char rendered_inductance[40];
-    uti_render_postfix_number(rendered_inductance, 40, l);
+    uti_render_postfix_number(rendered_inductance, 40, l, CIRCUIT_RENDER_NUMBER_AFTER_COMMA);
 
     // left
     const char text[] = " L ";
@@ -1167,7 +1164,7 @@ void inductor_parallel_view_settings_draw(struct Inductor_Ideal_Parallel_View* i
 
     double l = inductor_view->inductor->L;
     char rendered_inductance[40];
-    uti_render_postfix_number(rendered_inductance, 40, l);
+    uti_render_postfix_number(rendered_inductance, 40, l, CIRCUIT_RENDER_NUMBER_AFTER_COMMA);
 
     // left
     const char text[] = " L ";
@@ -1414,8 +1411,8 @@ SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit
         a5e_r = mui_cut_left(a5e_r, grid_pixels * 2, &a5e_l);
         a5f_r = mui_cut_left(a5f_r, grid_pixels * 2, &a5f_l);
 
-        char label[20];
-        snprintf(label, 20, "goal %d", i + 1);
+        char label[26];
+        snprintf(label, 26, "goal %zu", i + 1);
         mui_draw_rectangle(a5a_l, mui_protos_theme_g.primary_dark);
         mui_label(&mui_protos_theme_g, label, MUI_TEXT_ALIGN_CENTER, a5a_l);
         mui_label(&mui_protos_theme_g, "type", MUI_TEXT_ALIGN_DEFAULT, a5b_l);

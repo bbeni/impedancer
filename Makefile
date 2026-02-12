@@ -60,8 +60,8 @@ COMMON_SRCS :=  $(SRC_DIR)/s2p.c \
 OBJS_MAIN := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRC_DIR)/main.c $(COMMON_SRCS))
 HEADER_DEPS := $(SRC_DIR)/mui.h $(SRC_DIR)/gra.h $(SRC_DIR)/uti.h $(SRC_DIR)/mma.h
 
-CFLAGS := -Wall -Wextra -Iinclude -I$(RAYLIB_PATH)/include -I$(THIRDPARTY_DIR) -I$(WAVEFORMS_SDK_PATH)/inc -ggdb
-LDFLAGS := $(STATIC_LIBS) -L$(RAYLIB_PATH)/lib -L$(WAVEFORMS_SDK_PATH)/lib/x64 -ldwf -lraylib  $(LDFLAGS_PLATFORM) -ggdb
+CFLAGS := -Wall -Wextra -Iinclude -I$(RAYLIB_PATH)/include -I$(THIRDPARTY_DIR) -ggdb
+LDFLAGS := $(STATIC_LIBS) -L$(RAYLIB_PATH)/lib -lraylib  $(LDFLAGS_PLATFORM) -ggdb
 
 ifeq ($(PACK_RESOURCES), 1)
     CFLAGS += -DRESOURCE_PACKER -I$(RESOURCES_BUILD_DIR)

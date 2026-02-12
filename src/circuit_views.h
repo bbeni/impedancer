@@ -4,7 +4,8 @@
 #include "circuit.h"
 #include "mui.h"
 
-#define CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT 36 * 2
+#define CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT 36 * 3
+#define CIRCUIT_LINE_THICKNESS 2.0f
 
 //
 // circuit Views
@@ -135,6 +136,11 @@ void stage_view_update_data(struct Stage_View* stage_view);
 void stage_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight);
 void stage_view_settings_draw(struct Stage_View* stage_view, Mui_Rectangle symbol_area);
 void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, bool is_selected);
+
+// passive symbols
+void dotted_view_draw(Mui_Rectangle widget_area);
+void input_termination_view_draw(Mui_Rectangle widget_area);
+void output_termination_view_draw(Mui_Rectangle widget_area);
 
 // resistor
 void resistor_view_init(struct Resistor_Ideal_View* resistor_view, struct Circuit_Component_Resistor_Ideal* resistor);

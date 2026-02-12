@@ -85,7 +85,7 @@ void stage_view_init(struct Stage_View* stage_view, struct Circuit_Component_Sta
 
     stage_view->stage = stage;
 
-    stage_view->collapsable_section_state_1.open = true;
+    stage_view->collapsable_section_state_1.open = false;
 
     stage_view->active_setting = 0;
     stage_view->show_s11_checkbox_state.checked = true;
@@ -221,7 +221,7 @@ void stage_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
         mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
     }
 
-    float w = min(symbol_area.width, symbol_area.height);
+    float w = symbol_area.height;
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
@@ -242,7 +242,7 @@ void stage_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
     body_rect.x = center.x - body_rect.width * 0.5f;
 
 
-    float line_thickness = 3;
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
     float hemt_thickness = line_thickness * 2;
 
 
@@ -339,127 +339,244 @@ void stage_view_draw(struct Stage_View* stage_view, Mui_Rectangle widget_area, b
     double min_f = stage_view->min_f;
     double max_f = stage_view->max_f;
 
-    Mui_Rectangle collabsable_area_1;
-    rest = mui_cut_top(rest, 36, &collabsable_area_1);
-    //collabsable_area_1 = mui_cut_top(collabsable_area_1, 0, NULL);
-    if (mui_collapsable_section(&stage_view->collapsable_section_state_1, "Stage Settings", collabsable_area_1)) {
+    Mui_Rectangle collabsable_area;
+    rest = mui_cut_top(rest, 36, &collabsable_area);
+    rest = mui_shrink(rest, padding);
+
+    if (mui_collapsable_section(&stage_view->collapsable_section_state_1, "Amplifier Stage", collabsable_area)) {
         Mui_Rectangle sg_r;
         rest = mui_cut_top(rest, checkbox_s, &sg_r);
         mui_draw_rectangle(sg_r, mui_protos_theme_g.bg_dark);
         sg_r = mui_shrink(sg_r, padding);
         mui_checkbox(&stage_view->is_optimizable_checkbox_state, "optimizable", sg_r);
 
-    }
 
 
-    Mui_Rectangle collabsable_area_2;
-    rest = mui_cut_top(rest, 36, &collabsable_area_2);
-    //collabsable_area_2 = mui_cut_top(collabsable_area_2, 2, NULL);
-    if (mui_collapsable_section(&stage_view->collapsable_section_state_2, "S-parameter plot", collabsable_area_2)) {
-        //
-        // s paremter plot
-        //
-        Mui_Rectangle s_param_plot_area;
-        rest = mui_cut_top(rest, 300, &s_param_plot_area);
-        mui_draw_rectangle(s_param_plot_area, mui_protos_theme_g.bg_dark);
+        Mui_Rectangle collabsable_area_2;
+        rest = mui_cut_top(rest, 36, &collabsable_area_2);
+        //collabsable_area_2 = mui_cut_top(collabsable_area_2, 2, NULL);
+        if (mui_collapsable_section(&stage_view->collapsable_section_state_2, "S-parameter plot", collabsable_area_2)) {
+            //
+            // s paremter plot
+            //
+            Mui_Rectangle s_param_plot_area;
+            rest = mui_cut_top(rest, 300, &s_param_plot_area);
+            mui_draw_rectangle(s_param_plot_area, mui_protos_theme_g.bg_dark);
 
-        Mui_Rectangle slider_rect;
-        s_param_plot_area = mui_cut_top(s_param_plot_area, 50, &slider_rect);
-        slider_rect = mui_cut_left(slider_rect, 24, NULL);
-        slider_rect = mui_cut_right(slider_rect, 24*2, NULL);
-        slider_rect = mui_shrink(slider_rect, padding);
-        mui_simple_slider(&stage_view->slider_state_1, false, slider_rect);
+            Mui_Rectangle slider_rect;
+            s_param_plot_area = mui_cut_top(s_param_plot_area, 50, &slider_rect);
+            slider_rect = mui_cut_left(slider_rect, 24, NULL);
+            slider_rect = mui_cut_right(slider_rect, 24*2, NULL);
+            slider_rect = mui_shrink(slider_rect, padding);
+            mui_simple_slider(&stage_view->slider_state_1, false, slider_rect);
 
-        Mui_Rectangle slider_rect2;
-        s_param_plot_area = mui_cut_right(s_param_plot_area, 50, &slider_rect2);
-        slider_rect2 = mui_cut_bot(slider_rect2, 24, NULL);
-        slider_rect2 = mui_shrink(slider_rect2, padding);
-        mui_simple_slider(&stage_view->slider_state_2, true, slider_rect2);
+            Mui_Rectangle slider_rect2;
+            s_param_plot_area = mui_cut_right(s_param_plot_area, 50, &slider_rect2);
+            slider_rect2 = mui_cut_bot(slider_rect2, 24, NULL);
+            slider_rect2 = mui_shrink(slider_rect2, padding);
+            mui_simple_slider(&stage_view->slider_state_2, true, slider_rect2);
 
-        //
-        // s parameter plot draw
-        //
-        mui_draw_rectangle(s_param_plot_area, mui_protos_theme_g.bg_dark);
-        Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid("frequency [Hz]", "mag(S11)", min_f, max_f, min_y, max_y, step_f, step_y, true, s_param_plot_area);
-        for (int i = 0; i < 4; i++) {
-            if (stage_view->mask[i]) {
-                gra_xy_plot_data_points(stage_view->fs_interpolated, stage_view->s_params_interpolated[i], dB, N_INTERPOL, min_f, max_f, min_y, max_y, stage_view->colors[i], 1.0, plot_area);
-                //gra_xy_plot_data_points(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, MUI_RED, 2.0, plot_area);
+            //
+            // s parameter plot draw
+            //
+            mui_draw_rectangle(s_param_plot_area, mui_protos_theme_g.bg_dark);
+            Mui_Rectangle plot_area = gra_xy_plot_labels_and_grid("frequency [Hz]", "mag(S11)", min_f, max_f, min_y, max_y, step_f, step_y, true, s_param_plot_area);
+            for (int i = 0; i < 4; i++) {
+                if (stage_view->mask[i]) {
+                    gra_xy_plot_data_points(stage_view->fs_interpolated, stage_view->s_params_interpolated[i], dB, N_INTERPOL, min_f, max_f, min_y, max_y, stage_view->colors[i], 1.0, plot_area);
+                    //gra_xy_plot_data_points(fs, s_params[i], dB, length, min_f, max_f, min_y, max_y, MUI_RED, 2.0, plot_area);
+                }
+            }
+            gra_xy_legend(stage_view->labels, stage_view->colors, stage_view->mask, 4, plot_area);
+        }
+
+        Mui_Rectangle collabsable_area_3;
+        rest = mui_cut_top(rest, 36, &collabsable_area_3);
+        //collabsable_area_3 = mui_cut_top(collabsable_area_3, 2, NULL);
+        if (mui_collapsable_section(&stage_view->collapsable_section_state_3, "Smith chart", collabsable_area_3)) {
+            Mui_Rectangle smith_plot_area;
+            rest = mui_cut_top(rest, 400, &smith_plot_area);
+
+            //
+            // smith chart draw
+            //
+            mui_draw_rectangle(smith_plot_area, mui_protos_theme_g.bg_dark);
+            draw_smith_grid(true, true, NULL, 0, smith_plot_area);
+            for (int i = 0; i < 4; i++) {
+                if (stage_view->mask[i]) {
+                    gra_smith_plot_data(stage_view->fs_interpolated, stage_view->z_params_interpolated[i], N_INTERPOL, min_f, max_f, stage_view->colors[i], '-', 2, smith_plot_area);
+                }
+            }
+            if (stage_view->show_Gopt_checkbox_state.checked) {
+                gra_smith_plot_data(stage_view->fs_interpolated, stage_view->zGopt_interpolated, N_INTERPOL-1, min_f, max_f, MUI_BEIGE, '-', 2, smith_plot_area);
             }
         }
-        gra_xy_legend(stage_view->labels, stage_view->colors, stage_view->mask, 4, plot_area);
-    }
 
-    Mui_Rectangle collabsable_area_3;
-    rest = mui_cut_top(rest, 36, &collabsable_area_3);
-    //collabsable_area_3 = mui_cut_top(collabsable_area_3, 2, NULL);
-    if (mui_collapsable_section(&stage_view->collapsable_section_state_3, "Smith chart", collabsable_area_3)) {
-        Mui_Rectangle smith_plot_area;
-        rest = mui_cut_top(rest, 400, &smith_plot_area);
-
-        //
-        // smith chart draw
-        //
-        mui_draw_rectangle(smith_plot_area, mui_protos_theme_g.bg_dark);
-        draw_smith_grid(true, true, NULL, 0, smith_plot_area);
-        for (int i = 0; i < 4; i++) {
-            if (stage_view->mask[i]) {
-                gra_smith_plot_data(stage_view->fs_interpolated, stage_view->z_params_interpolated[i], N_INTERPOL, min_f, max_f, stage_view->colors[i], '-', 2, smith_plot_area);
-            }
+        Mui_Rectangle collabsable_area_4;
+        rest = mui_cut_top(rest, 36, &collabsable_area_4);
+        //collabsable_area_4 = mui_cut_top(collabsable_area_4, 2, NULL);
+        if (mui_collapsable_section(&stage_view->collapsable_section_state_4, "NFmin plot", collabsable_area_4)) {
+            Mui_Rectangle noise_plot_area;
+            rest = mui_cut_top(rest, 200, &noise_plot_area);
+            //
+            // noise plot draw
+            //
+            mui_draw_rectangle(noise_plot_area, mui_protos_theme_g.bg_dark);
+            Mui_Rectangle plot_area2 = gra_xy_plot_labels_and_grid("frequency [Hz]", "NFmin", min_f, max_f, min_nfmin, max_nfmin, step_f, step_nfmin, true, noise_plot_area);
+            gra_xy_plot_data_points(stage_view->fs_interpolated, stage_view->NFmins_interpolated, NULL, N_INTERPOL, min_f, max_f, min_nfmin, max_nfmin, MUI_GREEN, 1.0f, plot_area2);
+            gra_xy_plot_data_points(stage_view->noise_fs, stage_view->NFmins, NULL, stage_view->noise_length, min_f, max_f, min_nfmin, max_nfmin, MUI_BLUE, 3.0f, plot_area2);
         }
-        if (stage_view->show_Gopt_checkbox_state.checked) {
-            gra_smith_plot_data(stage_view->fs_interpolated, stage_view->zGopt_interpolated, N_INTERPOL-1, min_f, max_f, MUI_BEIGE, '-', 2, smith_plot_area);
+
+        Mui_Rectangle collabsable_area_5;
+        rest = mui_cut_top(rest, 36, &collabsable_area_5);
+        //collabsable_area_5 = mui_cut_top(collabsable_area_5, 0, NULL);
+        if (mui_collapsable_section(&stage_view->collapsable_section_state_5, "Plot Settings", collabsable_area_5)) {
+            Mui_Rectangle sg_r;
+            rest = mui_cut_top(rest, checkbox_s, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&stage_view->show_s11_checkbox_state, "Show S11", sg_r);
+            rest = mui_cut_top(rest, checkbox_s, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&stage_view->show_s21_checkbox_state, "Show S21", sg_r);
+            rest = mui_cut_top(rest, checkbox_s, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&stage_view->show_s12_checkbox_state, "Show S12", sg_r);
+            rest = mui_cut_top(rest, checkbox_s, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&stage_view->show_s22_checkbox_state, "Show S22", sg_r);
+            rest = mui_cut_top(rest, checkbox_s, &sg_r);
+            sg_r = mui_shrink(sg_r, padding);
+            mui_checkbox(&stage_view->show_Gopt_checkbox_state, "Show Gopt", sg_r);
         }
-    }
+        Mui_Rectangle collabsable_area_6;
+        rest = mui_cut_top(rest, 36, &collabsable_area_6);
+        if (mui_collapsable_section(&stage_view->collapsable_section_state_6, "Impedances at min(f)", collabsable_area_6)) {
+            //
+            // Text data view
+            //
+            Mui_Rectangle text_data_view;
+            rest = mui_cut_top(rest, 440, &text_data_view);
+            mui_text_selectable(&stage_view->text_selectable_state, stage_view->selectable_text, text_data_view);
+        }
+    // border
+    Mui_Rectangle border;
+    border.x = rest.x;
+    border.y = collabsable_area_2.y;
+    border.width = collabsable_area_2.width;
+    border.height = rest.y - collabsable_area_2.y;
+    mui_draw_rectangle_rounded_lines(border, padding, mui_protos_theme_g.border, mui_protos_theme_g.border_thickness);
 
-    Mui_Rectangle collabsable_area_4;
-    rest = mui_cut_top(rest, 36, &collabsable_area_4);
-    //collabsable_area_4 = mui_cut_top(collabsable_area_4, 2, NULL);
-    if (mui_collapsable_section(&stage_view->collapsable_section_state_4, "NFmin plot", collabsable_area_4)) {
-        Mui_Rectangle noise_plot_area;
-        rest = mui_cut_top(rest, 200, &noise_plot_area);
-        //
-        // noise plot draw
-        //
-        mui_draw_rectangle(noise_plot_area, mui_protos_theme_g.bg_dark);
-        Mui_Rectangle plot_area2 = gra_xy_plot_labels_and_grid("frequency [Hz]", "NFmin", min_f, max_f, min_nfmin, max_nfmin, step_f, step_nfmin, true, noise_plot_area);
-        gra_xy_plot_data_points(stage_view->fs_interpolated, stage_view->NFmins_interpolated, NULL, N_INTERPOL, min_f, max_f, min_nfmin, max_nfmin, MUI_GREEN, 1.0f, plot_area2);
-        gra_xy_plot_data_points(stage_view->noise_fs, stage_view->NFmins, NULL, stage_view->noise_length, min_f, max_f, min_nfmin, max_nfmin, MUI_BLUE, 3.0f, plot_area2);
     }
+}
 
-    Mui_Rectangle collabsable_area_5;
-    rest = mui_cut_top(rest, 36, &collabsable_area_5);
-    //collabsable_area_5 = mui_cut_top(collabsable_area_5, 0, NULL);
-    if (mui_collapsable_section(&stage_view->collapsable_section_state_5, "Plot Settings", collabsable_area_5)) {
-        Mui_Rectangle sg_r;
-        rest = mui_cut_top(rest, checkbox_s, &sg_r);
-        sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&stage_view->show_s11_checkbox_state, "Show S11", sg_r);
-        rest = mui_cut_top(rest, checkbox_s, &sg_r);
-        sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&stage_view->show_s21_checkbox_state, "Show S21", sg_r);
-        rest = mui_cut_top(rest, checkbox_s, &sg_r);
-        sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&stage_view->show_s12_checkbox_state, "Show S12", sg_r);
-        rest = mui_cut_top(rest, checkbox_s, &sg_r);
-        sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&stage_view->show_s22_checkbox_state, "Show S22", sg_r);
-        rest = mui_cut_top(rest, checkbox_s, &sg_r);
-        sg_r = mui_shrink(sg_r, padding);
-        mui_checkbox(&stage_view->show_Gopt_checkbox_state, "Show Gopt", sg_r);
+//
+// passive symbol (connections)
+//
+
+void dotted_view_draw(Mui_Rectangle widget_area) {
+
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
+
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
+    mui_draw_rectangle(symbol_area, bg);
+
+    float w = symbol_area.height;
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+
+    float dash_w = 0.5f;
+    size_t n = 7;
+    float step = symbol_area.width / (dash_w + n - 1);
+    for (int i = 0; i < n; i++) {
+        float x = i * step;
+        mui_draw_line(symbol_area.x + i * step, lower_y, symbol_area.x  + (i + dash_w) * step, lower_y, line_thickness, col);
+        mui_draw_line(symbol_area.x + i * step, upper_y, symbol_area.x  + (i + dash_w) * step, upper_y, line_thickness, col);
     }
-    Mui_Rectangle collabsable_area_6;
-    rest = mui_cut_top(rest, 36, &collabsable_area_6);
-    if (mui_collapsable_section(&stage_view->collapsable_section_state_6, "Impedances at min(f)", collabsable_area_6)) {
-        //
-        // Text data view
-        //
-        Mui_Rectangle text_data_view;
-        rest = mui_cut_top(rest, 440, &text_data_view);
-        mui_text_selectable(&stage_view->text_selectable_state, stage_view->selectable_text, text_data_view);
-    }
+}
+
+void input_termination_view_draw(Mui_Rectangle widget_area) {
+
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
+
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
+    mui_draw_rectangle(symbol_area, bg);
+
+    float w = symbol_area.height;
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+
+    float radius = 0.25f * symbol_area.width;
+    Mui_Vector2 center = mui_center_of_rectangle(symbol_area);
+    mui_draw_line(symbol_area.x + 0.5f * symbol_area.width, lower_y, symbol_area.x + symbol_area.width, lower_y, line_thickness, col);
+    mui_draw_line(symbol_area.x + 0.5f * symbol_area.width, upper_y, symbol_area.x + symbol_area.width, upper_y, line_thickness, col);
+    mui_draw_circle_lines(center, radius, col, line_thickness);
+    mui_draw_line(symbol_area.x + 0.5f * symbol_area.width, upper_y, symbol_area.x + 0.5f * symbol_area.width, upper_y + radius, line_thickness, col);
+    mui_draw_line(symbol_area.x + 0.5f * symbol_area.width, lower_y, symbol_area.x + 0.5f * symbol_area.width, lower_y - radius, line_thickness, col);
+
+    const char text[] = "IN";
+    const size_t text_len = 3;
+    Mui_Vector2 measure = mui_measure_text(mui_protos_theme_g.font_small, text, mui_protos_theme_g.font_small_size, 0.0f, 0, text_len);
+    Mui_Vector2 pos;
+    pos.x = center.x - 0.5f * measure.x;
+    pos.y = center.y - 0.5f * measure.y;
+    mui_draw_text_line(mui_protos_theme_g.font_small, pos, 0.0f, mui_protos_theme_g.font_small_size, text, col, 0, text_len);
+
 
 }
+void output_termination_view_draw(Mui_Rectangle widget_area) {
+
+    Mui_Rectangle symbol_area;
+    widget_area = mui_cut_top(widget_area, CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT, &symbol_area);
+
+    Mui_Color col = mui_protos_theme_g.text;
+    Mui_Color bg = mui_protos_theme_g.bg;
+    mui_draw_rectangle(symbol_area, bg);
+
+    float w = symbol_area.height;
+    Mui_Rectangle r;
+    r.width = w;
+    r.height = w;
+    mui_center_rectangle_inside_rectangle(&r, symbol_area);
+
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
+    float upper_y = r.y + 3.0f / 16.0f * r.height;
+    float lower_y = r.y + 13.0f / 16.0f * r.height;
+
+    float radius = 0.25f * symbol_area.width;
+    Mui_Vector2 center = mui_center_of_rectangle(symbol_area);
+    mui_draw_line(symbol_area.x + 0.5f * symbol_area.width, lower_y, symbol_area.x, lower_y, line_thickness, col);
+    mui_draw_line(symbol_area.x + 0.5f * symbol_area.width, upper_y, symbol_area.x, upper_y, line_thickness, col);
+    mui_draw_circle_lines(center, radius, col, line_thickness);
+    mui_draw_line(symbol_area.x + 0.5f * symbol_area.width, upper_y, symbol_area.x + 0.5f * symbol_area.width, upper_y + radius, line_thickness, col);
+    mui_draw_line(symbol_area.x + 0.5f * symbol_area.width, lower_y, symbol_area.x + 0.5f * symbol_area.width, lower_y - radius, line_thickness, col);
+
+    const char text[] = "OUT";
+    const size_t text_len = 3;
+    Mui_Vector2 measure = mui_measure_text(mui_protos_theme_g.font_small, text, mui_protos_theme_g.font_small_size, 0.0f, 0, text_len);
+    Mui_Vector2 pos;
+    pos.x = center.x - 0.5f * measure.x;
+    pos.y = center.y - 0.5f * measure.y;
+    mui_draw_text_line(mui_protos_theme_g.font_small, pos, 0.0f, mui_protos_theme_g.font_small_size, text, col, 0, text_len);
+
+}
+
+
 
 //
 // resistor
@@ -476,13 +593,13 @@ void resistor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
         mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
     }
 
-    float w = min(symbol_area.width, symbol_area.height);
+    float w = symbol_area.height;
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
 
-    float line_thickness = 3;
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
     Mui_Vector2 center = mui_center_of_rectangle(r_inset);
@@ -532,6 +649,7 @@ void resistor_view_settings_draw(struct Resistor_Ideal_View* resistor_view, Mui_
     pos.y = inset_area.y + (inset_area.height - text_size.y) * 0.5f;
     mui_draw_text_line(font, pos, 0.2f, font_size, rendered_resistance, col, 0, strlen(rendered_resistance));
 }
+
 
 void resistor_view_draw(struct Resistor_Ideal_View* view, Mui_Rectangle widget_area, bool is_selected) {
 
@@ -584,13 +702,13 @@ void resistor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highli
         mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
     }
 
-    float w = min(symbol_area.width, symbol_area.height);
+    float w = symbol_area.height;
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
 
-    float line_thickness = 3;
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
     Mui_Vector2 center = mui_center_of_rectangle(r_inset);
@@ -692,13 +810,13 @@ void capacitor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
         mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
     }
 
-    float w = min(symbol_area.width, symbol_area.height);
+    float w = symbol_area.height;
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
 
-    float line_thickness = 3;
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
     Mui_Vector2 center = mui_center_of_rectangle(r_inset);
@@ -791,13 +909,13 @@ void capacitor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highl
         mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
     }
 
-    float w = min(symbol_area.width, symbol_area.height);
+    float w = symbol_area.height;
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
 
-    float line_thickness = 3;
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
     Mui_Vector2 center = mui_center_of_rectangle(r_inset);
@@ -902,13 +1020,13 @@ void inductor_symbol_draw(Mui_Rectangle symbol_area, bool should_highlight) {
         mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
     }
 
-    float w = min(symbol_area.width, symbol_area.height);
+    float w = symbol_area.height;
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
 
-    float line_thickness = 3;
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
 
@@ -1006,13 +1124,13 @@ void inductor_parallel_symbol_draw(Mui_Rectangle symbol_area, bool should_highli
         mui_draw_rectangle_rounded_lines(mui_shrink(symbol_area, border), 10.0f, hl_color, border);
     }
 
-    float w = min(symbol_area.width, symbol_area.height);
+    float w = symbol_area.height;
     Mui_Rectangle r;
     r.width = w;
     r.height = w;
     mui_center_rectangle_inside_rectangle(&r, symbol_area);
 
-    float line_thickness = 3;
+    float line_thickness = CIRCUIT_LINE_THICKNESS;
     float f = w * 0.05f;
     Mui_Rectangle r_inset = mui_shrink(r, f);
 

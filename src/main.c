@@ -469,13 +469,31 @@ int main(int argc, char** argv) {
         //
         // circuit elements draw
         //
+        float dotted_symbol_width = grid_pixels * 2;
+        Mui_Rectangle rest_this_row = rest;
+        // input termination
+        rest_this_row = mui_cut_left(rest_this_row, dotted_symbol_width, &component_view_rect);
+        input_termination_view_draw(component_view_rect);
         for (size_t i = 0; i < n_comps; i ++) {
             float width = grid_pixels * 4;
             if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
                 width = grid_pixels * 8;
-            rest = mui_cut_left(rest, width, &component_view_rect);
+            if (rest_this_row.x + width +  dotted_symbol_width > w) {
+                // connection
+                rest_this_row = mui_cut_left(rest_this_row, dotted_symbol_width, &component_view_rect);
+                dotted_view_draw(component_view_rect);
+                rest = mui_cut_top(rest, grid_pixels * 6, NULL);
+                rest_this_row = rest;
+                rest_this_row = mui_cut_left(rest_this_row, dotted_symbol_width, &component_view_rect);
+                dotted_view_draw(component_view_rect);
+            }
+            // element
+            rest_this_row = mui_cut_left(rest_this_row, width, &component_view_rect);
             circuit_component_view_draw(&component_view_array[i], component_view_rect, selected_comp == i);
         }
+        // output termination
+        rest_this_row = mui_cut_left(rest_this_row, dotted_symbol_width, &component_view_rect);
+        output_termination_view_draw(component_view_rect);
 
 
         mui_end_drawing();

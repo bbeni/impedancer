@@ -100,6 +100,9 @@ struct Simulation_State {
     struct Circuit_Component *components_cascade;
     struct Simulation_Component_Intermediate_State *intermediate_states;
 
+    double z0_in;  // Source Impedance
+    double z0_out; // Load Impedance
+
     size_t n_frequencies;
     double *frequencies;
     struct Complex_2x2_SoA s_result;

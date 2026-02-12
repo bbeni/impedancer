@@ -203,14 +203,12 @@ bool simulation_interpolate_sparams_circuit_component(struct Circuit_Component *
     return true;
 }
 
-
-
+// make sure to call circuit_simulation_destroy before calling this function again
 bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, struct Simulation_Settings *settings) {
 
     size_t n_frequencies = settings->n_frequencies;
     double start_f = settings->f_min;
     double end_f = settings->f_max;
-    printf("start %f  end %f\n", start_f, end_f);
     double df = (end_f - start_f) / (n_frequencies - 1);
 
     sim_state->n_components = n_components;
@@ -268,6 +266,9 @@ bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_
         sim_state->frequencies[i] = start_f + i * df;
     }
 
+    sim_state->z0_in = settings->z0_in;
+    sim_state->z0_out = settings->z0_out;
+
     // interpolate S-Parameters and generate T-parameters
     for (size_t i_comp = 0; i_comp < n_components; i_comp++) {
         simulation_interpolate_sparams_circuit_component(
@@ -308,10 +309,55 @@ bool circuit_simulation_destroy(struct Simulation_State *sim_state) {
 }
 
 
+// T_f = T_x * T_y
+static void multiply_t_soa(struct Complex_2x2_SoA *tf, struct Complex_2x2_SoA *tx, struct Complex_2x2_SoA *ty, size_t n_f) {
+    // (A+iB)(C+iD) = (AC − BD) + i (AD + BC)
+    for (size_t i = 0; i < n_f; i++) {
+        // AC - BD     real real - imag imag
+        tf->r11[i] = tx->r11[i] * ty->r11[i] + tx->r12[i] * ty->r21[i]  -  (tx->i11[i] * ty->i11[i] + tx->i12[i] * ty->i21[i]);
+        tf->r21[i] = tx->r21[i] * ty->r11[i] + tx->r22[i] * ty->r21[i]  -  (tx->i21[i] * ty->i11[i] + tx->i22[i] * ty->i21[i]);
+        tf->r12[i] = tx->r11[i] * ty->r12[i] + tx->r12[i] * ty->r22[i]  -  (tx->i11[i] * ty->i12[i] + tx->i12[i] * ty->i22[i]);
+        tf->r22[i] = tx->r21[i] * ty->r12[i] + tx->r22[i] * ty->r22[i]  -  (tx->i21[i] * ty->i12[i] + tx->i22[i] * ty->i22[i]);
+        // i (AD + BC) realx imagy + imagx realy
+        tf->i11[i] = tx->r11[i] * ty->i11[i] + tx->r12[i] * ty->i21[i]  +  (tx->i11[i] * ty->r11[i] + tx->i12[i] * ty->r21[i]);
+        tf->i21[i] = tx->r21[i] * ty->i11[i] + tx->r22[i] * ty->i21[i]  +  (tx->i21[i] * ty->r11[i] + tx->i22[i] * ty->r21[i]);
+        tf->i12[i] = tx->r11[i] * ty->i12[i] + tx->r12[i] * ty->i22[i]  +  (tx->i11[i] * ty->r12[i] + tx->i12[i] * ty->r22[i]);
+        tf->i22[i] = tx->r21[i] * ty->i12[i] + tx->r22[i] * ty->i22[i]  +  (tx->i21[i] * ty->r12[i] + tx->i22[i] * ty->r22[i]);
+    }
+}
+
+// Fill a T-SoA with a constant impedance step
+// T = 1/sqrt(1-G^2) * | 1  G |
+//                     | G  1 |
+static void fill_impedance_step_t(struct Complex_2x2_SoA *t_out, double z_from, double z_to, size_t n_f) {
+    // Calculate Reflection Coeff Gamma
+    // Note: Standard definition G = (Z_load - Z0) / (Z_load + Z0)
+    double gamma = (z_to - z_from) / (z_to + z_from);
+
+    // T-param factor
+    double factor = 1.0 / sqrt(1.0 - gamma * gamma);
+    double t11_22 = factor * 1.0;
+    double t12_21 = factor * gamma;
+
+    for (size_t i = 0; i < n_f; i++) {
+        t_out->r11[i] = t11_22;
+        t_out->r22[i] = t11_22;
+        t_out->r12[i] = t12_21;
+        t_out->r21[i] = t12_21;
+
+        // Resistive steps have 0 imaginary part
+        t_out->i11[i] = 0; t_out->i22[i] = 0;
+        t_out->i12[i] = 0; t_out->i21[i] = 0;
+    }
+}
+
+// simulate the cascade of components using T-parameters
 bool circuit_simulation_do(struct Simulation_State *sim_state) {
 
-    printf("simulation started with %zu components and %zu frequencies\n", sim_state->n_components, sim_state->n_frequencies);
-
+    printf("===========================================================\n");
+    printf("simulation started\n");
+    printf("    components: %zu\n    number of frequencies: %zu\n", sim_state->n_components, sim_state->n_frequencies);
+    printf("    source impedance: %.1f\n    load impedance: %.1f\n", sim_state->z0_in, sim_state->z0_out);
 
     if (sim_state->n_components < 1) {
         printf("ERROR: need at least one component_cascade in sim_state\n");
@@ -321,7 +367,7 @@ bool circuit_simulation_do(struct Simulation_State *sim_state) {
     size_t n_f = sim_state->n_frequencies;
     size_t byte_size_total = 8 * n_f * sizeof(*sim_state->t_result.r11);
 
-    // T_0 T_1 T_2 ...
+    // [T_in] T_0 T_1 T_2 ... [T_out]
     // ---------------
     // copy T_f = T_0
     //
@@ -333,52 +379,79 @@ bool circuit_simulation_do(struct Simulation_State *sim_state) {
     //
     // ...
 
-    // copy T_f = T_0
-    memcpy(
-        sim_state->t_result.r11,
-        sim_state->intermediate_states[0].t.r11,
-        byte_size_total
-    );
-
     // reserve some temporary space (T_t)
-    struct Complex_2x2_SoA t_intermediate;
     mma_temp_set_restore_point();
-    t_intermediate.r11 = mma_temp_alloc(byte_size_total);
-    t_intermediate.r12 = &t_intermediate.r11[1 * n_f];
-    t_intermediate.r21 = &t_intermediate.r11[2 * n_f];
-    t_intermediate.r22 = &t_intermediate.r11[3 * n_f];
-    t_intermediate.i11 = &t_intermediate.r11[4 * n_f];
-    t_intermediate.i12 = &t_intermediate.r11[5 * n_f];
-    t_intermediate.i21 = &t_intermediate.r11[6 * n_f];
-    t_intermediate.i22 = &t_intermediate.r11[7 * n_f];
+    struct Complex_2x2_SoA t_temporary;
+    t_temporary.r11 = mma_temp_alloc(byte_size_total);
+    t_temporary.r12 = &t_temporary.r11[1 * n_f];
+    t_temporary.r21 = &t_temporary.r11[2 * n_f];
+    t_temporary.r22 = &t_temporary.r11[3 * n_f];
+    t_temporary.i11 = &t_temporary.r11[4 * n_f];
+    t_temporary.i12 = &t_temporary.r11[5 * n_f];
+    t_temporary.i21 = &t_temporary.r11[6 * n_f];
+    t_temporary.i22 = &t_temporary.r11[7 * n_f];
 
-    for (size_t i_comp = 1; i_comp < sim_state->n_components; i_comp++) {
+    // input impedance step if not 50 ohm
+    // copy T_f = T_0 [or T_f = T_in]
+    size_t start_index = 1;
+    if (fabs(sim_state->z0_in - 50.0) < 1e-9) {
+        // case 50 ohm: T_f = T_0
+        memcpy(
+            sim_state->t_result.r11,
+            sim_state->intermediate_states[0].t.r11,
+            byte_size_total
+        );
+    } else {
+        // case not 50 ohm: T_f = T_in
+        start_index = 0;
+        fill_impedance_step_t(
+            &sim_state->t_result,
+            sim_state->z0_in, 50.0, n_f
+        );
+    }
+
+    for (size_t i_comp = start_index; i_comp < sim_state->n_components; i_comp++) {
 
         // copy T_t = T_f
         memcpy(
-            t_intermediate.r11,
+            t_temporary.r11,
             sim_state->t_result.r11,
             byte_size_total
         );
 
-        struct Complex_2x2_SoA *tx = &t_intermediate; // T_t
+        struct Complex_2x2_SoA *tx = &t_temporary;
         struct Complex_2x2_SoA *ty = &sim_state->intermediate_states[i_comp].t;
         struct Complex_2x2_SoA *tf = &sim_state->t_result;
+        // T_f = T_x * T_y
+        multiply_t_soa(tf, tx, ty, n_f);
+    }
+
+    // output impedance step if not 50 ohm
+    if (fabs(sim_state->z0_out - 50.0) > 1e-9) {
+
+        // copy T_t = T_f
+        memcpy(
+            t_temporary.r11,
+            sim_state->t_result.r11,
+            byte_size_total
+        );
+
+        struct Complex_2x2_SoA *tx = &t_temporary;
+        struct Complex_2x2_SoA *tf = &sim_state->t_result;
+        struct Complex_2x2_SoA t_load_step;
+        t_load_step.r11 = mma_temp_alloc(byte_size_total);
+        t_load_step.r12 = &t_load_step.r11[1 * n_f];
+        t_load_step.r21 = &t_load_step.r11[2 * n_f];
+        t_load_step.r22 = &t_load_step.r11[3 * n_f];
+        t_load_step.i11 = &t_load_step.r11[4 * n_f];
+        t_load_step.i12 = &t_load_step.r11[5 * n_f];
+        t_load_step.i21 = &t_load_step.r11[6 * n_f];
+        t_load_step.i22 = &t_load_step.r11[7 * n_f];
+
+        fill_impedance_step_t(&t_load_step, 50.0, sim_state->z0_out, n_f);
 
         // T_f = T_x * T_y
-        // (A+iB)(C+iD) = (AC − BD) + i (AD + BC)
-        for (size_t i = 0; i < n_f; i++) {
-            // AC - BD     real real - imag imag
-            tf->r11[i] = tx->r11[i] * ty->r11[i] + tx->r12[i] * ty->r21[i]  -  (tx->i11[i] * ty->i11[i] + tx->i12[i] * ty->i21[i]);
-            tf->r21[i] = tx->r21[i] * ty->r11[i] + tx->r22[i] * ty->r21[i]  -  (tx->i21[i] * ty->i11[i] + tx->i22[i] * ty->i21[i]);
-            tf->r12[i] = tx->r11[i] * ty->r12[i] + tx->r12[i] * ty->r22[i]  -  (tx->i11[i] * ty->i12[i] + tx->i12[i] * ty->i22[i]);
-            tf->r22[i] = tx->r21[i] * ty->r12[i] + tx->r22[i] * ty->r22[i]  -  (tx->i21[i] * ty->i12[i] + tx->i22[i] * ty->i22[i]);
-            // i (AD + BC) realx imagy + imagx realy
-            tf->i11[i] = tx->r11[i] * ty->i11[i] + tx->r12[i] * ty->i21[i]  +  (tx->i11[i] * ty->r11[i] + tx->i12[i] * ty->r21[i]);
-            tf->i21[i] = tx->r21[i] * ty->i11[i] + tx->r22[i] * ty->i21[i]  +  (tx->i21[i] * ty->r11[i] + tx->i22[i] * ty->r21[i]);
-            tf->i12[i] = tx->r11[i] * ty->i12[i] + tx->r12[i] * ty->i22[i]  +  (tx->i11[i] * ty->r12[i] + tx->i12[i] * ty->r22[i]);
-            tf->i22[i] = tx->r21[i] * ty->i12[i] + tx->r22[i] * ty->i22[i]  +  (tx->i21[i] * ty->r12[i] + tx->i22[i] * ty->r22[i]);
-        }
+        multiply_t_soa(tf, tx, &t_load_step, n_f);
     }
 
     calc_s_from_t_array(
@@ -412,6 +485,8 @@ bool circuit_simulation_do(struct Simulation_State *sim_state) {
 
 
     printf("simulation finished.\n");
+    printf("===========================================================\n");
+
 
     mma_temp_restore();
 

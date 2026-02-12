@@ -174,7 +174,7 @@ int main(int argc, char** argv) {
     // TODO: extract the goals from ui state
     struct Simulation_Cockpit_View_State sim_cockpit_view_state;
     struct Simulation_Settings simulation_settings;
-    simulation_cockpit_view_init(&sim_cockpit_view_state, &simulation_settings, 1.0, 5e9, 1000);
+    simulation_cockpit_view_init(&sim_cockpit_view_state, &simulation_settings, 1.0, 1e8, 1000);
 
     struct Simulation_State simulation_state;
     bool todo_first_sim = true;

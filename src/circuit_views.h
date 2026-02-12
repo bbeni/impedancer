@@ -4,7 +4,7 @@
 #include "circuit.h"
 #include "mui.h"
 
-#define CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT 150
+#define CIRCUIT_VIEW_SYMBOL_AREA_HEIGHT 36 * 2
 
 //
 // circuit Views
@@ -183,6 +183,8 @@ struct Simulation_Cockpit_View_State {
     Mui_Button_State run_simulation_btn_state;
     Mui_Button_State run_optimization_btn_state;
     Mui_Button_State add_goal_btn_state;
+    Mui_Number_Input_State z0_in;
+    Mui_Number_Input_State z0_out;
     Mui_Number_Input_State f_start;
     Mui_Number_Input_State f_end;
     Mui_Number_Input_State n_steps;

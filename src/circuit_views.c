@@ -1183,7 +1183,11 @@ void simulation_cockpit_view_init(struct Simulation_Cockpit_View_State* view, st
     settings->f_max = f_max;
     settings->f_min = f_min;
     settings->n_frequencies = n_steps;
+    settings->z0_in = 50.0;
+    settings->z0_out = 50.0;
 
+    view->z0_in = mui_number_input_state(50.0);
+    view->z0_out = mui_number_input_state(50.0);
     view->f_start = mui_number_input_state(f_min);
     view->f_end = mui_number_input_state(f_max);
     view->n_steps = mui_number_input_state(n_steps);
@@ -1216,35 +1220,48 @@ SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit
     mui_draw_rectangle(area, mui_protos_theme_g.bg_dark);
 
     Mui_Rectangle a1, a2, a3, a4, a5, a6, a7;
+
     area = mui_cut_top(area, grid_pixels * 1.0f, &a1);
-    area = mui_cut_top(area, grid_pixels * 3.0f, &a2);
+    area = mui_cut_top(area, grid_pixels * 5.0f, &a2);
     area = mui_cut_top(area, grid_pixels * 1.0f, &a3);
     area = mui_cut_top(area, grid_pixels * 1.0f, &a4);
 
     // f_min, f_max, n_steps
-    Mui_Rectangle a2a_l, a2b_l, a2c_l;
-    Mui_Rectangle a2a_r, a2b_r, a2c_r;
+    Mui_Rectangle a2a_l, a2b_l, a2c_l, a2d_l, a2e_l;
+    Mui_Rectangle a2a_r, a2b_r, a2c_r, a2d_r, a2e_r;
     a2 = mui_cut_top(a2, grid_pixels, &a2a_r);
     a2 = mui_cut_top(a2, grid_pixels, &a2b_r);
     a2 = mui_cut_top(a2, grid_pixels, &a2c_r);
+    a2 = mui_cut_top(a2, grid_pixels, &a2d_r);
+    a2 = mui_cut_top(a2, grid_pixels, &a2e_r);
     a2a_r = mui_cut_left(a2a_r, grid_pixels * 2, &a2a_l);
     a2b_r = mui_cut_left(a2b_r, grid_pixels * 2, &a2b_l);
     a2c_r = mui_cut_left(a2c_r, grid_pixels * 2, &a2c_l);
+    a2d_r = mui_cut_left(a2d_r, grid_pixels * 2, &a2d_l);
+    a2e_r = mui_cut_left(a2e_r, grid_pixels * 2, &a2e_l);
 
 
     mui_draw_rectangle_rounded(a1, mui_protos_theme_g.corner_radius, mui_protos_theme_g.primary);
     mui_label(&mui_protos_theme_g, "SIMULATION", MUI_TEXT_ALIGN_DEFAULT, a1);
-    mui_label(&mui_protos_theme_g, "f_min", MUI_TEXT_ALIGN_DEFAULT, a2a_l);
-    mui_label(&mui_protos_theme_g, "f_max", MUI_TEXT_ALIGN_DEFAULT, a2b_l);
-    mui_label(&mui_protos_theme_g, "n_stp", MUI_TEXT_ALIGN_DEFAULT, a2c_l);
+    mui_label(&mui_protos_theme_g, "z0_in", MUI_TEXT_ALIGN_DEFAULT, a2a_l);
+    mui_label(&mui_protos_theme_g, "z0_out", MUI_TEXT_ALIGN_DEFAULT, a2b_l);
+    mui_label(&mui_protos_theme_g, "f_min", MUI_TEXT_ALIGN_DEFAULT, a2c_l);
+    mui_label(&mui_protos_theme_g, "f_max", MUI_TEXT_ALIGN_DEFAULT, a2d_l);
+    mui_label(&mui_protos_theme_g, "n_stp", MUI_TEXT_ALIGN_DEFAULT, a2e_l);
 
-    if (mui_number_input(&view->f_start, a2a_r)) {
+    if (mui_number_input(&view->z0_in, a2a_r)) {
+        settings_out->z0_in = view->z0_in.parsed_number;
+    }
+    if (mui_number_input(&view->z0_out, a2b_r)) {
+        settings_out->z0_out = view->z0_out.parsed_number;
+    }
+    if (mui_number_input(&view->f_start, a2c_r)) {
         settings_out->f_min = view->f_start.parsed_number;
     }
-    if (mui_number_input(&view->f_end, a2b_r)) {
+    if (mui_number_input(&view->f_end, a2d_r)) {
         settings_out->f_max = view->f_end.parsed_number;
     }
-    if (mui_number_input(&view->n_steps, a2c_r)) {
+    if (mui_number_input(&view->n_steps, a2e_r)) {
         settings_out->n_frequencies = view->n_steps.parsed_number;
     }
 

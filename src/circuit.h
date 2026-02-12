@@ -122,6 +122,8 @@ void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex
 struct Simulation_Settings {
     double f_min;
     double f_max;
+    double z0_in;
+    double z0_out;
     size_t n_frequencies;
 };
 

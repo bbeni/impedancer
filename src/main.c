@@ -63,10 +63,62 @@ int main(int argc, char** argv) {
     component_view_array = malloc(sizeof(*component_view_array) * MAX_CIRCUIT_COMPONENTS);
 
 
-    size_t n_comps = 8;
+    size_t n_comps = 13;
     size_t i = 0;
 
+    // test circuit
+    // input match
+    circuit_create_capacitor_ideal(33e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    circuit_create_capacitor_ideal_parallel(136e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    circuit_create_inductor_ideal_parallel(500e-9, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
 
+    // bias t
+    circuit_create_capacitor_ideal(2.2e-9, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    circuit_create_inductor_ideal_parallel(4.7e-6, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
+    // stability
+    circuit_create_resistor_ideal_parallel(56e3, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    circuit_create_capacitor_ideal_parallel(22.2e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    circuit_create_stage(&stage_archetype, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    circuit_create_capacitor_ideal_parallel(0.3e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
+    // bias t
+    circuit_create_capacitor_ideal(2.2e-9, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    circuit_create_inductor_ideal_parallel(4.7e-6, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
+    //output match
+    circuit_create_capacitor_ideal_parallel(97e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    circuit_create_inductor_ideal(360e-9, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
+
+
+    /*
     // R 35k Ohm parallel
     circuit_create_resistor_ideal_parallel(35e3, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
@@ -105,6 +157,7 @@ int main(int argc, char** argv) {
     circuit_create_capacitor_ideal_parallel(95e-15, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
+    */
 
     assert(i == n_comps && "update n_comps please");
 
@@ -285,10 +338,10 @@ int main(int argc, char** argv) {
             if (todo_first_sim) todo_first_sim = false;
         break;
         case SIMULATION_COCKPIT_ACTION_OPTIMIZE:
-            assert(false && "TODO implement me (the new action)");
+            assert(false && "TODO implement me");
         break;
         case SIMULATION_COCKPIT_ACTION_ERROR:
-            assert(false && "TODO implement me (the new action)");
+            assert(false && "TODO implement me");
         break;
         case SIMULATION_COCKPIT_ACTION_NUMBER:
             assert(false && "TODO implement me (the new action)");
@@ -417,9 +470,9 @@ int main(int argc, char** argv) {
         // circuit elements draw
         //
         for (size_t i = 0; i < n_comps; i ++) {
-            float width = grid_pixels * 5;
+            float width = grid_pixels * 4;
             if (component_view_array[i].kind == CIRCUIT_COMPONENT_STAGE)
-                width = grid_pixels * 10;
+                width = grid_pixels * 8;
             rest = mui_cut_left(rest, width, &component_view_rect);
             circuit_component_view_draw(&component_view_array[i], component_view_rect, selected_comp == i);
         }

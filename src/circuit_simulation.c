@@ -203,8 +203,6 @@ bool circuit_interpolate_sparams_circuit_component(struct Circuit_Component *com
     return true;
 }
 
-
-// make sure to call circuit_simulation_destroy before calling this function again
 bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, const struct Simulation_Settings *settings) {
 
     size_t n_frequencies = settings->n_frequencies;
@@ -217,48 +215,51 @@ bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_
     sim_state->components_cascade = component_cascade;
 
     /// START MALLOC BUSINESS
-    sim_state->frequencies = malloc(sizeof(*sim_state->frequencies) * n_frequencies);
-    sim_state->s11_result_plottable = malloc(sizeof(*sim_state->s11_result_plottable) * n_frequencies);
-    sim_state->s12_result_plottable = malloc(sizeof(*sim_state->s12_result_plottable) * n_frequencies);
-    sim_state->s21_result_plottable = malloc(sizeof(*sim_state->s21_result_plottable) * n_frequencies);
-    sim_state->s22_result_plottable = malloc(sizeof(*sim_state->s22_result_plottable) * n_frequencies);
-    sim_state->stab_mu = malloc(sizeof(*sim_state->stab_mu) * n_frequencies);
-    sim_state->stab_mu_prime = malloc(sizeof(*sim_state->stab_mu_prime) * n_frequencies);
-    sim_state->s_result.r11 = malloc(8 * sizeof(*sim_state->s_result.r11) * sim_state->n_frequencies);
-    sim_state->s_result.r12 = &sim_state->s_result.r11[1 * sim_state->n_frequencies];
-    sim_state->s_result.r21 = &sim_state->s_result.r11[2 * sim_state->n_frequencies];
-    sim_state->s_result.r22 = &sim_state->s_result.r11[3 * sim_state->n_frequencies];
-    sim_state->s_result.i11 = &sim_state->s_result.r11[4 * sim_state->n_frequencies];
-    sim_state->s_result.i12 = &sim_state->s_result.r11[5 * sim_state->n_frequencies];
-    sim_state->s_result.i21 = &sim_state->s_result.r11[6 * sim_state->n_frequencies];
-    sim_state->s_result.i22 = &sim_state->s_result.r11[7 * sim_state->n_frequencies];
+    if (!sim_state->memory_initalized) {
+        sim_state->frequencies = malloc(sizeof(*sim_state->frequencies) * n_frequencies);
+        sim_state->s11_result_plottable = malloc(sizeof(*sim_state->s11_result_plottable) * n_frequencies);
+        sim_state->s12_result_plottable = malloc(sizeof(*sim_state->s12_result_plottable) * n_frequencies);
+        sim_state->s21_result_plottable = malloc(sizeof(*sim_state->s21_result_plottable) * n_frequencies);
+        sim_state->s22_result_plottable = malloc(sizeof(*sim_state->s22_result_plottable) * n_frequencies);
+        sim_state->stab_mu = malloc(sizeof(*sim_state->stab_mu) * n_frequencies);
+        sim_state->stab_mu_prime = malloc(sizeof(*sim_state->stab_mu_prime) * n_frequencies);
+        sim_state->s_result.r11 = malloc(8 * sizeof(*sim_state->s_result.r11) * sim_state->n_frequencies);
+        sim_state->s_result.r12 = &sim_state->s_result.r11[1 * sim_state->n_frequencies];
+        sim_state->s_result.r21 = &sim_state->s_result.r11[2 * sim_state->n_frequencies];
+        sim_state->s_result.r22 = &sim_state->s_result.r11[3 * sim_state->n_frequencies];
+        sim_state->s_result.i11 = &sim_state->s_result.r11[4 * sim_state->n_frequencies];
+        sim_state->s_result.i12 = &sim_state->s_result.r11[5 * sim_state->n_frequencies];
+        sim_state->s_result.i21 = &sim_state->s_result.r11[6 * sim_state->n_frequencies];
+        sim_state->s_result.i22 = &sim_state->s_result.r11[7 * sim_state->n_frequencies];
 
-    sim_state->t_result.r11 = malloc(8 * sizeof(*sim_state->t_result.r11) * sim_state->n_frequencies);
-    sim_state->t_result.r12 = &sim_state->t_result.r11[1 * sim_state->n_frequencies];
-    sim_state->t_result.r21 = &sim_state->t_result.r11[2 * sim_state->n_frequencies];
-    sim_state->t_result.r22 = &sim_state->t_result.r11[3 * sim_state->n_frequencies];
-    sim_state->t_result.i11 = &sim_state->t_result.r11[4 * sim_state->n_frequencies];
-    sim_state->t_result.i12 = &sim_state->t_result.r11[5 * sim_state->n_frequencies];
-    sim_state->t_result.i21 = &sim_state->t_result.r11[6 * sim_state->n_frequencies];
-    sim_state->t_result.i22 = &sim_state->t_result.r11[7 * sim_state->n_frequencies];
-    sim_state->intermediate_states = malloc(sizeof(*sim_state->intermediate_states) * n_components);
-    for (size_t i_comp = 0; i_comp < n_components; i_comp++) {
-        sim_state->intermediate_states[i_comp].s.r11 = malloc(8 * sizeof(*sim_state->intermediate_states[i_comp].s.r11) * sim_state->n_frequencies);
-        sim_state->intermediate_states[i_comp].s.r12 = &sim_state->intermediate_states[i_comp].s.r11[1 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].s.r21 = &sim_state->intermediate_states[i_comp].s.r11[2 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].s.r22 = &sim_state->intermediate_states[i_comp].s.r11[3 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].s.i11 = &sim_state->intermediate_states[i_comp].s.r11[4 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].s.i12 = &sim_state->intermediate_states[i_comp].s.r11[5 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].s.i21 = &sim_state->intermediate_states[i_comp].s.r11[6 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].s.i22 = &sim_state->intermediate_states[i_comp].s.r11[7 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].t.r11 = malloc(8 * sizeof(*sim_state->intermediate_states[i_comp].t.r11) * sim_state->n_frequencies);
-        sim_state->intermediate_states[i_comp].t.r12 = &sim_state->intermediate_states[i_comp].t.r11[1 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].t.r21 = &sim_state->intermediate_states[i_comp].t.r11[2 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].t.r22 = &sim_state->intermediate_states[i_comp].t.r11[3 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].t.i11 = &sim_state->intermediate_states[i_comp].t.r11[4 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].t.i12 = &sim_state->intermediate_states[i_comp].t.r11[5 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].t.i21 = &sim_state->intermediate_states[i_comp].t.r11[6 * sim_state->n_frequencies];
-        sim_state->intermediate_states[i_comp].t.i22 = &sim_state->intermediate_states[i_comp].t.r11[7 * sim_state->n_frequencies];
+        sim_state->t_result.r11 = malloc(8 * sizeof(*sim_state->t_result.r11) * sim_state->n_frequencies);
+        sim_state->t_result.r12 = &sim_state->t_result.r11[1 * sim_state->n_frequencies];
+        sim_state->t_result.r21 = &sim_state->t_result.r11[2 * sim_state->n_frequencies];
+        sim_state->t_result.r22 = &sim_state->t_result.r11[3 * sim_state->n_frequencies];
+        sim_state->t_result.i11 = &sim_state->t_result.r11[4 * sim_state->n_frequencies];
+        sim_state->t_result.i12 = &sim_state->t_result.r11[5 * sim_state->n_frequencies];
+        sim_state->t_result.i21 = &sim_state->t_result.r11[6 * sim_state->n_frequencies];
+        sim_state->t_result.i22 = &sim_state->t_result.r11[7 * sim_state->n_frequencies];
+        sim_state->intermediate_states = malloc(sizeof(*sim_state->intermediate_states) * n_components);
+        for (size_t i_comp = 0; i_comp < n_components; i_comp++) {
+            sim_state->intermediate_states[i_comp].s.r11 = malloc(8 * sizeof(*sim_state->intermediate_states[i_comp].s.r11) * sim_state->n_frequencies);
+            sim_state->intermediate_states[i_comp].s.r12 = &sim_state->intermediate_states[i_comp].s.r11[1 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].s.r21 = &sim_state->intermediate_states[i_comp].s.r11[2 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].s.r22 = &sim_state->intermediate_states[i_comp].s.r11[3 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].s.i11 = &sim_state->intermediate_states[i_comp].s.r11[4 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].s.i12 = &sim_state->intermediate_states[i_comp].s.r11[5 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].s.i21 = &sim_state->intermediate_states[i_comp].s.r11[6 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].s.i22 = &sim_state->intermediate_states[i_comp].s.r11[7 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].t.r11 = malloc(8 * sizeof(*sim_state->intermediate_states[i_comp].t.r11) * sim_state->n_frequencies);
+            sim_state->intermediate_states[i_comp].t.r12 = &sim_state->intermediate_states[i_comp].t.r11[1 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].t.r21 = &sim_state->intermediate_states[i_comp].t.r11[2 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].t.r22 = &sim_state->intermediate_states[i_comp].t.r11[3 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].t.i11 = &sim_state->intermediate_states[i_comp].t.r11[4 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].t.i12 = &sim_state->intermediate_states[i_comp].t.r11[5 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].t.i21 = &sim_state->intermediate_states[i_comp].t.r11[6 * sim_state->n_frequencies];
+            sim_state->intermediate_states[i_comp].t.i22 = &sim_state->intermediate_states[i_comp].t.r11[7 * sim_state->n_frequencies];
+        }
+        sim_state->memory_initalized = true;
     }
     /// END MALLOC BUSINESS
 
@@ -293,6 +294,8 @@ void circuit_update_s_and_t_paramas_of_component(struct Simulation_State* sim_st
 
 bool circuit_simulation_destroy(struct Simulation_State *sim_state) {
 
+    if (!sim_state->memory_initalized) return true;
+
     /// START FREE BUSINESS
     for (size_t i_comp = 0; i_comp < sim_state->n_components; i_comp++) {
         free(sim_state->intermediate_states[i_comp].s.r11);
@@ -308,6 +311,8 @@ bool circuit_simulation_destroy(struct Simulation_State *sim_state) {
     free(sim_state->s_result.r11);
     free(sim_state->t_result.r11);
     /// END FREE BUSINESS
+
+    sim_state->memory_initalized = false;
 
     return true;
 }
@@ -356,12 +361,14 @@ static void fill_impedance_step_t(struct Complex_2x2_SoA *t_out, double z_from, 
 }
 
 // simulate the cascade of components using T-parameters
-bool circuit_simulation_do(struct Simulation_State *sim_state) {
+bool circuit_simulation_do(struct Simulation_State *sim_state, bool print_stdout) {
 
-    printf("===========================================================\n");
-    printf("simulation started\n");
-    printf("    components: %zu\n    number of frequencies: %zu\n", sim_state->n_components, sim_state->n_frequencies);
-    printf("    source impedance: %.1f\n    load impedance: %.1f\n", sim_state->z0_in, sim_state->z0_out);
+    if (print_stdout) {
+        printf("===========================================================\n");
+        printf("simulation started\n");
+        printf("    components: %zu\n    number of frequencies: %zu\n", sim_state->n_components, sim_state->n_frequencies);
+        printf("    source impedance: %.1f\n    load impedance: %.1f\n", sim_state->z0_in, sim_state->z0_out);
+    }
 
     if (sim_state->n_components < 1) {
         printf("ERROR: need at least one component_cascade in sim_state\n");
@@ -488,12 +495,16 @@ bool circuit_simulation_do(struct Simulation_State *sim_state) {
     }
 
 
-    printf("simulation finished.\n");
-    printf("===========================================================\n");
-
+    if (print_stdout) {
+        printf("simulation finished.\n");
+        printf("===========================================================\n");
+    }
 
     mma_temp_restore();
 
     return true;
 }
+
+
+
 

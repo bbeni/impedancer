@@ -55,6 +55,7 @@ COMMON_SRCS :=  $(SRC_DIR)/s2p.c \
                 $(SRC_DIR)/gra_smithchart.c \
                 $(SRC_DIR)/circuit_views.c \
                 $(SRC_DIR)/circuit_creation.c \
+                $(SRC_DIR)/circuit_optimizer.c \
                 $(SRC_DIR)/circuit_simulation.c
 
 OBJS_MAIN := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRC_DIR)/main.c $(COMMON_SRCS))

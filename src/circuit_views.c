@@ -20,7 +20,7 @@ double dB_from_squared(double x) {
 double dB(size_t i, void* x) {
     struct Complex *s = (struct Complex *)x;
     struct Complex si = s[i];
-    return dB_from_squared(si.i * si.i + si.r* si.r);
+    return dB_from_squared(si.i * si.i + si.r * si.r);
 }
 
 
@@ -1314,16 +1314,18 @@ void simulation_cockpit_view_init(struct Simulation_Cockpit_View_State* view, st
         view->goals[i].active = false;
         view->goals[i].f_max = f_max;
         view->goals[i].f_min = f_min;
-        view->goals[i].target = 1.0;
-        view->goals[i].type = OPTIMIZATION_LESS_THAN;
+        view->goals[i].goal_value = 30.0;
         view->goals[i].weight = 1.0;
+        view->goals[i].value_map = dB;
+        view->goals[i].target = OPTIMIZATION_TARGET_S21;
+        view->goals[i].type = OPTIMIZATION_TYPE_MORE_THAN;
 
         view->goal_views[i].active = mui_checkbox_state();
         view->goal_views[i].f_max = mui_number_input_state(f_max);
         view->goal_views[i].f_min = mui_number_input_state(f_min);
-        view->goal_views[i].target = mui_number_input_state(1.0);
-        view->goal_views[i].type = mui_number_input_state(0);
-        view->goal_views[i].weight = mui_number_input_state(1.0);
+        view->goal_views[i].target = mui_number_input_state(view->goals[i].goal_value);
+        view->goal_views[i].type = mui_number_input_state(view->goals[i].type);
+        view->goal_views[i].weight = mui_number_input_state(view->goals[i].weight);
     }
 }
 
@@ -1427,7 +1429,7 @@ SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit
             view->goals[i].type = view->goal_views[i].type.parsed_number;
         }
         if (mui_number_input(&view->goal_views[i].target, a5c_r)) {
-            view->goals[i].target = view->goal_views[i].target.parsed_number;
+            view->goals[i].goal_value = view->goal_views[i].target.parsed_number;
         }
         if (mui_number_input(&view->goal_views[i].weight, a5d_r)) {
             view->goals[i].weight = view->goal_views[i].weight.parsed_number;
@@ -1460,6 +1462,6 @@ SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit
 void simulation_optimization_goals_draw(Mui_Rectangle plot_area, struct Optimization_Goal* goals, size_t n_goals, double f_min, double f_max, double y_min, double y_max) {
     for (size_t i = 0; i < n_goals; i++) {
         if (!goals[i].active) continue;
-        gra_xy_plot_line(goals[i].f_min, goals[i].target, goals[i].f_max, goals[i].target, f_min, f_max, y_min, y_max, MUI_YELLOW, 7.0f, plot_area);
+        gra_xy_plot_line(goals[i].f_min, goals[i].goal_value, goals[i].f_max, goals[i].goal_value, f_min, f_max, y_min, y_max, MUI_YELLOW, 7.0f, plot_area);
     }
 }

@@ -114,6 +114,8 @@ struct Simulation_State {
     struct Complex* s22_result_plottable;
     double* stab_mu;
     double* stab_mu_prime;
+
+    bool memory_initalized;
 };
 
 struct Simulation_Settings {
@@ -124,22 +126,8 @@ struct Simulation_Settings {
     size_t n_frequencies;
 };
 
-typedef enum {
-    OPTIMIZATION_LESS_THAN,
-    OPTIMIZATION_MORE_THAN
-} OPTIMIZATION_TYPE;
-
-struct Optimization_Goal {
-    OPTIMIZATION_TYPE type;
-    double target;
-    double f_min;
-    double f_max;
-    double weight;
-    bool active;
-};
-
 bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, const struct Simulation_Settings *settings);
-bool circuit_simulation_do(struct Simulation_State *sim_state);
+bool circuit_simulation_do(struct Simulation_State *sim_state, bool print_stdout);
 bool circuit_simulation_destroy(struct Simulation_State *sim_state);
 
 void circuit_update_s_and_t_paramas_of_component(struct Simulation_State* sim_state, size_t component_index);
@@ -148,5 +136,48 @@ bool circuit_interpolate_sparams_circuit_component(struct Circuit_Component *com
 void calc_s_from_t_array(struct Complex_2x2_SoA *t, struct Complex_2x2_SoA *s_out, size_t length);
 void calc_t_from_s_array(struct Complex_2x2_SoA *s, struct Complex_2x2_SoA *t_out, size_t length);
 void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex s21, struct Complex s22, double* mu_out, double* mu_prime_out);
+
+// less than the target is meant
+typedef enum {
+    OPTIMIZATION_TYPE_LESS_THAN,
+    OPTIMIZATION_TYPE_MORE_THAN
+} OPTIMIZATION_TYPE;
+
+typedef enum {
+    OPTIMIZATION_TARGET_S11,
+    OPTIMIZATION_TARGET_S21,
+    OPTIMIZATION_TARGET_S12,
+    OPTIMIZATION_TARGET_S22,
+    OPTIMIZATION_TARGET_MU,
+    OPTIMIZATION_TARGET_MU_PRIME,
+} OPTIMIZATION_TARGET;
+
+struct Optimization_Goal {
+    OPTIMIZATION_TYPE type;
+    OPTIMIZATION_TARGET target;
+    double goal_value;
+    double f_min;
+    double f_max;
+    double weight;
+    bool active;
+    double (*value_map)(size_t, void*); // for example dB(...), mag(...), ...
+};
+
+struct Optimizer_State {
+    size_t iteration;
+    size_t max_iterations;
+    double best_total_loss_value;
+    struct Circuit_Component *initial_component_cascade;
+    struct Circuit_Component *best_component_cascade;
+    struct Circuit_Component *temporary_component_cascade;
+    size_t n_components;
+};
+
+double circuit_optimizer_calculate_loss_hinge_lt(void* values, size_t value_count, double (*value_map)(size_t, void*), double goal);
+double circuit_optimizer_calculate_loss_hinge_gt(void* values, size_t value_count, double (*value_map)(size_t, void*), double goal);
+double circuit_optimizer_evaluate_goal(const struct Optimization_Goal* goal, struct Simulation_State* sim_state);
+
+bool circuit_optimizer_setup(struct Optimizer_State* state, size_t max_iterations, struct Circuit_Component *intial_component_cascade, size_t n_components);
+bool circuit_optimizer_update_one_round(struct Optimizer_State* opt_state, struct Simulation_State* sim_state, const struct Simulation_Settings* sim_settings, const struct Optimization_Goal* goals, size_t goal_count, struct Circuit_Component *component_cascade, size_t n_components);
 
 #endif //CIRCUIT_H_

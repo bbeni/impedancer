@@ -174,10 +174,13 @@ int main(int argc, char** argv) {
     // TODO: extract the goals from ui state
     struct Simulation_Cockpit_View_State sim_cockpit_view_state;
     struct Simulation_Settings simulation_settings;
-    simulation_cockpit_view_init(&sim_cockpit_view_state, &simulation_settings, 1.0, 1e8, 1000);
+    simulation_cockpit_view_init(&sim_cockpit_view_state, &simulation_settings, 1e5, 1e8, 1000);
 
     struct Simulation_State simulation_state;
     bool todo_first_sim = true;
+
+    struct Optimizer_State optimizer_state;
+    bool optimizer_running = false;
 
     while (!mui_window_should_close())
     {
@@ -267,7 +270,7 @@ int main(int argc, char** argv) {
         if (mui_is_key_pressed(MUI_KEY_S)) {
             if (!todo_first_sim) circuit_simulation_destroy(&simulation_state);
             circuit_simulation_setup(component_array, n_comps, &simulation_state, &simulation_settings);
-            circuit_simulation_do(&simulation_state);
+            circuit_simulation_do(&simulation_state, true);
             if (todo_first_sim) todo_first_sim = false;
         }
 
@@ -334,11 +337,21 @@ int main(int argc, char** argv) {
         case SIMULATION_COCKPIT_ACTION_SIMULATE:
             if (!todo_first_sim) circuit_simulation_destroy(&simulation_state);
             circuit_simulation_setup(component_array, n_comps, &simulation_state, &simulation_settings);
-            circuit_simulation_do(&simulation_state);
+            circuit_simulation_do(&simulation_state, true);
             if (todo_first_sim) todo_first_sim = false;
         break;
         case SIMULATION_COCKPIT_ACTION_OPTIMIZE:
-            assert(false && "TODO implement me");
+            if (!optimizer_running) {
+
+                if (!todo_first_sim) circuit_simulation_destroy(&simulation_state);
+                circuit_simulation_setup(component_array, n_comps, &simulation_state, &simulation_settings);
+                circuit_simulation_do(&simulation_state, true);
+                if (todo_first_sim) todo_first_sim = false;
+
+                // TODO: check if 1 or more goals are activated
+                circuit_optimizer_setup(&optimizer_state, 1000, component_array, n_comps);
+                optimizer_running = true;
+            }
         break;
         case SIMULATION_COCKPIT_ACTION_ERROR:
             assert(false && "TODO implement me");
@@ -349,6 +362,10 @@ int main(int argc, char** argv) {
         default:
             assert(false && "TODO implement me (the new actions?)");
         break;
+        }
+
+        if (optimizer_running) {
+            optimizer_running = !circuit_optimizer_update_one_round(&optimizer_state, &simulation_state, &simulation_settings, sim_cockpit_view_state.goals, sim_cockpit_view_state.n_goals, component_array, n_comps);
         }
 
         //

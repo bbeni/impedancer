@@ -83,7 +83,7 @@ void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex
 #define Z0 50.0
 #define OMEGA_ZERO_SNAP 1e-12
 
-bool simulation_interpolate_sparams_circuit_component(struct Circuit_Component *component, double *frequencies, struct Complex_2x2_SoA *s_out, size_t n_frequencies) {
+bool circuit_interpolate_sparams_circuit_component(struct Circuit_Component *component, double *frequencies, struct Complex_2x2_SoA *s_out, size_t n_frequencies) {
     switch (component->kind) {
     case CIRCUIT_COMPONENT_RESISTOR_IDEAL: {
         struct Circuit_Component_Resistor_Ideal r = component->as.resistor_ideal;
@@ -203,8 +203,9 @@ bool simulation_interpolate_sparams_circuit_component(struct Circuit_Component *
     return true;
 }
 
+
 // make sure to call circuit_simulation_destroy before calling this function again
-bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, struct Simulation_Settings *settings) {
+bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, const struct Simulation_Settings *settings) {
 
     size_t n_frequencies = settings->n_frequencies;
     double start_f = settings->f_min;
@@ -271,21 +272,24 @@ bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_
 
     // interpolate S-Parameters and generate T-parameters
     for (size_t i_comp = 0; i_comp < n_components; i_comp++) {
-        simulation_interpolate_sparams_circuit_component(
-            &sim_state->components_cascade[i_comp], sim_state->frequencies,
-            &sim_state->intermediate_states[i_comp].s, sim_state->n_frequencies
-        );
-
-        calc_t_from_s_array(
-            &sim_state->intermediate_states[i_comp].s,
-            &sim_state->intermediate_states[i_comp].t,
-            sim_state->n_frequencies
-        );
+        circuit_update_s_and_t_paramas_of_component(sim_state, i_comp);
     }
 
     return true;
 }
 
+
+void circuit_update_s_and_t_paramas_of_component(struct Simulation_State* sim_state, size_t component_index) {
+    circuit_interpolate_sparams_circuit_component(
+        &sim_state->components_cascade[component_index], sim_state->frequencies,
+        &sim_state->intermediate_states[component_index].s, sim_state->n_frequencies
+    );
+    calc_t_from_s_array(
+        &sim_state->intermediate_states[component_index].s,
+        &sim_state->intermediate_states[component_index].t,
+        sim_state->n_frequencies
+    );
+}
 
 bool circuit_simulation_destroy(struct Simulation_State *sim_state) {
 
@@ -492,5 +496,4 @@ bool circuit_simulation_do(struct Simulation_State *sim_state) {
 
     return true;
 }
-
 

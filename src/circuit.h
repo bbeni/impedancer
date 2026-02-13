@@ -116,12 +116,6 @@ struct Simulation_State {
     double* stab_mu_prime;
 };
 
-
-void calc_s_from_t_array(struct Complex_2x2_SoA *t, struct Complex_2x2_SoA *s_out, size_t length);
-void calc_t_from_s_array(struct Complex_2x2_SoA *s, struct Complex_2x2_SoA *t_out, size_t length);
-void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex s21, struct Complex s22, double* mu_out, double* mu_prime_out);
-
-
 struct Simulation_Settings {
     double f_min;
     double f_max;
@@ -144,9 +138,15 @@ struct Optimization_Goal {
     bool active;
 };
 
-bool simulation_interpolate_sparams_circuit_component(struct Circuit_Component *component, double *frequencies, struct Complex_2x2_SoA *s_out, size_t n_frequencies);
-bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, struct Simulation_Settings *settings);
-bool circuit_simulation_destroy(struct Simulation_State *sim_state);
+bool circuit_simulation_setup(struct Circuit_Component *component_cascade, size_t n_components, struct Simulation_State *sim_state, const struct Simulation_Settings *settings);
 bool circuit_simulation_do(struct Simulation_State *sim_state);
+bool circuit_simulation_destroy(struct Simulation_State *sim_state);
+
+void circuit_update_s_and_t_paramas_of_component(struct Simulation_State* sim_state, size_t component_index);
+bool circuit_interpolate_sparams_circuit_component(struct Circuit_Component *component, double *frequencies, struct Complex_2x2_SoA *s_out, size_t n_frequencies);
+
+void calc_s_from_t_array(struct Complex_2x2_SoA *t, struct Complex_2x2_SoA *s_out, size_t length);
+void calc_t_from_s_array(struct Complex_2x2_SoA *s, struct Complex_2x2_SoA *t_out, size_t length);
+void calc_mu_and_mu_prime(struct Complex s11, struct Complex s12, struct Complex s21, struct Complex s22, double* mu_out, double* mu_prime_out);
 
 #endif //CIRCUIT_H_

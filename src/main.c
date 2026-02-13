@@ -63,9 +63,9 @@ int main(int argc, char** argv) {
     component_view_array = malloc(sizeof(*component_view_array) * MAX_CIRCUIT_COMPONENTS);
 
 
-    size_t n_comps = 13;
     size_t i = 0;
 
+/*
     // test circuit
     // input match
     circuit_create_capacitor_ideal(33e-12, &component_array[i]);
@@ -115,10 +115,11 @@ int main(int argc, char** argv) {
     circuit_create_inductor_ideal(360e-9, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
+*/
 
 
-
-    /*
+/*
+    // test curcuit 2
     // R 35k Ohm parallel
     circuit_create_resistor_ideal_parallel(35e3, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
@@ -157,10 +158,72 @@ int main(int argc, char** argv) {
     circuit_create_capacitor_ideal_parallel(95e-15, &component_array[i]);
     circuit_component_view_init(&component_view_array[i], &component_array[i]);
     i++;
-    */
+*/
 
-    assert(i == n_comps && "update n_comps please");
 
+    // test circuit 3: bandpass
+
+    // L ||
+    circuit_create_inductor_ideal_parallel(1.7e-6, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // C ||
+    circuit_create_capacitor_ideal_parallel(95e-15, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // L
+    circuit_create_inductor_ideal(5.5e-9, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // C
+    circuit_create_capacitor_ideal(120e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
+    // L ||
+    circuit_create_inductor_ideal_parallel(1.7e-6, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // C ||
+    circuit_create_capacitor_ideal_parallel(95e-15, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // L
+    circuit_create_inductor_ideal(5.5e-9, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // C
+    circuit_create_capacitor_ideal(120e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
+    // L ||
+    circuit_create_inductor_ideal_parallel(1.7e-6, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // C ||
+    circuit_create_capacitor_ideal_parallel(95e-15, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // L
+    circuit_create_inductor_ideal(5.5e-9, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // C
+    circuit_create_capacitor_ideal(120e-12, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
+    // L ||
+    circuit_create_inductor_ideal_parallel(1.7e-6, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+    // C ||
+    circuit_create_capacitor_ideal_parallel(95e-15, &component_array[i]);
+    circuit_component_view_init(&component_view_array[i], &component_array[i]);
+    i++;
+
+    size_t n_comps = i;
     size_t selected_comp = 0;
 
     Mui_Button_State dark_mode_btn = mui_button_state();
@@ -353,7 +416,6 @@ int main(int argc, char** argv) {
             } else {
                 optimizer_running = false;
             }
-            sim_cockpit_view_state.optimizer_running = optimizer_running;
         break;
         case SIMULATION_COCKPIT_ACTION_ERROR:
             assert(false && "TODO implement me");
@@ -381,6 +443,9 @@ int main(int argc, char** argv) {
             circuit_simulation_setup(component_array, n_comps, &simulation_state, &simulation_settings);
             circuit_simulation_do(&simulation_state, false);
         }
+
+        sim_cockpit_view_state.optimizer_running = optimizer_running;
+
 
         //
         // simulation results draw

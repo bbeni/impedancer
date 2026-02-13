@@ -174,7 +174,7 @@ int main(int argc, char** argv) {
     // TODO: extract the goals from ui state
     struct Simulation_Cockpit_View_State sim_cockpit_view_state;
     struct Simulation_Settings simulation_settings;
-    simulation_cockpit_view_init(&sim_cockpit_view_state, &simulation_settings, 1e5, 1e8, 1000);
+    simulation_cockpit_view_init(&sim_cockpit_view_state, &simulation_settings, 5e6, 1e8, 1000);
 
     struct Simulation_State simulation_state;
     bool todo_first_sim = true;
@@ -343,15 +343,17 @@ int main(int argc, char** argv) {
         case SIMULATION_COCKPIT_ACTION_OPTIMIZE:
             if (!optimizer_running) {
 
-                if (!todo_first_sim) circuit_simulation_destroy(&simulation_state);
                 circuit_simulation_setup(component_array, n_comps, &simulation_state, &simulation_settings);
                 circuit_simulation_do(&simulation_state, true);
                 if (todo_first_sim) todo_first_sim = false;
 
                 // TODO: check if 1 or more goals are activated
-                circuit_optimizer_setup(&optimizer_state, 1000, component_array, n_comps);
+                circuit_optimizer_setup(&optimizer_state, 100000, component_array, n_comps);
                 optimizer_running = true;
+            } else {
+                optimizer_running = false;
             }
+            sim_cockpit_view_state.optimizer_running = optimizer_running;
         break;
         case SIMULATION_COCKPIT_ACTION_ERROR:
             assert(false && "TODO implement me");
@@ -366,6 +368,18 @@ int main(int argc, char** argv) {
 
         if (optimizer_running) {
             optimizer_running = !circuit_optimizer_update_one_round(&optimizer_state, &simulation_state, &simulation_settings, sim_cockpit_view_state.goals, sim_cockpit_view_state.n_goals, component_array, n_comps);
+            // update stage views
+            for (size_t i = 0; i < n_comps; i++) {
+                if (component_array[i].kind == CIRCUIT_COMPONENT_STAGE) {
+                    if (component_view_array[i].as.stage_view.active_setting != component_array[i].as.stage.selected_setting) {
+                        stage_view_update_active_setting(&component_view_array[i].as.stage_view, component_array[i].as.stage.selected_setting);
+                    }
+                }
+            }
+
+            // update plot
+            circuit_simulation_setup(component_array, n_comps, &simulation_state, &simulation_settings);
+            circuit_simulation_do(&simulation_state, false);
         }
 
         //
@@ -381,8 +395,6 @@ int main(int argc, char** argv) {
             double fma = simulation_state.frequencies[simulation_state.n_frequencies - 1];
             double ymi = -30;
             double yma = 60;
-            double ystep = 10;
-            double fstep = 10e9;
 
             bool should_plot_mask[4] = {true, true, true, true};
             char* x_label = "f [Hz]";

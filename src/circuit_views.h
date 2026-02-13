@@ -178,7 +178,7 @@ do optimization
 
 struct Optimization_Goal_View {
     Mui_Number_Input_State type;
-    Mui_Number_Input_State target;
+    Mui_Number_Input_State goal_value;
     Mui_Number_Input_State f_min;
     Mui_Number_Input_State f_max;
     Mui_Number_Input_State weight;
@@ -187,6 +187,7 @@ struct Optimization_Goal_View {
 
 #define SIMULATION_COCKPIT_MAX_GOALS 128
 struct Simulation_Cockpit_View_State {
+    bool optimizer_running;
     Mui_Button_State run_simulation_btn_state;
     Mui_Button_State run_optimization_btn_state;
     Mui_Button_State add_goal_btn_state;

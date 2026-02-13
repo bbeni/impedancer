@@ -1323,7 +1323,7 @@ void simulation_cockpit_view_init(struct Simulation_Cockpit_View_State* view, st
         view->goal_views[i].active = mui_checkbox_state();
         view->goal_views[i].f_max = mui_number_input_state(f_max);
         view->goal_views[i].f_min = mui_number_input_state(f_min);
-        view->goal_views[i].target = mui_number_input_state(view->goals[i].goal_value);
+        view->goal_views[i].goal_value = mui_number_input_state(view->goals[i].goal_value);
         view->goal_views[i].type = mui_number_input_state(view->goals[i].type);
         view->goal_views[i].weight = mui_number_input_state(view->goals[i].weight);
     }
@@ -1418,7 +1418,7 @@ SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit
         mui_draw_rectangle(a5a_l, mui_protos_theme_g.primary_dark);
         mui_label(&mui_protos_theme_g, label, MUI_TEXT_ALIGN_CENTER, a5a_l);
         mui_label(&mui_protos_theme_g, "type", MUI_TEXT_ALIGN_DEFAULT, a5b_l);
-        mui_label(&mui_protos_theme_g, "target", MUI_TEXT_ALIGN_DEFAULT, a5c_l);
+        mui_label(&mui_protos_theme_g, "goal", MUI_TEXT_ALIGN_DEFAULT, a5c_l);
         mui_label(&mui_protos_theme_g, "weight", MUI_TEXT_ALIGN_DEFAULT, a5d_l);
         mui_label(&mui_protos_theme_g, "f_min", MUI_TEXT_ALIGN_DEFAULT, a5e_l);
         mui_label(&mui_protos_theme_g, "f_max", MUI_TEXT_ALIGN_DEFAULT, a5f_l);
@@ -1428,8 +1428,8 @@ SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit
         if (mui_number_input(&view->goal_views[i].type, a5b_r)) {
             view->goals[i].type = view->goal_views[i].type.parsed_number;
         }
-        if (mui_number_input(&view->goal_views[i].target, a5c_r)) {
-            view->goals[i].goal_value = view->goal_views[i].target.parsed_number;
+        if (mui_number_input(&view->goal_views[i].goal_value, a5c_r)) {
+            view->goals[i].goal_value = view->goal_views[i].goal_value.parsed_number;
         }
         if (mui_number_input(&view->goal_views[i].weight, a5d_r)) {
             view->goals[i].weight = view->goal_views[i].weight.parsed_number;
@@ -1452,7 +1452,9 @@ SIMULATION_COCKPIT_ACTION simulation_cockpit_view_draw(struct Simulation_Cockpit
             view->n_goals++;
         }
     }
-    if (mui_button(&view->run_optimization_btn_state, "run optimization", mui_shrink(a7, padding))) {
+
+
+    if (mui_button(&view->run_optimization_btn_state, !view->optimizer_running ? "run optimizer" : "stop optimizer", mui_shrink(a7, padding))) {
         action = SIMULATION_COCKPIT_ACTION_OPTIMIZE;
     }
 

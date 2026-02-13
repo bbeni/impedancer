@@ -112,7 +112,7 @@ double circuit_optimizer_evaluate_goal(const struct Optimization_Goal* goal, str
 }
 
 void circuit_random_tweak_cascade(struct Circuit_Component *component_cascade, size_t n_components) {
-    double rand_double = rand_from(0.4, 1.5);
+    double rand_double = rand_from(0.3, 1.3);
     int index = rand() % n_components;
 
     switch(component_cascade[index].kind) {
@@ -157,6 +157,8 @@ bool circuit_optimizer_setup(struct Optimizer_State* state, size_t max_iteration
     state->best_component_cascade = malloc(sizeof(*intial_component_cascade) * n_components);
 
     memcpy(state->initial_component_cascade, intial_component_cascade, sizeof(*intial_component_cascade) * n_components);
+    memcpy(state->best_component_cascade, intial_component_cascade, sizeof(*intial_component_cascade) * n_components);
+    memcpy(state->temporary_component_cascade, intial_component_cascade, sizeof(*intial_component_cascade) * n_components);
 
     return true;
 }
@@ -170,10 +172,12 @@ bool circuit_optimizer_update_one_round(struct Optimizer_State* opt_state, struc
 
     printf("optimizer round %zu\n", opt_state->iteration);
 
-    // back up the thing
-    memcpy(opt_state->temporary_component_cascade, component_cascade, sizeof(*component_cascade) * n_components);
+    memcpy(opt_state->temporary_component_cascade, opt_state->best_component_cascade, sizeof(*component_cascade) * n_components);
 
-    circuit_random_tweak_cascade(opt_state->temporary_component_cascade, n_components);
+    int stop_tweak = rand() % 10;
+    for (int i = 0; i < stop_tweak; i++);
+        circuit_random_tweak_cascade(opt_state->temporary_component_cascade, n_components);
+
     circuit_simulation_setup(opt_state->temporary_component_cascade, n_components, sim_state, sim_settings);
     circuit_simulation_do(sim_state, false);
 
